@@ -5,15 +5,15 @@ import { getAuth } from "firebase/auth";
 // Import analytics only on client side
 import { getAnalytics } from "firebase/analytics";
 
-// Initialize Firebase with configuration
+// Initialize Firebase with configuration for Daygo app
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: "daygo-app.firebaseapp.com", // This will need to be updated with the actual Firebase project
-  projectId: "daygo-app", // This will need to be updated with the actual Firebase project
-  storageBucket: "daygo-app.appspot.com", // This will need to be updated with the actual Firebase project
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyDF3-5iA2WBv57MNvgxPD1m7NO39AjBg5Y",
+  authDomain: "dayfocus-45a76.firebaseapp.com",
+  projectId: "dayfocus-45a76",
+  storageBucket: "dayfocus-45a76.firebasestorage.app",
+  messagingSenderId: "961785427048",
+  appId: "1:961785427048:web:963710ad53d9a17facf7dd",
+  measurementId: "G-SGB18DZLJN"
 };
 
 // Initialize Firebase

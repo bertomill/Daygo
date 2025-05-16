@@ -7,7 +7,7 @@ let testEnv;
 beforeAll(async () => {
   // Initialize the test environment with your rules
   testEnv = await initializeTestEnvironment({
-    projectId: "daygo-test",
+    projectId: "dayfocus-test",
     firestore: {
       rules: fs.readFileSync("firestore.rules", "utf8"),
     },
@@ -94,7 +94,7 @@ describe("Journal entries", () => {
 // Initialize the Firebase testing environment
 function initializeTestEnv() {
   return firebase.initializeTestApp({
-    projectId: "daygo-test",
+    projectId: "dayfocus-test",
     auth: { uid: "test-user", email: "test@example.com" }
   });
 } 
