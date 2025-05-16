@@ -214,7 +214,7 @@ export function TemplateForm({ template, isEditing = false }: TemplateFormProps)
             {fields.length === 0 && (
               <div className="text-center p-4 border rounded-md">
                 <p className="text-muted-foreground">
-                  No fields added. Click "Add Field" to create form fields.
+                  No fields added. Click &quot;Add Field&quot; to create form fields.
                 </p>
               </div>
             )}

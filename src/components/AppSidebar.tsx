@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarRail
 } from "@/components/ui/sidebar"
-import { File, FileText, LogOut, Plus, ShieldCheck, Tablet, User, Book } from "lucide-react"
+import { File, FileText, LogOut, Plus, ShieldCheck, User, Book } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { getAuth, User as FirebaseUser } from "firebase/auth"
 import { useEffect, useState } from "react"

@@ -73,7 +73,7 @@ export async function updateTemplate(id: string, template: Partial<JournalTempla
     }
     
     // Ensure fields are properly formatted if present
-    let updatedTemplate = {...template};
+    const updatedTemplate = {...template};
     if (template.fields) {
       const validatedFields = Array.isArray(template.fields) ? template.fields.map(field => ({
         ...field,

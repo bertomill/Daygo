@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { registerUser } from "@/lib/authUtils";
+import { FirebaseError } from 'firebase/app';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -15,43 +16,67 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
-      setIsLoading(false);
+      setError("Passwords don't match");
       return;
     }
-
+    
+    setIsLoading(true);
+    setError('');
+    
     try {
       await registerUser(name, email, password);
       toast.success('Account created successfully');
       router.push('/');
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      toast.error(error.message || 'Failed to create account');
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        // Handle Firebase errors
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            setError('Email is already in use');
+            break;
+          case 'auth/invalid-email':
+            setError('Invalid email address');
+            break;
+          case 'auth/weak-password':
+            setError('Password is too weak');
+            break;
+          default:
+            setError('An error occurred during registration');
+        }
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Create an account</h1>
+          <h2 className="mt-6 text-3xl font-bold tracking-tight">Create an account</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Or{" "}
-            <Link href="/login" className="font-medium text-primary hover:text-primary/90">
+            <Link href="/login" className="font-medium hover:text-primary">
               sign in to your account
             </Link>
           </p>
         </div>
-
+        
+        {error && (
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+        
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           <div className="space-y-4 rounded-md shadow-sm">
             <div>

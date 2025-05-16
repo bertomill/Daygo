@@ -1,4 +1,4 @@
-import { collection, addDoc, serverTimestamp, query, orderBy, getDocs, where } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, getDocs, where, Timestamp } from "firebase/firestore";
 import { db } from "./firebase";
 import { getAuth } from "firebase/auth";
 
@@ -7,7 +7,7 @@ export interface JournalEntry {
   title: string;
   content: string;
   userId: string;
-  createdAt?: any;
+  createdAt?: Timestamp;
 }
 
 // Collection reference

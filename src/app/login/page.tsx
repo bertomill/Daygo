@@ -9,53 +9,83 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { signInWithEmail, signInWithGoogle } from "@/lib/authUtils";
+import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  const handleEmailSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
 
     try {
       await signInWithEmail(email, password);
       toast.success('Signed in successfully');
       router.push('/');
-    } catch (error: any) {
-      console.error('Login error:', error);
-      toast.error(error.message || 'Failed to sign in');
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        // Handle Firebase errors
+        switch (error.code) {
+          case 'auth/invalid-email':
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+            setError('Invalid email or password. Please try again.');
+            break;
+          default:
+            setError('An error occurred. Please try again.');
+        }
+      } else {
+        // Handle other errors
+        setError('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setError('');
+    
     try {
       await signInWithGoogle();
-      toast.success('Signed in with Google');
+      toast.success('Signed in successfully');
       router.push('/');
-    } catch (error: any) {
-      console.error('Google sign-in error:', error);
-      toast.error(error.message || 'Failed to sign in with Google');
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        setError('Google sign-in failed');
+      } else {
+        setError('An unexpected error occurred');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Sign in to your account</h1>
+          <h2 className="mt-6 text-3xl font-bold tracking-tight">Sign in to your account</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Or{" "}
-            <Link href="/register" className="font-medium text-primary hover:text-primary/90">
+            <Link href="/register" className="font-medium hover:text-primary">
               create a new account
             </Link>
           </p>
         </div>
-
+        
+        {error && (
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+        
         <form className="mt-8 space-y-6" onSubmit={handleEmailSignIn}>
           <div className="space-y-4 rounded-md shadow-sm">
             <div>

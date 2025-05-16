@@ -70,11 +70,17 @@ export function JournalEntries() {
 export function JournalEntriesWithRefresh({ onRefreshNeeded }: { onRefreshNeeded?: () => void }) {
   const [refreshKey, setRefreshKey] = useState(0);
   
-  const handleRefresh = useCallback(() => {
-    setRefreshKey(prev => prev + 1);
-    if (onRefreshNeeded) {
-      onRefreshNeeded();
-    }
+  // Using useEffect to trigger the refresh function when needed
+  useEffect(() => {
+    // Example: You can trigger a refresh based on some condition
+    const timeoutId = setTimeout(() => {
+      setRefreshKey(prev => prev + 1);
+      if (onRefreshNeeded) {
+        onRefreshNeeded();
+      }
+    }, 60000); // Refresh every minute as an example
+    
+    return () => clearTimeout(timeoutId);
   }, [onRefreshNeeded]);
   
   // This key change will cause the component to remount and fetch fresh data
