@@ -149,11 +149,11 @@ export default function CommunityPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen w-full">
       <AppSidebar />
       
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-6xl mx-auto p-6">
+      <main className="flex-1 overflow-auto">
+        <div className="w-full p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold">Community Templates</h1>
@@ -224,7 +224,7 @@ export default function CommunityPage() {
             ))}
           </Tabs>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
