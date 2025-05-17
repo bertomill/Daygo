@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { CalendarDays, FileText, Plus, BarChart2, Sparkles, Clock, ArrowRight, Book, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -37,6 +35,7 @@ export default function Home() {
     router.push("/home");
   };
 
+  // Handle loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -45,7 +44,7 @@ export default function Home() {
     );
   }
 
-  // If user is already authenticated, redirect to dashboard
+  // For authenticated users, show quick dashboard access instead of landing page
   if (isAuthenticated) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
@@ -60,10 +59,31 @@ export default function Home() {
     );
   }
 
+  // Main landing page for non-authenticated users
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Navigation */}
+      <header className="fixed w-full top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center">
+            <Link href="/" className="font-bold text-xl flex items-center">
+              <span className="bg-white text-black px-2 py-1 rounded-sm mr-1">Day</span>
+              <span>Go</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" className="text-white hover:text-white/80" onClick={handleLogin}>
+              Log in
+            </Button>
+            <Button variant="default" onClick={handleSignUp}>
+              Sign up
+            </Button>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-24 flex flex-col items-center text-center">
+      <div className="container mx-auto px-4 pt-32 pb-24 flex flex-col items-center text-center">
         <div className="inline-flex items-center justify-center px-4 py-2 mb-8 rounded-full border border-gray-800 gap-2 bg-gray-900/50">
           <span className="bg-primary h-2 w-2 rounded-full"></span>
           <span className="text-sm font-medium text-gray-300">Journaling reimagined</span>
@@ -140,7 +160,7 @@ export default function Home() {
       <footer className="bg-gray-950 py-12 text-center text-gray-500">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center mb-6">
-            <div className="bg-black text-white px-2 py-1 text-xl font-bold">Day</div>
+            <div className="bg-white text-black px-2 py-1 text-xl font-bold">Day</div>
             <div className="text-xl font-bold">Go</div>
           </div>
           <p>&copy; {new Date().getFullYear()} Daygo. All rights reserved.</p>
