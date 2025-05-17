@@ -1,3 +1,4 @@
+// Account settings page component that provides user profile management, security settings, notifications preferences, and other account-related configurations
 'use client';
 
 import { useEffect, useState } from "react";

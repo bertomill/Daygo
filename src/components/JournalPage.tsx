@@ -6,8 +6,8 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { getJournalEntries } from '@/lib/journalService'
-import { JournalEntry } from '@/lib/journalService'
+import { getJournalEntries } from '@/services/journalService'
+import { JournalEntry } from '@/types/journal'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
