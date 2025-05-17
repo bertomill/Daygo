@@ -17,8 +17,9 @@ import {
 } from "firebase/firestore";
 import { JournalEntry } from "@/types/journal";
 
-// Collection reference
-const journalCollection = () => collection(db, "journal");
+// Collection references - ensure we use the same collection name consistently
+// The app is using "journalEntries" in some places and "journal" in others
+const journalCollection = () => collection(db, "journalEntries");
 
 // Get current user ID
 const getCurrentUser = () => {
@@ -68,7 +69,7 @@ export const addJournalEntry = async (journalData: JournalEntryInput) => {
 export const getJournalEntry = async (id: string): Promise<JournalEntry> => {
   const user = getCurrentUser();
   
-  const docRef = doc(db, "journal", id);
+  const docRef = doc(db, "journalEntries", id);
   const docSnap = await getDoc(docRef);
   
   if (!docSnap.exists()) {
@@ -116,7 +117,7 @@ export const updateJournalEntry = async (id: string, updates: Partial<JournalEnt
   const user = getCurrentUser();
   
   // First check that the journal entry belongs to the user
-  const entryDoc = await getDoc(doc(db, "journal", id));
+  const entryDoc = await getDoc(doc(db, "journalEntries", id));
   if (!entryDoc.exists()) {
     throw new Error("Journal entry not found");
   }
@@ -127,7 +128,7 @@ export const updateJournalEntry = async (id: string, updates: Partial<JournalEnt
   }
   
   // Update the journal entry
-  const docRef = doc(db, "journal", id);
+  const docRef = doc(db, "journalEntries", id);
   await updateDoc(docRef, {
     ...updates,
     updatedAt: serverTimestamp()
@@ -141,7 +142,7 @@ export const deleteJournalEntry = async (id: string) => {
   const user = getCurrentUser();
   
   // First check that the journal entry belongs to the user
-  const entryDoc = await getDoc(doc(db, "journal", id));
+  const entryDoc = await getDoc(doc(db, "journalEntries", id));
   if (!entryDoc.exists()) {
     throw new Error("Journal entry not found");
   }
@@ -152,7 +153,7 @@ export const deleteJournalEntry = async (id: string) => {
   }
   
   // Delete the journal entry
-  await deleteDoc(doc(db, "journal", id));
+  await deleteDoc(doc(db, "journalEntries", id));
   
   return id;
 };

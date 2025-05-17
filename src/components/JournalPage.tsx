@@ -15,28 +15,49 @@ import Link from 'next/link'
 import { Eye, Plus } from 'lucide-react'
 import { Calendar } from 'lucide-react'
 import { Timestamp } from 'firebase/firestore'
+import { getAuth, onAuthStateChanged } from "firebase/auth"
 
 export function JournalPage() {
   const [entries, setEntries] = useState<JournalEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [authInitialized, setAuthInitialized] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
 
+  // Check authentication first
   useEffect(() => {
+    const auth = getAuth()
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user)
+      setAuthInitialized(true)
+    })
+    
+    return () => unsubscribe()
+  }, [])
+
+  // Only fetch entries when authenticated
+  useEffect(() => {
+    if (!authInitialized) return
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
+
     const fetchEntries = async () => {
       try {
         setLoading(true)
         const fetchedEntries = await getJournalEntries()
         setEntries(fetchedEntries)
       } catch (error) {
-        toast.error('Failed to load journal entries')
         console.error('Error fetching journal entries:', error)
+        toast.error('Failed to load journal entries')
       } finally {
         setLoading(false)
       }
     }
 
     fetchEntries()
-  }, [])
+  }, [authInitialized, isAuthenticated])
 
   const formatDate = (timestamp: Timestamp | Date | undefined | null) => {
     if (!timestamp) return '';
@@ -57,6 +78,49 @@ export function JournalPage() {
       day: 'numeric',
     }).format(date);
   };
+
+  const handleLogin = () => {
+    router.push("/login")
+  }
+
+  // If not authenticated, show a message
+  if (authInitialized && !isAuthenticated) {
+    return (
+      <>
+        <AppSidebar />
+        <SidebarInset>
+          <header className="flex sticky top-0 z-10 h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Journal</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </header>
+          
+          <main className="flex flex-1 flex-col items-center justify-center p-4 md:p-8">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle>Journal Access</CardTitle>
+                <CardDescription>
+                  Please log in to view your journal entries
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  You need to be logged in to access your journal entries.
+                </p>
+                <Button onClick={handleLogin}>Go to Login</Button>
+              </CardContent>
+            </Card>
+          </main>
+        </SidebarInset>
+      </>
+    )
+  }
 
   return (
     <>
