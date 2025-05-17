@@ -3,7 +3,7 @@
 import { AppSidebar } from "./AppSidebar"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { getJournalEntries } from '@/services/journalService'
@@ -59,7 +59,7 @@ export function JournalPage() {
   };
 
   return (
-    <SidebarProvider>
+    <>
       <AppSidebar />
       <SidebarInset>
         <header className="flex sticky top-0 z-10 h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
@@ -132,6 +132,6 @@ export function JournalPage() {
           )}
         </main>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   )
 } 

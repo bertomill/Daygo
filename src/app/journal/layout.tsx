@@ -1,12 +1,15 @@
 'use client';
 
-import { HomePage } from "@/components/HomePage";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
-export default function Home() {
+export default function JournalLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <SidebarProvider defaultOpen>
-      <HomePage />
+      {children}
     </SidebarProvider>
   );
-}
+} 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { AppSidebar } from "./AppSidebar"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { getJournalEntries } from "@/lib/journalService"
@@ -119,7 +119,7 @@ export function HomePage() {
   }
 
   return (
-    <SidebarProvider>
+    <>
       <AppSidebar />
       <SidebarInset>
         <header className="flex sticky top-0 z-10 h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
@@ -280,6 +280,6 @@ export function HomePage() {
           )}
         </main>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   )
 } 
