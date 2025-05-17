@@ -17,7 +17,7 @@ const COMMUNITY_TEMPLATES = [
     id: 1,
     name: "Gratitude Journal",
     description: "Start your day with positivity by noting things you're grateful for.",
-    author: "Sarah Johnson",
+    author: "Daygo",
     authorAvatar: null,
     likes: 842,
     category: "Mindfulness",
@@ -34,7 +34,7 @@ const COMMUNITY_TEMPLATES = [
     id: 2,
     name: "Daily Focus Planner",
     description: "Prioritize your tasks and track your accomplishments throughout the day.",
-    author: "Michael Chen",
+    author: "Daygo",
     authorAvatar: null,
     likes: 635,
     category: "Productivity",
@@ -52,7 +52,7 @@ const COMMUNITY_TEMPLATES = [
     id: 3,
     name: "Evening Reflection",
     description: "End your day with thoughtful reflection on accomplishments and lessons.",
-    author: "Emma Wilson",
+    author: "Daygo",
     authorAvatar: null,
     likes: 529,
     category: "Self-Improvement",
@@ -69,7 +69,7 @@ const COMMUNITY_TEMPLATES = [
     id: 4,
     name: "Mood Tracker",
     description: "Monitor your emotions throughout the day to identify patterns and triggers.",
-    author: "David Garcia",
+    author: "Daygo",
     authorAvatar: null,
     likes: 412,
     category: "Mental Health",
@@ -86,7 +86,7 @@ const COMMUNITY_TEMPLATES = [
     id: 5,
     name: "Habit Builder",
     description: "Track your daily habits and build consistency for personal growth.",
-    author: "Alex Taylor",
+    author: "Daygo",
     authorAvatar: null,
     likes: 378,
     category: "Productivity",
@@ -103,7 +103,7 @@ const COMMUNITY_TEMPLATES = [
     id: 6,
     name: "Weekly Review",
     description: "Reflect on your week and set intentions for the coming days.",
-    author: "Olivia Martinez",
+    author: "Daygo",
     authorAvatar: null,
     likes: 347,
     category: "Planning",
@@ -301,7 +301,7 @@ function TemplateCard({ template, onUse, onLike }: TemplateCardProps) {
         <div className="flex items-center gap-2">
           <Avatar className="h-6 w-6">
             <AvatarImage src={template.authorAvatar || undefined} />
-            <AvatarFallback className="text-xs">{getInitials(template.author)}</AvatarFallback>
+            <AvatarFallback className="text-xs">DG</AvatarFallback>
           </Avatar>
           <span className="text-xs text-muted-foreground">{template.author}</span>
         </div>
