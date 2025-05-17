@@ -10,7 +10,7 @@ export interface JournalEntry {
   createdAt?: Timestamp;
 }
 
-// Collection reference
+// Collection reference - make sure it matches the Firestore rules
 const journalEntriesRef = collection(db, "journalEntries");
 
 // Add a new journal entry
