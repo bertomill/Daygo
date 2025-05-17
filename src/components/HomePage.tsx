@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { getJournalEntries } from "@/lib/journalService"
-import { CalendarDays, FileText, PlusCircle, Clock, Sparkles, BarChart2, Bookmark, Pencil, Eye, BookOpen, Calendar, Edit } from "lucide-react"
+import { CalendarDays, FileText, PlusCircle, Clock, Sparkles, BarChart2, Bookmark, Pencil, Eye, BookOpen, Calendar, Edit, AlertTriangle } from "lucide-react"
 import { format } from "date-fns"
 import { JournalEntryForm } from "./JournalEntryForm"
 import { getAuth, onAuthStateChanged } from "firebase/auth"
 import Link from "next/link"
+import { toast } from "sonner"
 
 export function HomePage() {
   const [journalStats, setJournalStats] = useState({
@@ -24,6 +25,7 @@ export function HomePage() {
   const [authInitialized, setAuthInitialized] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   // Check authentication first
@@ -48,6 +50,7 @@ export function HomePage() {
 
     const fetchStats = async () => {
       try {
+        setError(null) // Reset error state
         const entries = await getJournalEntries()
         
         // Store recent entries for display
@@ -128,8 +131,18 @@ export function HomePage() {
         })
         
         setIsLoading(false)
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching journal stats:", error)
+        
+        // Handle Firebase permission errors
+        if (error.message.includes("permission") || error.code === "permission-denied") {
+          setError("Permission error: Unable to access your journal data. Please try logging out and back in.")
+          toast.error("Permission error: Unable to access your journal data")
+        } else {
+          setError("Error loading journal data. Please try again later.")
+          toast.error("Failed to load journal data")
+        }
+        
         // Reset stats on error
         setJournalStats({
           totalEntries: 0,
@@ -138,6 +151,7 @@ export function HomePage() {
           latestEntry: null,
           streakDays: 0
         })
+        setRecentEntries([])
         setIsLoading(false)
       }
     }
@@ -159,6 +173,17 @@ export function HomePage() {
 
   const handleLogin = () => {
     router.push("/login")
+  }
+
+  const handleSignOut = async () => {
+    try {
+      const auth = getAuth()
+      await auth.signOut()
+      router.push('/login')
+      toast.success("Successfully signed out")
+    } catch (error) {
+      toast.error("Failed to sign out")
+    }
   }
 
   const formatDate = (timestamp: any) => {
@@ -194,6 +219,87 @@ export function HomePage() {
             <Button onClick={handleLogin}>Go to Login</Button>
           </CardContent>
         </Card>
+      </div>
+    )
+  }
+
+  // If there's a permission error, show a message
+  if (error && error.includes("Permission")) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="max-w-2xl">
+          <h1 className="text-3xl font-bold tracking-tight">Welcome to Daygo</h1>
+          <p className="mt-2 text-muted-foreground">
+            Your personal space for daily reflections, goals, and growth.
+          </p>
+        </div>
+        
+        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center text-red-600 dark:text-red-400">
+              <AlertTriangle className="mr-2 h-5 w-5" />
+              Firebase Permission Error
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              {error}
+            </p>
+            <div className="flex gap-3">
+              <Button onClick={handleSignOut} variant="destructive">
+                Sign Out
+              </Button>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Quick Actions Section - still show this section */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer" onClick={handleNewEntry}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-lg">
+                <Edit className="mr-2 h-5 w-5" />
+                New Journal Entry
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Record today's thoughts, feelings, and experiences.
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={handleViewAllEntries}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-lg">
+                <BookOpen className="mr-2 h-5 w-5" />
+                View All Entries
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Browse through your previous journal entries.
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={handleCreateTemplate}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-lg">
+                <Bookmark className="mr-2 h-5 w-5" />
+                Create Template
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Design a new journal template for consistent entries.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
