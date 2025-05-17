@@ -25,6 +25,7 @@ export function HomePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [authInitialized, setAuthInitialized] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const router = useRouter()
 
   // Check authentication first
@@ -32,16 +33,17 @@ export function HomePage() {
     const auth = getAuth()
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user)
+      setUserId(user ? user.uid : null)
       setAuthInitialized(true)
     })
     
     return () => unsubscribe()
   }, [])
 
-  // Only fetch stats when authenticated
+  // Only fetch stats when authenticated and have a userId
   useEffect(() => {
     if (!authInitialized) return
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !userId) {
       setIsLoading(false)
       return
     }
@@ -51,6 +53,13 @@ export function HomePage() {
         const entries = await getJournalEntries()
         
         if (!entries || entries.length === 0) {
+          setJournalStats({
+            totalEntries: 0,
+            thisWeek: 0,
+            thisMonth: 0,
+            latestEntry: null,
+            streakDays: 0
+          })
           setIsLoading(false)
           return
         }
@@ -120,12 +129,20 @@ export function HomePage() {
         setIsLoading(false)
       } catch (error) {
         console.error("Error fetching journal stats:", error)
+        // Reset stats on error
+        setJournalStats({
+          totalEntries: 0,
+          thisWeek: 0,
+          thisMonth: 0,
+          latestEntry: null,
+          streakDays: 0
+        })
         setIsLoading(false)
       }
     }
     
     fetchStats()
-  }, [authInitialized, isAuthenticated])
+  }, [authInitialized, isAuthenticated, userId])
 
   const handleNewEntry = () => {
     router.push("/journal/select-template")

@@ -48,7 +48,7 @@ export default function Home() {
   // For authenticated users, we redirect in the useEffect hook
   // This is just a fallback in case the redirect hasn't happened yet
   if (isAuthenticated) {
-    router.push('/journal');
+    // Don't call router.push here as it causes the "Cannot update a component while rendering a different component" error
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Redirecting to your journal...</div>

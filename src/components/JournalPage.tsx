@@ -6,8 +6,8 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { getJournalEntries } from '@/services/journalService'
-import { JournalEntry } from '@/types/journal'
+import { getJournalEntries } from '@/lib/journalService'
+import { JournalEntry } from '@/lib/journalService'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
@@ -22,6 +22,7 @@ export function JournalPage() {
   const [loading, setLoading] = useState(true)
   const [authInitialized, setAuthInitialized] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const router = useRouter()
 
   // Check authentication first
@@ -29,16 +30,17 @@ export function JournalPage() {
     const auth = getAuth()
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user)
+      setUserId(user ? user.uid : null)
       setAuthInitialized(true)
     })
     
     return () => unsubscribe()
   }, [])
 
-  // Only fetch entries when authenticated
+  // Only fetch entries when authenticated and have userId
   useEffect(() => {
     if (!authInitialized) return
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !userId) {
       setLoading(false)
       return
     }
@@ -51,13 +53,14 @@ export function JournalPage() {
       } catch (error) {
         console.error('Error fetching journal entries:', error)
         toast.error('Failed to load journal entries')
+        setEntries([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchEntries()
-  }, [authInitialized, isAuthenticated])
+  }, [authInitialized, isAuthenticated, userId])
 
   const formatDate = (timestamp: Timestamp | Date | undefined | null) => {
     if (!timestamp) return '';
