@@ -4,13 +4,14 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { getJournalEntries } from "@/lib/journalService"
-import { CalendarDays, FileText, PlusCircle, Clock, Sparkles, BarChart2, Bookmark, Pencil, Eye, BookOpen, Calendar, Edit, AlertTriangle } from "lucide-react"
+import { getJournalEntries } from "@/services/journalService"
+import { CalendarDays, FileText, PlusCircle, Clock, Eye, BookOpen, Calendar, Edit, AlertTriangle } from "lucide-react"
 import { format } from "date-fns"
 import { JournalEntryForm } from "./JournalEntryForm"
 import { getAuth, onAuthStateChanged } from "firebase/auth"
-import Link from "next/link"
 import { toast } from "sonner"
+import { JournalEntry } from "@/types/journal"
+import { FirebaseError } from "firebase/app"
 
 export function HomePage() {
   const [journalStats, setJournalStats] = useState({
@@ -20,7 +21,7 @@ export function HomePage() {
     latestEntry: null as Date | null,
     streakDays: 0
   })
-  const [recentEntries, setRecentEntries] = useState<any[]>([])
+  const [recentEntries, setRecentEntries] = useState<JournalEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [authInitialized, setAuthInitialized] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -78,11 +79,11 @@ export function HomePage() {
         
         // Calculate stats
         const entriesThisWeek = entries.filter(entry => 
-          entry.createdAt && entry.createdAt.toDate() >= oneWeekAgo
+          entry.createdAt && new Date(entry.createdAt.seconds * 1000) >= oneWeekAgo
         )
         
         const entriesThisMonth = entries.filter(entry => 
-          entry.createdAt && entry.createdAt.toDate() >= oneMonthAgo
+          entry.createdAt && new Date(entry.createdAt.seconds * 1000) >= oneMonthAgo
         )
         
         // Calculate streak (simplified - actual implementation would be more complex)
@@ -90,11 +91,11 @@ export function HomePage() {
         let streakDays = 0
         const entryDates = entries
           .filter(entry => entry.createdAt)
-          .map(entry => entry.createdAt?.toDate().toDateString())
+          .map(entry => new Date(entry.createdAt!.seconds * 1000).toDateString())
           .filter((date, index, self) => self.indexOf(date) === index) // Unique dates only
         
         // Sort dates in descending order
-        entryDates.sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime())
+        entryDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
         
         // Check if last entry was today or yesterday
         const today = new Date().toDateString()
@@ -108,7 +109,7 @@ export function HomePage() {
           
           // Count consecutive days
           for (let i = 1; i < entryDates.length; i++) {
-            const currentDate = new Date(entryDates[i-1]!)
+            const currentDate = new Date(entryDates[i-1])
             currentDate.setDate(currentDate.getDate() - 1)
             
             if (currentDate.toDateString() === entryDates[i]) {
@@ -120,7 +121,8 @@ export function HomePage() {
         }
         
         // Get latest entry date
-        const latestEntry = entries[0].createdAt?.toDate() || null
+        const latestEntry = entries[0].createdAt ? 
+          new Date(entries[0].createdAt.seconds * 1000) : null
         
         setJournalStats({
           totalEntries: entries.length,
@@ -131,11 +133,12 @@ export function HomePage() {
         })
         
         setIsLoading(false)
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error fetching journal stats:", error)
         
         // Handle Firebase permission errors
-        if (error.message.includes("permission") || error.code === "permission-denied") {
+        const fbError = error as FirebaseError
+        if (fbError.message?.includes("permission") || fbError.code === "permission-denied") {
           setError("Permission error: Unable to access your journal data. Please try logging out and back in.")
           toast.error("Permission error: Unable to access your journal data")
         } else {
@@ -181,17 +184,17 @@ export function HomePage() {
       await auth.signOut()
       router.push('/login')
       toast.success("Successfully signed out")
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign out")
     }
   }
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
     if (!timestamp) return '';
     
     let date;
-    if (timestamp.toDate) {
-      date = timestamp.toDate();
+    if (timestamp.seconds) {
+      date = new Date(timestamp.seconds * 1000);
     } else if (timestamp instanceof Date) {
       date = timestamp;
     } else {
@@ -267,7 +270,7 @@ export function HomePage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Record today's thoughts, feelings, and experiences.
+                Record today&apos;s thoughts, feelings, and experiences.
               </p>
             </CardContent>
           </Card>
@@ -289,7 +292,7 @@ export function HomePage() {
           <Card className="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={handleCreateTemplate}>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-lg">
-                <Bookmark className="mr-2 h-5 w-5" />
+                <FileText className="mr-2 h-5 w-5" />
                 Create Template
               </CardTitle>
             </CardHeader>
@@ -324,7 +327,7 @@ export function HomePage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Record today's thoughts, feelings, and experiences.
+              Record today&apos;s thoughts, feelings, and experiences.
             </p>
           </CardContent>
         </Card>
@@ -346,7 +349,7 @@ export function HomePage() {
         <Card className="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={handleCreateTemplate}>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center text-lg">
-              <Bookmark className="mr-2 h-5 w-5" />
+              <FileText className="mr-2 h-5 w-5" />
               Create Template
             </CardTitle>
           </CardHeader>
@@ -398,7 +401,7 @@ export function HomePage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-lg">
-                <Sparkles className="mr-2 h-5 w-5" />
+                <PlusCircle className="mr-2 h-5 w-5" />
                 Streak
               </CardTitle>
             </CardHeader>
