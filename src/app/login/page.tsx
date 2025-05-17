@@ -70,21 +70,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-black font-sans">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <div className="font-bold text-xl flex items-center">
-              <span className="bg-black text-white px-2 py-1 rounded-md mr-1">Day</span>
+              <span className="bg-primary text-primary-foreground px-2 py-1 rounded-md mr-1">Day</span>
               <span>Go</span>
             </div>
           </div>
           <div className="flex items-center gap-6">
-            <Link href="/login" className="text-sm text-gray-600 hover:text-black transition-colors">
+            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Log in
             </Link>
-            <Button asChild size="sm" className="bg-black hover:bg-gray-800 text-white rounded-full px-4">
+            <Button asChild size="sm" className="rounded-full px-4">
               <Link href="/register">Sign up</Link>
             </Button>
           </div>
@@ -93,15 +93,15 @@ export default function LoginPage() {
 
       <div className="flex flex-1 flex-col md:flex-row">
         {/* Left side - App information */}
-        <div className="w-full md:w-1/2 bg-gray-50 py-24 px-6 md:px-12 flex items-center justify-center">
+        <div className="w-full md:w-1/2 bg-muted py-24 px-6 md:px-12 flex items-center justify-center">
           <div className="max-w-xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <div className="inline-flex items-center bg-gray-100 rounded-full px-4 py-1 mb-6 self-start">
-                <Sparkles className="w-4 h-4 text-black mr-2" />
+              <div className="inline-flex items-center bg-background rounded-full px-4 py-1 mb-6 self-start">
+                <Sparkles className="w-4 h-4 text-primary mr-2" />
                 <span className="text-sm font-medium">Journaling reimagined</span>
               </div>
 
@@ -110,7 +110,7 @@ export default function LoginPage() {
                 <span className="relative ml-2">
                   intention
                   <motion.div
-                    className="absolute -bottom-2 left-0 h-3 w-full bg-gray-200 -z-10"
+                    className="absolute -bottom-2 left-0 h-3 w-full bg-primary/20 -z-10"
                     initial={{ width: 0 }}
                     animate={{ width: "100%" }}
                     transition={{ duration: 0.8, delay: 0.5 }}
@@ -118,7 +118,7 @@ export default function LoginPage() {
                 </span>
               </h1>
 
-              <p className="text-lg text-gray-700 mb-8">
+              <p className="text-lg text-muted-foreground mb-8">
                 DayGo helps you create structured journal templates and daily rituals 
                 that lead to deeper self-awareness and enhanced productivity.
               </p>
@@ -126,17 +126,17 @@ export default function LoginPage() {
               <div className="space-y-6 mt-8">
                 {[
                   {
-                    icon: <Calendar className="h-5 w-5 text-black" />,
+                    icon: <Calendar className="h-5 w-5" />,
                     title: "Custom templates",
                     description: "Create personalized journal templates that fit your unique needs and goals"
                   },
                   {
-                    icon: <CheckCircle className="h-5 w-5 text-black" />,
+                    icon: <CheckCircle className="h-5 w-5" />,
                     title: "Track your progress",
                     description: "Monitor your growth and celebrate small wins with built-in tracking tools"
                   },
                   {
-                    icon: <Clock className="h-5 w-5 text-black" />,
+                    icon: <Clock className="h-5 w-5" />,
                     title: "Daily rituals",
                     description: "Build consistent habits and routines that transform your productivity"
                   }
@@ -148,19 +148,19 @@ export default function LoginPage() {
                     transition={{ duration: 0.5, delay: 0.3 + (i * 0.2) }}
                     className="flex items-start gap-4"
                   >
-                    <div className="flex-shrink-0 mt-1 bg-gray-100 p-2 rounded-full">
+                    <div className="flex-shrink-0 mt-1 bg-secondary p-2 rounded-full text-secondary-foreground">
                       {feature.icon}
                     </div>
                     <div>
-                      <h3 className="font-medium text-black">{feature.title}</h3>
-                      <p className="text-gray-600">{feature.description}</p>
+                      <h3 className="font-medium">{feature.title}</h3>
+                      <p className="text-muted-foreground">{feature.description}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
 
-              <div className="mt-12 pt-6 border-t border-gray-200">
-                <p className="text-sm text-gray-500 mb-4">Start your journaling journey today</p>
+              <div className="mt-12 pt-6 border-t border-border">
+                <p className="text-sm text-muted-foreground mb-4">Start your journaling journey today</p>
               </div>
             </motion.div>
           </div>
@@ -178,7 +178,7 @@ export default function LoginPage() {
               <h2 className="mt-6 text-3xl font-bold tracking-tight">Welcome back</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Don&apos;t have an account yet?{" "}
-                <Link href="/register" className="font-medium hover:text-primary">
+                <Link href="/register" className="font-medium text-primary hover:text-primary/90">
                   Sign up now
                 </Link>
               </p>
@@ -247,7 +247,7 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <Button type="submit" className="w-full h-12 rounded-md bg-black hover:bg-gray-800 text-white" disabled={isLoading}>
+                <Button type="submit" className="w-full h-12 rounded-md" disabled={isLoading}>
                   {isLoading ? "Signing in..." : "Sign in"}
                 </Button>
               </div>
@@ -256,7 +256,7 @@ export default function LoginPage() {
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t" />
+                  <div className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
@@ -264,7 +264,7 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-6">
-                <Button variant="outline" className="w-full h-12 rounded-md border-gray-300" onClick={handleGoogleSignIn}>
+                <Button variant="outline" className="w-full h-12 rounded-md" onClick={handleGoogleSignIn}>
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -288,7 +288,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <p className="mt-6 text-center text-sm text-gray-600">
+            <p className="mt-6 text-center text-sm text-muted-foreground">
               By signing in, you agree to our{" "}
               <Link href="/terms" className="font-medium text-primary hover:text-primary/90">
                 Terms of Service
