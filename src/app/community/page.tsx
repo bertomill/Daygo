@@ -271,7 +271,7 @@ function TemplateCard({ template, onUse, onLike }: TemplateCardProps) {
               {template.category}
             </Badge>
             {template.featured && (
-              <Badge className="bg-amber-500 hover:bg-amber-500/80 flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1">
                 <Award className="h-3 w-3" />
                 Featured
               </Badge>
