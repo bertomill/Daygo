@@ -9,10 +9,11 @@ import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { getJournalEntries } from "@/lib/journalService"
-import { CalendarDays, FileText, PlusCircle, Clock, Sparkles, BarChart2, Bookmark, Pencil } from "lucide-react"
+import { CalendarDays, FileText, PlusCircle, Clock, Sparkles, BarChart2, Bookmark, Pencil, Eye, BookOpen, Calendar, Edit } from "lucide-react"
 import { format } from "date-fns"
 import { JournalEntryForm } from "./JournalEntryForm"
 import { getAuth, onAuthStateChanged } from "firebase/auth"
+import Link from "next/link"
 
 export function HomePage() {
   const [journalStats, setJournalStats] = useState({
@@ -22,6 +23,7 @@ export function HomePage() {
     latestEntry: null as Date | null,
     streakDays: 0
   })
+  const [recentEntries, setRecentEntries] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [authInitialized, setAuthInitialized] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -51,6 +53,9 @@ export function HomePage() {
     const fetchStats = async () => {
       try {
         const entries = await getJournalEntries()
+        
+        // Store recent entries for display
+        setRecentEntries(entries.slice(0, 3))
         
         if (!entries || entries.length === 0) {
           setJournalStats({
@@ -160,6 +165,21 @@ export function HomePage() {
     router.push("/login")
   }
 
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return '';
+    
+    let date;
+    if (timestamp.toDate) {
+      date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else {
+      return '';
+    }
+    
+    return format(date, 'MMM d, yyyy');
+  };
+
   // If not authenticated, show a message
   if (authInitialized && !isAuthenticated) {
     return (
@@ -230,7 +250,7 @@ export function HomePage() {
             <Card className="bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer" onClick={handleNewEntry}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center text-lg">
-                  <PlusCircle className="mr-2 h-5 w-5" />
+                  <Edit className="mr-2 h-5 w-5" />
                   New Journal Entry
                 </CardTitle>
               </CardHeader>
@@ -244,7 +264,7 @@ export function HomePage() {
             <Card className="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={handleViewAllEntries}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center text-lg">
-                  <FileText className="mr-2 h-5 w-5" />
+                  <BookOpen className="mr-2 h-5 w-5" />
                   View All Entries
                 </CardTitle>
               </CardHeader>
@@ -341,6 +361,81 @@ export function HomePage() {
                 </CardContent>
               </Card>
             </div>
+          </div>
+
+          {/* Recent Entries Section */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Recent Journal Entries</h2>
+              {recentEntries.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={handleViewAllEntries}>
+                  View all
+                </Button>
+              )}
+            </div>
+            
+            {isLoading ? (
+              <div className="grid gap-4 md:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="h-[200px]">
+                    <CardHeader>
+                      <div className="h-5 bg-muted animate-pulse rounded w-3/4" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-1/2 mt-2" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-4 bg-muted animate-pulse rounded w-full mt-2" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-full mt-2" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-3/4 mt-2" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : recentEntries.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-3">
+                {recentEntries.map((entry) => (
+                  <Card key={entry.id} className="overflow-hidden hover:border-primary/50 transition-colors cursor-pointer">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="truncate text-base">{entry.title}</CardTitle>
+                      <CardDescription className="flex items-center text-xs">
+                        <Calendar className="h-3 w-3 mr-1 inline" />
+                        {formatDate(entry.createdAt)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="line-clamp-3 text-sm text-muted-foreground">
+                        {entry.content}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="pt-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full group"
+                        onClick={() => router.push(`/journal/${entry.id}`)}
+                      >
+                        <Eye className="h-3 w-3 mr-1 group-hover:text-primary" />
+                        <span className="group-hover:text-primary">Read More</span>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="border-dashed">
+                <CardHeader>
+                  <CardTitle className="text-base">No Journal Entries Yet</CardTitle>
+                  <CardDescription>
+                    Create your first journal entry to start tracking your thoughts and reflections.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                  <Button onClick={handleNewEntry}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Create First Entry
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
           
           {/* Quick Entry Form */}
