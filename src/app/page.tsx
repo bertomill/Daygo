@@ -19,9 +19,9 @@ export default function Home() {
       setIsAuthenticated(!!user);
       setIsLoading(false);
       
-      // Redirect authenticated users to journal page
+      // Redirect authenticated users to home dashboard
       if (user) {
-        router.push('/journal');
+        router.push('/home');
       }
     });
     
@@ -51,7 +51,7 @@ export default function Home() {
     // Don't call router.push here as it causes the "Cannot update a component while rendering a different component" error
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Redirecting to your journal...</div>
+        <div className="animate-pulse text-muted-foreground">Redirecting to your dashboard...</div>
       </div>
     );
   }
