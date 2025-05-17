@@ -12,6 +12,7 @@ import { getJournalEntries } from "@/lib/journalService"
 import { CalendarDays, FileText, PlusCircle, Clock, Sparkles, BarChart2, Bookmark, Pencil } from "lucide-react"
 import { format } from "date-fns"
 import { JournalEntryForm } from "./JournalEntryForm"
+import { getAuth, onAuthStateChanged } from "firebase/auth"
 
 export function HomePage() {
   const [journalStats, setJournalStats] = useState({
@@ -22,9 +23,29 @@ export function HomePage() {
     streakDays: 0
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [authInitialized, setAuthInitialized] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
 
+  // Check authentication first
   useEffect(() => {
+    const auth = getAuth()
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user)
+      setAuthInitialized(true)
+    })
+    
+    return () => unsubscribe()
+  }, [])
+
+  // Only fetch stats when authenticated
+  useEffect(() => {
+    if (!authInitialized) return
+    if (!isAuthenticated) {
+      setIsLoading(false)
+      return
+    }
+
     const fetchStats = async () => {
       try {
         const entries = await getJournalEntries()
@@ -104,7 +125,7 @@ export function HomePage() {
     }
     
     fetchStats()
-  }, [])
+  }, [authInitialized, isAuthenticated])
 
   const handleNewEntry = () => {
     router.push("/journal/select-template")
@@ -116,6 +137,49 @@ export function HomePage() {
 
   const handleCreateTemplate = () => {
     router.push("/templates/new")
+  }
+
+  const handleLogin = () => {
+    router.push("/login")
+  }
+
+  // If not authenticated, show a message
+  if (authInitialized && !isAuthenticated) {
+    return (
+      <>
+        <AppSidebar />
+        <SidebarInset>
+          <header className="flex sticky top-0 z-10 h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Home</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </header>
+          
+          <main className="flex flex-1 flex-col items-center justify-center p-4 md:p-8">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle>Welcome to Daygo</CardTitle>
+                <CardDescription>
+                  Please log in to view your journal entries and stats
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  You need to be logged in to access your personal journal dashboard.
+                </p>
+                <Button onClick={handleLogin}>Go to Login</Button>
+              </CardContent>
+            </Card>
+          </main>
+        </SidebarInset>
+      </>
+    )
   }
 
   return (
