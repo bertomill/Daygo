@@ -66,70 +66,173 @@ export function AITemplateGenerator() {
     setIsLoading(true);
     
     try {
-      // In a real app, you would call your backend API that uses the OpenAI API
-      // For now, we'll simulate a response after a delay
-      setTimeout(() => {
-        const isLastMessage = messages.length === 2; // Only system and first assistant message
+      // Get the current messages including the new user message
+      const currentMessages = [...messages, userMessage];
+      
+      // Call the serverless API route
+      const response = await fetch('/api/openai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: currentMessages }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get response from AI');
+      }
+      
+      const data = await response.json();
+      const assistantMessage = data.response.content;
+      
+      // Add the assistant's response to the messages
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: assistantMessage
+        }
+      ]);
+      
+      // After 3 exchanges (3 user messages), generate template
+      if (currentMessages.filter(m => m.role === "user").length === 3) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Perfect! I have enough information to create your journal template now. Let me generate that for you..."
+          }
+        ]);
         
-        if (isLastMessage) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: "Great! Can you tell me a bit more about what specific sections or prompts you'd like to include in your journal template?"
-            }
-          ]);
-        } else if (messages.length === 4) { // After user's second response
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: "Thank you for sharing those details. Would you like the entries to be mostly free-form text, or would you prefer structured questions with specific answer formats (like yes/no questions, rating scales, etc.)?"
-            }
-          ]);
-        } else if (messages.length === 6) { // After user's third response
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: "Perfect! I have enough information to create your journal template now. Let me generate that for you..."
-            }
-          ]);
-          setIsGenerating(true);
+        setIsGenerating(true);
+        
+        try {
+          // Call the template generation API
+          const templateResponse = await fetch('/api/openai/template', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ messages: currentMessages }),
+          });
           
-          // Simulate generating the template
-          setTimeout(() => {
-            const templateExample = generateSampleTemplate(messages);
-            setGeneratedTemplate(templateExample);
-            setIsGenerating(false);
+          if (!templateResponse.ok) {
+            const errorData = await templateResponse.json();
+            throw new Error(errorData.error || 'Failed to generate template');
+          }
+          
+          const templateData = await templateResponse.json();
+          
+          if (templateData.template) {
+            setGeneratedTemplate(templateData.template);
             
             setMessages((prev) => [
               ...prev,
               {
                 role: "assistant",
-                content: `I've created a template called "${templateExample.name}" with ${templateExample.fields.length} fields. Would you like to save this template or make any changes?`
+                content: `I've created a template called "${templateData.template.name}" with ${templateData.template.fields.length} fields. Would you like to save this template or make any changes?`
               }
             ]);
-          }, 3000);
-        } else if (messages.length >= 8 && generatedTemplate) {
+          } else {
+            throw new Error('No template data received');
+          }
+        } catch (error) {
+          console.error("Error generating template:", error);
+          toast.error("Failed to generate template. Using a sample template instead.");
+          
+          // Fallback to sample template
+          const fallbackTemplate = generateSampleTemplate(currentMessages);
+          setGeneratedTemplate(fallbackTemplate);
+          
           setMessages((prev) => [
             ...prev,
             {
               role: "assistant",
-              content: "Great! I've saved your template. You can now use it to create new journal entries."
+              content: `I've created a template called "${fallbackTemplate.name}" with ${fallbackTemplate.fields.length} fields. Would you like to save this template or make any changes?`
             }
           ]);
-          handleSaveTemplate();
+        } finally {
+          setIsGenerating(false);
         }
-        
-        setIsLoading(false);
-      }, 1000);
+      } else if (currentMessages.filter(m => m.role === "user").length > 3 && generatedTemplate) {
+        // If user confirms they want to save the template
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Great! I've saved your template. You can now use it to create new journal entries."
+          }
+        ]);
+        handleSaveTemplate();
+      }
       
-    } catch (error) {
-      console.error("Error generating response:", error);
-      toast.error("Failed to generate response. Please try again.");
       setIsLoading(false);
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Failed to get response. Using simulated responses instead.");
+      simulateResponse([...messages, userMessage]);
     }
+  };
+
+  // Fallback function for simulation
+  const simulateResponse = (currentMessages: Message[]) => {
+    setTimeout(() => {
+      const userMessageCount = currentMessages.filter(m => m.role === "user").length;
+      
+      if (userMessageCount === 1) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Great! Can you tell me a bit more about what specific sections or prompts you'd like to include in your journal template?"
+          }
+        ]);
+      } else if (userMessageCount === 2) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Thank you for sharing those details. Would you like the entries to be mostly free-form text, or would you prefer structured questions with specific answer formats (like yes/no questions, rating scales, etc.)?"
+          }
+        ]);
+      } else if (userMessageCount === 3) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Perfect! I have enough information to create your journal template now. Let me generate that for you..."
+          }
+        ]);
+        setIsGenerating(true);
+        
+        // Simulate generating the template
+        setTimeout(() => {
+          const templateExample = generateSampleTemplate(currentMessages);
+          setGeneratedTemplate(templateExample);
+          setIsGenerating(false);
+          
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: `I've created a template called "${templateExample.name}" with ${templateExample.fields.length} fields. Would you like to save this template or make any changes?`
+            }
+          ]);
+        }, 3000);
+      } else if (userMessageCount > 3 && generatedTemplate) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Great! I've saved your template. You can now use it to create new journal entries."
+          }
+        ]);
+        handleSaveTemplate();
+      }
+      
+      setIsLoading(false);
+    }, 1000);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -278,7 +381,7 @@ export function AITemplateGenerator() {
   );
 }
 
-// This function simulates what would normally be an API call to an AI service
+// This function generates a sample template based on user messages
 function generateSampleTemplate(messages: Message[]): AITemplateResult {
   // Extract some keywords from the user messages
   const userMessages = messages.filter(m => m.role === "user").map(m => m.content.toLowerCase());
