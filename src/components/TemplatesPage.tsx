@@ -23,6 +23,7 @@ import { AppSidebar } from "./AppSidebar";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AITemplateGenerator } from "@/components/AITemplateGenerator";
 
 export function TemplatesPage() {
   const [templates, setTemplates] = useState<JournalTemplate[]>([]);
@@ -95,12 +96,15 @@ export function TemplatesPage() {
         <main className="flex flex-1 flex-col gap-4 p-4 md:p-8">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold">Journal Templates</h1>
-            <Button asChild>
-              <Link href="/templates/new">
-                <Plus className="mr-2 h-4 w-4" />
-                New Template
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <AITemplateGenerator />
+              <Button asChild>
+                <Link href="/templates/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Template
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {loading ? (
@@ -111,16 +115,19 @@ export function TemplatesPage() {
             <div className="text-center py-10 border rounded-lg">
               <h3 className="text-lg font-medium">No templates yet</h3>
               <p className="text-muted-foreground mt-1">Create your first journal template to get started</p>
-              <Button asChild className="mt-4">
-                <Link href="/templates/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Template
-                </Link>
-              </Button>
+              <div className="flex justify-center gap-2 mt-4">
+                <AITemplateGenerator />
+                <Button asChild>
+                  <Link href="/templates/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Template
+                  </Link>
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {templates.map((template) => (
+              {templates.map(template => (
                 <Card 
                   key={template.id} 
                   className="overflow-hidden flex flex-col"
@@ -167,28 +174,23 @@ export function TemplatesPage() {
               ))}
             </div>
           )}
-
-          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete this template and cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={confirmDelete}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </main>
       </SidebarInset>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the template. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 } 
