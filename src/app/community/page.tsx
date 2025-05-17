@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Bookmark, Heart, Calendar, CheckCircle, List, Clock, Award, TrendingUp, Star } from "lucide-react";
 import { toast } from "sonner";
+import { saveCommunityTemplate } from "@/services/templateService";
+import { useRouter } from "next/navigation";
 
 // Mock data for community templates
 const COMMUNITY_TEMPLATES = [
@@ -121,6 +123,8 @@ const COMMUNITY_TEMPLATES = [
 export default function CommunityPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [savingTemplateId, setSavingTemplateId] = useState<number | null>(null);
+  const router = useRouter();
   
   const filteredTemplates = COMMUNITY_TEMPLATES.filter(template => {
     if (searchQuery) {
@@ -139,8 +143,37 @@ export default function CommunityPage() {
   });
 
   const handleUseTemplate = (templateId: number) => {
-    toast.success("Template added to your collection");
-    // In a real app, this would save to Firebase/user's collection
+    // Find the template
+    const template = COMMUNITY_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+    
+    // Redirect to create a new journal entry with this template
+    router.push(`/journal/new?communityTemplate=${JSON.stringify(template)}`);
+  };
+
+  const handleSaveTemplate = async (templateId: number) => {
+    try {
+      setSavingTemplateId(templateId);
+      
+      // Find the template
+      const template = COMMUNITY_TEMPLATES.find(t => t.id === templateId);
+      if (!template) {
+        toast.error("Template not found");
+        return;
+      }
+      
+      // Save to user's collection
+      await saveCommunityTemplate(template);
+      toast.success("Template saved to your collection");
+      
+      // Optional: redirect to templates page
+      // router.push("/templates");
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast.error("Failed to save template. Please make sure you're logged in.");
+    } finally {
+      setSavingTemplateId(null);
+    }
   };
 
   const handleLikeTemplate = (templateId: number) => {
@@ -190,7 +223,9 @@ export default function CommunityPage() {
                     key={template.id} 
                     template={template} 
                     onUse={handleUseTemplate}
+                    onSave={handleSaveTemplate}
                     onLike={handleLikeTemplate}
+                    isSaving={savingTemplateId === template.id}
                   />
                 ))}
               </div>
@@ -210,7 +245,9 @@ export default function CommunityPage() {
                       key={template.id} 
                       template={template} 
                       onUse={handleUseTemplate}
+                      onSave={handleSaveTemplate}
                       onLike={handleLikeTemplate}
+                      isSaving={savingTemplateId === template.id}
                     />
                   ))}
                 </div>
@@ -232,10 +269,12 @@ export default function CommunityPage() {
 interface TemplateCardProps {
   template: typeof COMMUNITY_TEMPLATES[0];
   onUse: (id: number) => void;
+  onSave: (id: number) => void;
   onLike: (id: number) => void;
+  isSaving: boolean;
 }
 
-function TemplateCard({ template, onUse, onLike }: TemplateCardProps) {
+function TemplateCard({ template, onUse, onSave, onLike, isSaving }: TemplateCardProps) {
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -277,9 +316,20 @@ function TemplateCard({ template, onUse, onLike }: TemplateCardProps) {
               </Badge>
             )}
           </div>
-          <Button variant="ghost" size="icon" onClick={() => onLike(template.id)}>
-            <Heart className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={(e) => {
+              e.stopPropagation();
+              onLike(template.id);
+            }}>
+              <Heart className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={(e) => {
+              e.stopPropagation();
+              onSave(template.id);
+            }}>
+              <Bookmark className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <CardTitle className="mt-2">{template.name}</CardTitle>
         <CardDescription className="line-clamp-2">{template.description}</CardDescription>
@@ -297,7 +347,7 @@ function TemplateCard({ template, onUse, onLike }: TemplateCardProps) {
           )}
         </div>
       </CardContent>
-      <CardFooter className="flex items-center justify-between pt-0">
+      <CardFooter className="flex items-center justify-between gap-2 pt-0">
         <div className="flex items-center gap-2">
           <Avatar className="h-6 w-6">
             <AvatarImage src={template.authorAvatar || undefined} />
@@ -305,9 +355,23 @@ function TemplateCard({ template, onUse, onLike }: TemplateCardProps) {
           </Avatar>
           <span className="text-xs text-muted-foreground">{template.author}</span>
         </div>
-        <Button size="sm" onClick={() => onUse(template.id)}>
-          Use Template
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={(e) => {
+              e.stopPropagation();
+              onSave(template.id);
+            }}
+            disabled={isSaving}
+          >
+            <Bookmark className="h-4 w-4 mr-1" />
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+          <Button size="sm" onClick={() => onUse(template.id)}>
+            Use
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

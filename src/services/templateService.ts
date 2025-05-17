@@ -58,6 +58,36 @@ export async function addTemplate(template: Omit<JournalTemplate, "id" | "create
   }
 }
 
+// Save a community template to user's personal templates
+export async function saveCommunityTemplate(template: any) {
+  try {
+    if (!auth.currentUser) {
+      throw new Error("User must be logged in to save templates");
+    }
+
+    // Extract the necessary fields from the community template
+    const templateToSave = {
+      name: template.name,
+      description: template.description,
+      fields: template.fields.map((field: any) => ({
+        name: field.name,
+        type: field.type || 'text',
+        label: field.name, // Use the name as the label
+        placeholder: '',
+        required: false
+      })),
+      source: 'community',
+      sourceId: template.id
+    };
+    
+    // Save the template using the existing addTemplate function
+    return await addTemplate(templateToSave);
+  } catch (error) {
+    console.error("Error saving community template:", error);
+    throw error;
+  }
+}
+
 // Update a journal template
 export async function updateTemplate(id: string, template: Partial<JournalTemplate> & { isDefault?: boolean }) {
   try {
