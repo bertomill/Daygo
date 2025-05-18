@@ -35,15 +35,18 @@ function sanitizeMetadata(metadata: Record<string, unknown>): Record<string, str
 export async function upsertJournalEmbedding(journalEntry: JournalEntry) {
   try {
     // Log entry details for debugging
-    console.log(`Processing embedding for journal entry ${journalEntry.id}:`);
-    console.log(`- Title: "${journalEntry.title}"`);
-    console.log(`- Content length: ${journalEntry.content?.length || 0} characters`);
-    console.log(`- Using template: ${journalEntry.templateId || 'Quick Note (no template)'}`);
+    console.log(`[EMBED] Processing embedding for journal entry ${journalEntry.id}:`);
+    console.log(`[EMBED] - Title: "${journalEntry.title}"`);
+    console.log(`[EMBED] - Content length: ${journalEntry.content?.length || 0} characters`);
+    console.log(`[EMBED] - Using template: ${journalEntry.templateId || 'Quick Note (no template)'}`);
+    console.log(`[EMBED] - Environment: ${process.env.NODE_ENV}, Vercel env: ${process.env.VERCEL_ENV || 'not set'}`);
+    console.log(`[EMBED] - Has OpenAI API Key: ${!!process.env.OPENAI_API_KEY}`);
+    console.log(`[EMBED] - Has Pinecone API Key: ${!!process.env.PINECONE_API_KEY}`);
     
     // Special handling for quick notes
     const isQuickNote = !journalEntry.templateId;
     if (isQuickNote) {
-      console.log('Processing entry as Quick Note');
+      console.log('[EMBED] Processing entry as Quick Note');
     }
     
     // Combine title and content for embedding with stronger weighting for title in quick notes
@@ -56,19 +59,35 @@ export async function upsertJournalEmbedding(journalEntry: JournalEntry) {
       textToEmbed = `${journalEntry.title || ''}\n${journalEntry.content || ''}`;
     }
     
-    console.log(`- Combined text length for embedding: ${textToEmbed.length} characters`);
-    console.log(`- Text preview: "${textToEmbed.substring(0, 50)}..."`);
+    console.log(`[EMBED] - Combined text length for embedding: ${textToEmbed.length} characters`);
+    console.log(`[EMBED] - Text preview: "${textToEmbed.substring(0, 50)}..."`);
     
     // Check for minimum content
     if (textToEmbed.trim().length < 5) {
-      console.warn('Warning: Very short content for embedding, might affect quality');
+      console.warn('[EMBED] Warning: Very short content for embedding, might affect quality');
     }
     
     // Generate embedding
-    const embedding = await generateEmbedding(textToEmbed);
+    console.log('[EMBED] Generating embedding via OpenAI...');
+    let embedding;
+    try {
+      embedding = await generateEmbedding(textToEmbed);
+      console.log(`[EMBED] Successfully generated embedding with length: ${embedding.length}`);
+    } catch (embeddingError) {
+      console.error('[EMBED] Failed to generate embedding:', embeddingError);
+      throw embeddingError;
+    }
     
     // Get Pinecone index
-    const index = await getJournalIndex();
+    console.log('[EMBED] Getting Pinecone index...');
+    let index;
+    try {
+      index = await getJournalIndex();
+      console.log('[EMBED] Successfully got Pinecone index');
+    } catch (indexError) {
+      console.error('[EMBED] Failed to get Pinecone index:', indexError);
+      throw indexError;
+    }
     
     // Create metadata for the entry
     const metadata = {
@@ -86,24 +105,31 @@ export async function upsertJournalEmbedding(journalEntry: JournalEntry) {
     
     // Use sanitized metadata to prevent Pinecone errors with null values
     const sanitizedMetadata = sanitizeMetadata(metadata);
-    console.log('Creating metadata for Pinecone:', JSON.stringify(sanitizedMetadata));
+    console.log('[EMBED] Creating metadata for Pinecone:', JSON.stringify(sanitizedMetadata));
     
     // Upsert vector into Pinecone
-    await index.upsert([{
-      id: journalEntry.id,
-      values: embedding,
-      metadata: sanitizedMetadata
-    }]);
+    console.log('[EMBED] Upserting vector into Pinecone...');
+    try {
+      await index.upsert([{
+        id: journalEntry.id,
+        values: embedding,
+        metadata: sanitizedMetadata
+      }]);
+      console.log(`[EMBED] Successfully upserted embedding for journal entry: ${journalEntry.id}`);
+    } catch (upsertError) {
+      console.error('[EMBED] Failed to upsert vector into Pinecone:', upsertError);
+      throw upsertError;
+    }
     
-    console.log(`Successfully upserted embedding for journal entry: ${journalEntry.id}`);
     return true;
   } catch (error) {
-    console.error('Error upserting journal embedding:', error);
+    console.error('[EMBED] Error upserting journal embedding:', error);
     // Add more detailed error reporting
     if (error instanceof Error) {
-      console.error(`Error details: ${error.message}`);
+      console.error(`[EMBED] Error details: ${error.message}`);
+      console.error(`[EMBED] Error stack: ${error.stack}`);
       if ('cause' in error) {
-        console.error('Caused by:', error.cause);
+        console.error('[EMBED] Caused by:', error.cause);
       }
     }
     return false;
@@ -327,12 +353,29 @@ function enhanceSearchQuery(query: string): string {
  */
 export async function indexAllJournalEntries(userId: string) {
   try {
+    console.log(`[INDEX] Starting indexing for user: ${userId}`);
+    console.log(`[INDEX] Environment: ${process.env.NODE_ENV}, Vercel env: ${process.env.VERCEL_ENV || 'not set'}`);
+    console.log(`[INDEX] Has OpenAI API Key: ${!!process.env.OPENAI_API_KEY}`);
+    console.log(`[INDEX] Has Pinecone API Key: ${!!process.env.PINECONE_API_KEY}`);
+    
     // Get all journal entries for the user from Firebase
-    const entries = await getAllJournalEntries(userId);
+    console.log(`[INDEX] Fetching journal entries for user: ${userId}`);
+    let entries;
+    try {
+      entries = await getAllJournalEntries(userId);
+      console.log(`[INDEX] Successfully fetched ${entries.length} journal entries`);
+    } catch (fetchError) {
+      console.error(`[INDEX] Error fetching journal entries:`, fetchError);
+      return { 
+        success: false, 
+        error: fetchError instanceof Error ? fetchError.message : 'Failed to fetch journal entries',
+        fetchError: true
+      };
+    }
     
     // Skip if no entries
     if (!entries || entries.length === 0) {
-      console.log('No journal entries found to index');
+      console.log('[INDEX] No journal entries found to index');
       return { success: true, indexed: 0 };
     }
     
@@ -341,19 +384,40 @@ export async function indexAllJournalEntries(userId: string) {
     let indexed = 0;
     let failed = 0;
     
+    console.log(`[INDEX] Processing ${entries.length} entries in batches of ${batchSize}`);
+    
     for (let i = 0; i < entries.length; i += batchSize) {
       const batch = entries.slice(i, i + batchSize);
-      const promises = batch.map(entry => upsertJournalEmbedding(entry)
-        .then(success => {
-          if (success) indexed++;
-          else failed++;
-        })
-        .catch(() => { failed++; })
-      );
+      console.log(`[INDEX] Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(entries.length / batchSize)}, size: ${batch.length}`);
       
-      await Promise.all(promises);
-      console.log(`Indexed batch ${i / batchSize + 1}/${Math.ceil(entries.length / batchSize)}`);
+      const promises = batch.map(entry => {
+        console.log(`[INDEX] Processing entry ID: ${entry.id}, title: "${entry.title || 'Untitled'}"`);
+        return upsertJournalEmbedding(entry)
+          .then(success => {
+            if (success) {
+              indexed++;
+              console.log(`[INDEX] Successfully indexed entry ID: ${entry.id}`);
+            } else {
+              failed++;
+              console.error(`[INDEX] Failed to index entry ID: ${entry.id}`);
+            }
+          })
+          .catch((error) => { 
+            failed++;
+            console.error(`[INDEX] Error indexing entry ID: ${entry.id}:`, error);
+          });
+      });
+      
+      try {
+        await Promise.all(promises);
+        console.log(`[INDEX] Completed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(entries.length / batchSize)}`);
+      } catch (batchError) {
+        console.error(`[INDEX] Error processing batch:`, batchError);
+        // Continue processing other batches
+      }
     }
+    
+    console.log(`[INDEX] Indexing complete. Total: ${entries.length}, Indexed: ${indexed}, Failed: ${failed}`);
     
     return {
       success: true,
@@ -362,10 +426,16 @@ export async function indexAllJournalEntries(userId: string) {
       failed
     };
   } catch (error) {
-    console.error('Error indexing all journal entries:', error);
+    console.error('[INDEX] Error indexing all journal entries:', error);
+    if (error instanceof Error) {
+      console.error(`[INDEX] Error details: ${error.message}`);
+      console.error(`[INDEX] Error stack: ${error.stack}`);
+    }
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      stack: error instanceof Error ? error.stack : undefined
     };
   }
 } 
