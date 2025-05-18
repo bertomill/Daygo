@@ -14,7 +14,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { addTemplate } from "@/services/templateService";
-import { JournalTemplate } from "@/types/journal";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -286,8 +285,8 @@ export function AITemplateGenerator() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Sparkles className="h-4 w-4" />
+        <Button className="gap-2">
+          <Sparkles className="mr-2 h-4 w-4" />
           AI Template
         </Button>
       </DialogTrigger>
@@ -390,7 +389,6 @@ function generateSampleTemplate(messages: Message[]): AITemplateResult {
   const isGratitude = userMessages.some(m => m.includes("gratitude") || m.includes("thankful"));
   const isMood = userMessages.some(m => m.includes("mood") || m.includes("emotion") || m.includes("feeling"));
   const isGoals = userMessages.some(m => m.includes("goal") || m.includes("achievement") || m.includes("target"));
-  const isReflection = userMessages.some(m => m.includes("reflect") || m.includes("thinking") || m.includes("thought"));
   
   if (isGratitude) {
     return {

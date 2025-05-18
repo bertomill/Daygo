@@ -131,10 +131,10 @@ export function TemplateFormPage() {
     
     // Scroll to the new field after a short delay
     setTimeout(() => {
-      window.scrollTo({
-        top: document.body.scrollHeight - 500,
-        behavior: 'smooth'
-      });
+      const fieldElements = document.querySelectorAll('[data-field-id]');
+      if (fieldElements && fieldElements[index]) {
+        fieldElements[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }, 100);
   };
   
@@ -311,7 +311,7 @@ export function TemplateFormPage() {
           </div>
         </header>
         
-        <main className="flex flex-1 flex-col gap-6 p-4 md:p-8 max-w-5xl mx-auto"
+        <main className="flex flex-1 flex-col gap-6 p-4 md:p-8 max-w-6xl mx-auto w-full"
               onClick={() => activeAddMenu !== null && setActiveAddMenu(null)}>
           {loading ? (
             <div className="flex justify-center py-10">
@@ -322,7 +322,7 @@ export function TemplateFormPage() {
               <div className="space-y-6">
                 <div>
                   <h1 className="text-3xl font-bold mb-6">{isEditing ? 'Edit Template' : 'Create Template'}</h1>
-                  <Card>
+                  <Card className="w-full">
                     <CardContent className="pt-6 space-y-4">
                       <div>
                         <label className="text-sm font-medium mb-1 block">Template Name</label>
@@ -330,7 +330,7 @@ export function TemplateFormPage() {
                           placeholder="Daily Journal" 
                           value={templateName}
                           onChange={(e) => setTemplateName(e.target.value)}
-                          className="max-w-lg"
+                          className="w-full"
                         />
                         <p className="text-sm text-muted-foreground mt-1">
                           Give your template a descriptive name
@@ -343,7 +343,7 @@ export function TemplateFormPage() {
                           placeholder="A template for daily journal entries"
                           value={templateDescription}
                           onChange={(e) => setTemplateDescription(e.target.value)}
-                          className="max-w-lg"
+                          className="w-full"
                         />
                         <p className="text-sm text-muted-foreground mt-1">
                           Briefly describe the purpose of this template
@@ -383,6 +383,7 @@ export function TemplateFormPage() {
                                           snapshot.isDragging ? "opacity-70" : "opacity-100"
                                         }`}
                                         onClick={(e) => e.stopPropagation()}
+                                        data-field-id={field.id}
                                       >
                                         <div className="flex items-center justify-between p-3 bg-muted/50">
                                           <div className="flex items-center gap-2">

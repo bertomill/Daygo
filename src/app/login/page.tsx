@@ -1,5 +1,6 @@
 'use client';
 
+// Import necessary components and hooks
 import { useState } from 'react';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,7 +13,11 @@ import { signInWithEmail, signInWithGoogle } from "@/lib/authUtils";
 import { FirebaseError } from 'firebase/app';
 import { motion } from "framer-motion";
 import { Calendar, CheckCircle, Clock, Sparkles } from "lucide-react";
+import { DayGoLogo } from '@/components/DayGoLogo';
 
+// Main login page component
+// Designer: This is the main login page that handles both email and Google authentication
+// It includes a split layout with app info on the left and login form on the right
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,6 +25,8 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
+  // Handle email/password sign in
+  // Designer: This handles form submission and displays appropriate error messages
   const handleEmailSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
@@ -50,6 +57,8 @@ export default function LoginPage() {
     }
   };
 
+  // Handle Google sign in
+  // Designer: This provides a simple Google authentication flow
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError('');
@@ -72,13 +81,13 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Navigation */}
+      {/* Designer: Fixed navigation bar with blur effect and border bottom */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
-            <div className="font-bold text-xl flex items-center">
-              <span className="bg-primary text-primary-foreground px-2 py-1 rounded-md mr-1">Day</span>
-              <span>Go</span>
-            </div>
+            <Link href="/" className="flex items-center">
+              <DayGoLogo size={36} variant="system" />
+            </Link>
           </div>
           <div className="flex items-center gap-6">
             <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -93,6 +102,7 @@ export default function LoginPage() {
 
       <div className="flex flex-1 flex-col md:flex-row">
         {/* Left side - App information */}
+        {/* Designer: Marketing content with animated features list */}
         <div className="w-full md:w-1/2 bg-muted py-24 px-6 md:px-12 flex items-center justify-center">
           <div className="max-w-xl mx-auto">
             <motion.div
@@ -167,6 +177,7 @@ export default function LoginPage() {
         </div>
 
         {/* Right side - Login form */}
+        {/* Designer: Clean login form with email/password and Google sign in options */}
         <div className="w-full md:w-1/2 pt-24 pb-16 px-6 md:px-12 flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -253,6 +264,7 @@ export default function LoginPage() {
               </div>
             </form>
 
+            {/* Designer: Divider with "Or continue with" text */}
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -263,6 +275,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* Designer: Google sign in button with logo */}
               <div className="mt-6">
                 <Button variant="outline" className="w-full h-12 rounded-md" onClick={handleGoogleSignIn}>
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -288,6 +301,7 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Designer: Terms and privacy links */}
             <p className="mt-6 text-center text-sm text-muted-foreground">
               By signing in, you agree to our{" "}
               <Link href="/terms" className="font-medium text-primary hover:text-primary/90">

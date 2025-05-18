@@ -6,7 +6,7 @@ import { initializeAnalytics } from '@/lib/firebase';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 // Pages that don't require authentication
-const publicPages = ['/login', '/register', '/forgot-password'];
+const publicPages = ['/login', '/register', '/forgot-password', '/'];
 
 export function FirebaseAnalyticsProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
