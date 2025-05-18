@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { deleteJournalEmbedding } from "@/services/journalEmbeddingService";
-// Comment out Firebase Admin imports
-// import { getAuth } from "firebase-admin/auth";
-// import { initAdmin } from "@/lib/firebase-admin";
-// import { getAdminFirestore } from "@/lib/firebase-admin";
+// Uncomment Firebase Admin imports
+import { getAuth } from "firebase-admin/auth";
+import { initAdmin } from "@/lib/firebase-admin";
+import { getAdminFirestore } from "@/lib/firebase-admin";
 
 // Initialize Firebase Admin if not already initialized
-// initAdmin();
+initAdmin();
 
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -31,13 +31,9 @@ export async function POST(req: Request) {
       
       // Verify Firebase token - this requires Firebase Admin to be properly initialized
       try {
-        // Since we commented out the Firebase Admin imports, this code is unreachable
-        // We'll uncomment this when Firebase Admin is properly configured
-        /*
         const decodedToken = await getAuth().verifyIdToken(token);
         userId = decodedToken.uid;
-        */
-        console.warn("DEVELOPMENT MODE: Skipping Firebase token verification");
+        console.log(`Verified token for user: ${userId}`);
       } catch (tokenError) {
         console.error("Token verification error:", tokenError);
         return NextResponse.json(
@@ -67,8 +63,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: result });
     }
     
-    // This part will only run when Firebase Admin is properly configured
-    /*
     // Verify ownership of the journal entry before deleting the embedding
     const adminDb = getAdminFirestore();
     const journalDoc = await adminDb.collection("journalEntries").doc(journalId).get();
@@ -89,7 +83,6 @@ export async function POST(req: Request) {
         { status: 403 }
       );
     }
-    */
     
     // Delete the embedding
     const result = await deleteJournalEmbedding(journalId);

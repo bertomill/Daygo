@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { upsertJournalEmbedding } from "@/services/journalEmbeddingService";
-// Comment out Firebase Admin imports for now
-// import { getAuth } from "firebase-admin/auth";
-// import { initAdmin } from "@/lib/firebase-admin";
+// Uncomment Firebase Admin imports
+import { getAuth } from "firebase-admin/auth";
+import { initAdmin } from "@/lib/firebase-admin";
 
 // Initialize Firebase Admin if not already initialized
-// initAdmin();
+initAdmin();
 
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -30,15 +30,9 @@ export async function POST(req: Request) {
       
       // Verify Firebase token - this requires Firebase Admin to be properly initialized
       try {
-        // Since we commented out the Firebase Admin imports, this code is unreachable
-        // We'll uncomment this when Firebase Admin is properly configured
-        /*
         const decodedToken = await getAuth().verifyIdToken(token);
         userId = decodedToken.uid;
-        */
-        
-        // TEMPORARY: Return mock success response
-        console.warn("DEVELOPMENT MODE: Skipping Firebase token verification");
+        console.log(`Verified token for user: ${userId}`);
       } catch (tokenError) {
         console.error("Token verification error:", tokenError);
         return NextResponse.json(
