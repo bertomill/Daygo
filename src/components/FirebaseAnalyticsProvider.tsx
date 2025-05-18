@@ -12,22 +12,14 @@ export function FirebaseAnalyticsProvider({ children }: { children: React.ReactN
   const pathname = usePathname();
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
-  const [redirectAttempts, setRedirectAttempts] = useState(0);
 
   // Helper function to force redirect using window.location if needed
   const forceRedirect = (path: string) => {
-    console.log(`Redirecting to ${path} (attempt ${redirectAttempts + 1})`);
+    console.log(`Redirecting to ${path}`);
     
-    // After 2 router.push attempts, if we're still on the same page, use window.location
-    if (redirectAttempts >= 1) {
-      console.log(`Using window.location to redirect to ${path}`);
-      window.location.href = path;
-      return;
-    }
-    
-    // Increment redirect attempts
-    setRedirectAttempts(prev => prev + 1);
-    router.push(path);
+    // Use window.location.href directly for critical redirects
+    // This bypasses Next.js's router completely, avoiding fetch errors
+    window.location.href = path;
   };
 
   useEffect(() => {
@@ -43,9 +35,6 @@ export function FirebaseAnalyticsProvider({ children }: { children: React.ReactN
     router.prefetch('/home');
     router.prefetch('/login');
     router.prefetch('/journal');
-    
-    // Reset redirect attempts when pathname changes
-    setRedirectAttempts(0);
     
     // Handle authentication
     const auth = getAuth();
@@ -100,7 +89,7 @@ export function FirebaseAnalyticsProvider({ children }: { children: React.ReactN
     });
 
     return () => unsubscribe();
-  }, [pathname, router, redirectAttempts]);
+  }, [pathname, router]);
 
   // Show loading indicator only for protected pages and only briefly
   if (!authChecked && !publicPages.includes(pathname)) {

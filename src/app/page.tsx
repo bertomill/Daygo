@@ -22,23 +22,17 @@ export default function Home() {
   // Designer: This handles redirecting logged in users to their dashboard
   useEffect(() => {
     const auth = getAuth();
-    let redirectTimeout: NodeJS.Timeout | null = null;
-    
-    // Prefetch the home route to speed up navigation
-    router.prefetch('/home');
     
     // Check if user is already authenticated when component mounts
     const currentUser = auth.currentUser;
     if (currentUser) {
       setIsAuthenticated(true);
       setIsLoading(false);
-      router.push('/home');
       
-      // Set a timeout for fallback redirect if router.push doesn't work
-      redirectTimeout = setTimeout(() => {
-        console.log("Fallback redirect with window.location");
-        window.location.href = '/home';
-      }, 1500); // Wait 1.5 seconds before forcing redirect
+      // Use direct window.location for reliable redirects
+      console.log("User already authenticated, redirecting via window.location");
+      window.location.href = '/home';
+      return;
     }
     
     // Otherwise, set up the auth state listener
@@ -48,27 +42,15 @@ export default function Home() {
       
       // Redirect authenticated users to home dashboard
       if (user) {
-        router.push('/home');
-        
-        // Set a timeout for fallback redirect if router.push doesn't work
-        if (redirectTimeout) {
-          clearTimeout(redirectTimeout);
-        }
-        
-        redirectTimeout = setTimeout(() => {
-          console.log("Fallback redirect with window.location");
-          window.location.href = '/home';
-        }, 1500); // Wait 1.5 seconds before forcing redirect
+        console.log("Auth state changed, user authenticated, redirecting via window.location");
+        window.location.href = '/home';
       }
     });
     
     return () => {
       unsubscribe();
-      if (redirectTimeout) {
-        clearTimeout(redirectTimeout);
-      }
     };
-  }, [router]);
+  }, []);
 
   // Navigation handlers
   const handleLogin = () => {
