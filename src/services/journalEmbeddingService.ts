@@ -186,48 +186,86 @@ export async function searchJournalEmbeddings(
   limit: number = 5
 ) {
   try {
+    // Add detailed logging for production debugging
+    console.log(`[PINECONE DEBUG] Starting search with query: "${query}"`);
+    console.log(`[PINECONE DEBUG] Using userId: "${userId}"`);
+    console.log(`[PINECONE DEBUG] Environment: ${process.env.NODE_ENV || 'unknown'}`);
+    console.log(`[PINECONE DEBUG] Has OpenAI API Key: ${!!process.env.OPENAI_API_KEY}`);
+    console.log(`[PINECONE DEBUG] Has Pinecone API Key: ${!!process.env.PINECONE_API_KEY}`);
+
     // Check for specific topic searches and enhance them
     const enhancedQuery = enhanceSearchQuery(query);
-    console.log(`Original query: "${query}", Enhanced: "${enhancedQuery}"`);
+    console.log(`[PINECONE DEBUG] Original query: "${query}", Enhanced: "${enhancedQuery}"`);
     
     // Generate embedding for the query
-    const queryEmbedding = await generateEmbedding(enhancedQuery);
+    console.log(`[PINECONE DEBUG] Generating embedding...`);
+    let queryEmbedding;
+    try {
+      queryEmbedding = await generateEmbedding(enhancedQuery);
+      console.log(`[PINECONE DEBUG] Embedding generated successfully, length: ${queryEmbedding.length}`);
+    } catch (embeddingError) {
+      console.error(`[PINECONE DEBUG] Error generating embedding:`, embeddingError);
+      throw embeddingError;
+    }
     
     // Get Pinecone index
-    const index = await getJournalIndex();
+    console.log(`[PINECONE DEBUG] Getting Pinecone index...`);
+    let index;
+    try {
+      index = await getJournalIndex();
+      console.log(`[PINECONE DEBUG] Got Pinecone index successfully`);
+    } catch (indexError) {
+      console.error(`[PINECONE DEBUG] Error getting Pinecone index:`, indexError);
+      throw indexError;
+    }
     
     // Prepare the filter condition
     const filter: Record<string, any> = { userId };
+    console.log(`[PINECONE DEBUG] Using filter:`, JSON.stringify(filter));
     
     // Add topic-specific filters if needed
     if (isTravelQuery(query)) {
       // For travel queries, also search in keywords metadata
-      console.log('Using travel-specific filter to improve results');
+      console.log('[PINECONE DEBUG] Using travel-specific filter to improve results');
     }
     
     // Search for similar entries
-    const results = await index.query({
-      vector: queryEmbedding,
-      topK: limit,
-      filter,
-      includeMetadata: true
-    });
+    console.log(`[PINECONE DEBUG] Executing Pinecone query...`);
+    let results;
+    try {
+      results = await index.query({
+        vector: queryEmbedding,
+        topK: limit,
+        filter,
+        includeMetadata: true
+      });
+      console.log(`[PINECONE DEBUG] Pinecone query executed successfully`);
+    } catch (queryError) {
+      console.error(`[PINECONE DEBUG] Error executing Pinecone query:`, queryError);
+      throw queryError;
+    }
     
     // Log the results for debugging
     if (results.matches && results.matches.length > 0) {
-      console.log(`Found ${results.matches.length} matches with scores:`);
+      console.log(`[PINECONE DEBUG] Found ${results.matches.length} matches with scores:`);
       results.matches.forEach((match: any, i: number) => {
         const metadata = match.metadata || {};
-        console.log(`${i+1}. ID: ${match.id}, Score: ${match.score?.toFixed(4)}, Title: "${metadata.title || 'Untitled'}"`);
+        console.log(`[PINECONE DEBUG] ${i+1}. ID: ${match.id}, Score: ${match.score?.toFixed(4)}, Title: "${metadata.title || 'Untitled'}"`);
       });
     } else {
-      console.log('No matches found for query');
+      console.log('[PINECONE DEBUG] No matches found for query');
     }
     
     // Return the results
     return results.matches || [];
   } catch (error) {
-    console.error('Error searching journal embeddings:', error);
+    console.error('[PINECONE DEBUG] Error searching journal embeddings:', error);
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error(`[PINECONE DEBUG] Error name: ${error.name}`);
+      console.error(`[PINECONE DEBUG] Error message: ${error.message}`);
+      console.error(`[PINECONE DEBUG] Error stack: ${error.stack}`);
+    }
     throw error;
   }
 }
