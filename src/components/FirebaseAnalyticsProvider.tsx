@@ -12,6 +12,23 @@ export function FirebaseAnalyticsProvider({ children }: { children: React.ReactN
   const pathname = usePathname();
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
+  const [redirectAttempts, setRedirectAttempts] = useState(0);
+
+  // Helper function to force redirect using window.location if needed
+  const forceRedirect = (path: string) => {
+    console.log(`Redirecting to ${path} (attempt ${redirectAttempts + 1})`);
+    
+    // After 2 router.push attempts, if we're still on the same page, use window.location
+    if (redirectAttempts >= 1) {
+      console.log(`Using window.location to redirect to ${path}`);
+      window.location.href = path;
+      return;
+    }
+    
+    // Increment redirect attempts
+    setRedirectAttempts(prev => prev + 1);
+    router.push(path);
+  };
 
   useEffect(() => {
     // Initialize Firebase Analytics
@@ -22,14 +39,45 @@ export function FirebaseAnalyticsProvider({ children }: { children: React.ReactN
       console.log('Firebase Analytics initialized');
     }
 
+    // Prefetch common routes to improve navigation speed
+    router.prefetch('/home');
+    router.prefetch('/login');
+    router.prefetch('/journal');
+    
+    // Reset redirect attempts when pathname changes
+    setRedirectAttempts(0);
+    
     // Handle authentication
     const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    
+    // First check if user is already authenticated synchronously
+    console.log('Current path:', pathname);
+    console.log('Current auth status:', !!auth.currentUser);
+    
+    const currentUser = auth.currentUser;
+    if (currentUser) {
       setAuthChecked(true);
       
       // If on a public page and already authenticated, redirect to home
+      if (publicPages.includes(pathname)) {
+        console.log('User is authenticated on public page, redirecting to /home');
+        forceRedirect('/home');
+        return;
+      }
+    } else if (publicPages.includes(pathname)) {
+      // If on a public page and not authenticated, allow access without waiting
+      setAuthChecked(true);
+    }
+    
+    // Set up auth state listener for changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthChecked(true);
+      console.log('Auth state changed, user:', !!user);
+      
+      // If on a public page and already authenticated, redirect to home
       if (user && publicPages.includes(pathname)) {
-        router.push('/');
+        console.log('Auth changed: User is authenticated on public page, redirecting to /home');
+        forceRedirect('/home');
         return;
       }
 
@@ -38,11 +86,10 @@ export function FirebaseAnalyticsProvider({ children }: { children: React.ReactN
         return;
       }
       
-      // If no user on a protected page, try anonymous auth as fallback
+      // If no user on a protected page, redirect to login
       if (!user && !publicPages.includes(pathname)) {
         console.log('No user detected, redirecting to login page');
-        // Redirecting to login instead of using anonymous auth
-        router.push('/login');
+        forceRedirect('/login');
         return;
       }
       
@@ -53,11 +100,15 @@ export function FirebaseAnalyticsProvider({ children }: { children: React.ReactN
     });
 
     return () => unsubscribe();
-  }, [pathname, router]);
+  }, [pathname, router, redirectAttempts]);
 
-  // Show nothing while checking authentication
+  // Show loading indicator only for protected pages and only briefly
   if (!authChecked && !publicPages.includes(pathname)) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-pulse">Loading...</div>
+      </div>
+    );
   }
 
   return <>{children}</>;

@@ -22,6 +22,26 @@ export default function Home() {
   // Designer: This handles redirecting logged in users to their dashboard
   useEffect(() => {
     const auth = getAuth();
+    let redirectTimeout: NodeJS.Timeout | null = null;
+    
+    // Prefetch the home route to speed up navigation
+    router.prefetch('/home');
+    
+    // Check if user is already authenticated when component mounts
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      router.push('/home');
+      
+      // Set a timeout for fallback redirect if router.push doesn't work
+      redirectTimeout = setTimeout(() => {
+        console.log("Fallback redirect with window.location");
+        window.location.href = '/home';
+      }, 1500); // Wait 1.5 seconds before forcing redirect
+    }
+    
+    // Otherwise, set up the auth state listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user);
       setIsLoading(false);
@@ -29,10 +49,25 @@ export default function Home() {
       // Redirect authenticated users to home dashboard
       if (user) {
         router.push('/home');
+        
+        // Set a timeout for fallback redirect if router.push doesn't work
+        if (redirectTimeout) {
+          clearTimeout(redirectTimeout);
+        }
+        
+        redirectTimeout = setTimeout(() => {
+          console.log("Fallback redirect with window.location");
+          window.location.href = '/home';
+        }, 1500); // Wait 1.5 seconds before forcing redirect
       }
     });
     
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (redirectTimeout) {
+        clearTimeout(redirectTimeout);
+      }
+    };
   }, [router]);
 
   // Navigation handlers
@@ -57,7 +92,6 @@ export default function Home() {
   // For authenticated users, we redirect in the useEffect hook
   // Designer: This is a fallback loading state while redirect happens
   if (isAuthenticated) {
-    // Don't call router.push here as it causes the "Cannot update a component while rendering a different component" error
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Redirecting to your dashboard...</div>
