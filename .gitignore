@@ -38,3 +38,10 @@ next-env.d.ts
 .firebase/
 ui-debug.log
 firebase-debug.log
+
+# Next.js cache
+.next/cache/
+
+# Large image files
+liza_g_books.png
+liza_golzan_interior.png
