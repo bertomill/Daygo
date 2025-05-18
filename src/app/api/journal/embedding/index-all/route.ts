@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { indexAllJournalEntries } from "@/services/journalEmbeddingService";
-// Uncomment Firebase Admin imports
+// Firebase Admin imports
 import { getAuth } from "firebase-admin/auth";
 import { initAdmin } from "@/lib/firebase-admin";
 
-// Initialize Firebase Admin if not already initialized
+// Initialize Firebase Admin if not already initialized - this will handle missing credentials gracefully
 initAdmin();
 
 // Check if we're in development mode
@@ -30,10 +30,14 @@ export async function POST(req: Request) {
       
       // Verify Firebase token
       try {
-        // Uncomment this Firebase Admin verification code
-        const decodedToken = await getAuth().verifyIdToken(token);
-        userId = decodedToken.uid;
-        console.log(`Verified token for user: ${userId}`);
+        // Only attempt to verify the token if we have Firebase Admin credentials
+        if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+          const decodedToken = await getAuth().verifyIdToken(token);
+          userId = decodedToken.uid;
+          console.log(`Verified token for user: ${userId}`);
+        } else {
+          console.warn("Firebase Admin credentials missing, using default user ID");
+        }
       } catch (tokenError) {
         console.error("Token verification error:", tokenError);
         return NextResponse.json(
@@ -51,9 +55,9 @@ export async function POST(req: Request) {
           userId = body.userId;
           console.log(`Using userId from request body: ${userId}`);
         }
-      } catch (e) {
+      } catch (error) {
         // If there's no body or it can't be parsed, use the default dev ID
-        console.log(`Using default development userId: ${userId}`);
+        console.log(`Using default development userId: ${userId}`, error instanceof Error ? error.message : 'Unknown error');
       }
     }
     

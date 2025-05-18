@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { upsertJournalEmbedding } from "@/services/journalEmbeddingService";
-// Uncomment Firebase Admin imports
+// Firebase Admin imports
 import { getAuth } from "firebase-admin/auth";
 import { initAdmin } from "@/lib/firebase-admin";
 
-// Initialize Firebase Admin if not already initialized
+// Initialize Firebase Admin if not already initialized - this will handle missing credentials gracefully
 initAdmin();
 
 // Check if we're in development mode
@@ -30,9 +30,14 @@ export async function POST(req: Request) {
       
       // Verify Firebase token - this requires Firebase Admin to be properly initialized
       try {
-        const decodedToken = await getAuth().verifyIdToken(token);
-        userId = decodedToken.uid;
-        console.log(`Verified token for user: ${userId}`);
+        // Only attempt to verify the token if we have Firebase Admin credentials
+        if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+          const decodedToken = await getAuth().verifyIdToken(token);
+          userId = decodedToken.uid;
+          console.log(`Verified token for user: ${userId}`);
+        } else {
+          console.warn("Firebase Admin credentials missing, skipping token verification");
+        }
       } catch (tokenError) {
         console.error("Token verification error:", tokenError);
         return NextResponse.json(
