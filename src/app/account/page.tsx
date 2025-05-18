@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CreditCard, HelpCircle, Key, Shield, User, Mail, Clock, Bell } from "lucide-react";
+import { ArrowLeft, HelpCircle, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -27,8 +27,8 @@ export default function AccountSettingsPage() {
     return () => unsubscribe();
   }, []);
 
-  const getInitials = (displayName: string | null) => {
-    if (!displayName) return user?.email?.charAt(0).toUpperCase() || "U";
+  const getInitials = (displayName: string | null | undefined) => {
+    if (!displayName) return user?.email?.charAt(0)?.toUpperCase() || "U";
     return displayName
       .split(" ")
       .map((n) => n[0])
@@ -55,8 +55,8 @@ export default function AccountSettingsPage() {
       <AppSidebar />
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto p-6">
+      <div className="flex-1 overflow-auto bg-background">
+        <div className="container max-w-5xl mx-auto py-8 px-4">
           <div className="flex items-center gap-2 mb-6">
             <Link href="/" className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
@@ -64,7 +64,7 @@ export default function AccountSettingsPage() {
             <h1 className="text-2xl font-bold">Account Settings</h1>
           </div>
 
-          <div className="grid gap-6">
+          <div className="grid gap-8">
             {/* Profile Section */}
             <Card>
               <CardHeader>
@@ -76,7 +76,7 @@ export default function AccountSettingsPage() {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={user?.photoURL || undefined} />
+                    <AvatarImage src={user?.photoURL || ""} />
                     <AvatarFallback className="text-lg">{getInitials(user?.displayName)}</AvatarFallback>
                   </Avatar>
                   <div>
