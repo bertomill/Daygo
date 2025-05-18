@@ -115,7 +115,7 @@ export default function Home() {
       {/* Designer: Main hero section with large text, description and CTA buttons */}
       <div className="container mx-auto px-4 pt-32 pb-24 flex flex-col items-center text-center relative overflow-hidden">
         {/* Background bookshelf image - full width, showing top shelves */}
-        <div className="fixed inset-0 w-screen h-screen pointer-events-none z-0">
+        <div className="fixed inset-0 w-full h-screen pointer-events-none z-0">
           <Image 
             src="/daygo_bookshelf.png" 
             alt="Journal bookshelf" 
@@ -123,7 +123,6 @@ export default function Home() {
             priority
             sizes="100vw"
             className="opacity-50 dark:opacity-40 object-cover object-top"
-            style={{ width: '100vw', maxWidth: '100vw' }}
           />
         </div>
         
