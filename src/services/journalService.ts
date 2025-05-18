@@ -86,6 +86,9 @@ export const addJournalEntry = async (journalData: JournalEntryInput) => {
         pinecone: !!process.env.PINECONE_API_KEY
       });
       
+      // Get Firebase auth token for the API request
+      const token = await user.getIdToken();
+      
       // Create a server action to handle the embedding creation
       // This is done via a fetch to avoid importing server code in client components
       console.log("Creating embedding for journal entry:", docRef.id);
@@ -93,6 +96,7 @@ export const addJournalEntry = async (journalData: JournalEntryInput) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ journalEntry: entry }),
       });
@@ -237,11 +241,15 @@ export const updateJournalEntry = async (id: string, updates: Partial<JournalEnt
     // Get the updated entry
     const updatedEntry = await getJournalEntry(id);
     
+    // Get Firebase auth token for the API request
+    const token = await user.getIdToken();
+    
     // Update embedding
     const embedResponse = await fetch('/api/journal/embedding/upsert', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ journalEntry: updatedEntry }),
     });
@@ -276,10 +284,14 @@ export const deleteJournalEntry = async (id: string) => {
   
   // Remove from Pinecone
   try {
+    // Get Firebase auth token for the API request
+    const token = await user.getIdToken();
+    
     const embedResponse = await fetch('/api/journal/embedding/delete', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ journalId: id }),
     });
