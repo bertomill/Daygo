@@ -21,7 +21,10 @@ export async function POST(req: Request) {
       const authHeader = req.headers.get("authorization");
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return NextResponse.json(
-          { error: "Missing or invalid authorization token" },
+          { 
+            error: "Missing or invalid authorization token",
+            details: "Authentication header missing or malformed"
+          },
           { status: 401 }
         );
       }
@@ -41,7 +44,10 @@ export async function POST(req: Request) {
       } catch (tokenError) {
         console.error("Token verification error:", tokenError);
         return NextResponse.json(
-          { error: "Invalid authorization token" },
+          { 
+            error: "Invalid authorization token",
+            details: tokenError instanceof Error ? tokenError.message : 'Unknown error'
+          },
           { status: 401 }
         );
       }
@@ -55,7 +61,10 @@ export async function POST(req: Request) {
     // Validate journal entry
     if (!journalEntry || !journalEntry.id) {
       return NextResponse.json(
-        { error: "Invalid journal entry data" },
+        { 
+          error: "Invalid journal entry data",
+          details: "Journal entry is missing or doesn't contain an ID"
+        },
         { status: 400 }
       );
     }
@@ -63,8 +72,34 @@ export async function POST(req: Request) {
     // Skip userId check in development mode with missing Firebase Admin
     if (userId && journalEntry.userId !== userId) {
       return NextResponse.json(
-        { error: "Unauthorized access to journal entry" },
+        { 
+          error: "Unauthorized access to journal entry",
+          details: "The user ID doesn't match the entry's owner"
+        },
         { status: 403 }
+      );
+    }
+    
+    // Check for required API keys
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("OpenAI API key is missing");
+      return NextResponse.json(
+        { 
+          error: "OpenAI API key is missing",
+          details: "Cannot generate embeddings without an OpenAI API key"
+        },
+        { status: 500 }
+      );
+    }
+    
+    if (!process.env.PINECONE_API_KEY) {
+      console.error("Pinecone API key is missing");
+      return NextResponse.json(
+        { 
+          error: "Pinecone API key is missing",
+          details: "Cannot store embeddings without a Pinecone API key"
+        },
+        { status: 500 }
       );
     }
     
@@ -76,13 +111,36 @@ export async function POST(req: Request) {
     }
     
     // Upsert the embedding
-    const result = await upsertJournalEmbedding(journalEntry);
-    
-    return NextResponse.json({ success: result });
+    try {
+      const result = await upsertJournalEmbedding(journalEntry);
+      
+      if (!result) {
+        return NextResponse.json({ 
+          success: false,
+          error: "Failed to upsert journal embedding in Pinecone" 
+        });
+      }
+      
+      return NextResponse.json({ success: result });
+    } catch (upsertError) {
+      console.error("Error during upsert operation:", upsertError);
+      return NextResponse.json(
+        { 
+          error: "Failed to process embedding upsert",
+          details: upsertError instanceof Error ? upsertError.message : 'Unknown error',
+          stack: upsertError instanceof Error ? upsertError.stack : undefined
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Error upserting journal embedding:", error);
     return NextResponse.json(
-      { error: "Failed to process request" },
+      { 
+        error: "Failed to process request",
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

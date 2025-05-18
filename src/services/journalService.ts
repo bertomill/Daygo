@@ -81,6 +81,10 @@ export const addJournalEntry = async (journalData: JournalEntryInput) => {
       console.log(`- Title: "${entry.title}"`);
       console.log(`- Content length: ${entry.content?.length || 0} characters`);
       console.log(`- Is template-based: ${entry.templateId ? 'Yes' : 'No (Quick Note)'}`);
+      console.log(`- Environment: ${process.env.NODE_ENV}, API Keys Present:`, {
+        openai: !!process.env.OPENAI_API_KEY,
+        pinecone: !!process.env.PINECONE_API_KEY
+      });
       
       // Create a server action to handle the embedding creation
       // This is done via a fetch to avoid importing server code in client components
@@ -94,16 +98,37 @@ export const addJournalEntry = async (journalData: JournalEntryInput) => {
       });
       
       if (!embedResponse.ok) {
-        const errorData = await embedResponse.json().catch(() => ({}));
-        console.error('Failed to create embedding for journal entry:', 
-          errorData.error || embedResponse.statusText);
-        toast.error('Failed to create embedding for journal entry');
+        let errorMessage = 'Failed to create embedding for journal entry';
+        let errorDetails = '';
+        
+        try {
+          const errorData = await embedResponse.json();
+          console.error('Failed to create embedding:', errorData);
+          
+          if (errorData.error) {
+            errorMessage = errorData.error;
+            errorDetails = errorData.details || '';
+          }
+        } catch (parseError) {
+          console.error('Could not parse error response:', parseError);
+          errorMessage = `Failed to create embedding (Status ${embedResponse.status}: ${embedResponse.statusText})`;
+        }
+        
+        console.error(errorMessage, errorDetails);
+        toast.error(`Failed to create embedding: ${errorMessage}`);
+        
+        // Create a toast that shows more details but still saves the entry
+        toast.error("Journal entry saved, but embedding failed. The AI assistant might not be able to find this entry.");
       } else {
         console.log("Successfully created embedding for journal entry:", docRef.id);
+        toast.success("Journal entry saved successfully");
       }
     } catch (embedError) {
       // Don't block the UI flow if embedding fails
       console.error('Error creating embedding:', embedError);
+      
+      // Show a more descriptive error but confirm the entry was saved
+      toast.error(`Journal entry saved, but embedding failed: ${embedError instanceof Error ? embedError.message : 'Unknown error'}`);
     }
     
     return docRef.id;
