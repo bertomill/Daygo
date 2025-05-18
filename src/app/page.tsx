@@ -114,24 +114,28 @@ export default function Home() {
       {/* Hero Section */}
       {/* Designer: Main hero section with large text, description and CTA buttons */}
       <div className="container mx-auto px-4 pt-32 pb-24 flex flex-col items-center text-center relative overflow-hidden">
-        {/* Background bookshelf image */}
-        <div className="absolute right-0 bottom-0 pointer-events-none z-0 w-full md:w-3/4 lg:w-2/3 h-[500px]">
+        {/* Background bookshelf image - full width, showing top shelves */}
+        <div className="fixed inset-0 w-screen h-screen pointer-events-none z-0">
           <Image 
             src="/daygo_bookshelf.png" 
             alt="Journal bookshelf" 
             fill
             priority
-            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 75vw, 66vw"
-            className="opacity-75 dark:opacity-40 mix-blend-soft-light object-contain object-right-bottom"
+            sizes="100vw"
+            className="opacity-50 dark:opacity-40 object-cover object-top"
+            style={{ width: '100vw', maxWidth: '100vw' }}
           />
         </div>
         
-        <div className="inline-flex items-center justify-center px-4 py-2 mb-8 rounded-full border border-border gap-2 bg-secondary/50 relative z-10">
+        {/* Gradient overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/75 via-background/60 to-background/80 pointer-events-none z-[1]"></div>
+        
+        <div className="inline-flex items-center justify-center px-4 py-2 mb-8 rounded-full border border-border gap-2 bg-secondary/70 backdrop-blur-sm relative z-10">
           <span className="bg-primary h-2 w-2 rounded-full"></span>
           <span className="text-sm font-medium">Journaling reimagined</span>
         </div>
         
-        <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight max-w-3xl relative z-10">
+        <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight max-w-3xl relative z-10 text-foreground">
           Design your days with <span className="text-primary">intention</span>
         </h1>
         
@@ -141,10 +145,10 @@ export default function Home() {
         </p>
         
         <div className="flex flex-wrap gap-4 justify-center relative z-10">
-          <Button size="lg" className="px-8 py-6 text-lg" onClick={handleSignUp}>
+          <Button size="lg" className="px-8 py-6 text-lg bg-primary/90 backdrop-blur-sm hover:bg-primary" onClick={handleSignUp}>
             Start your journaling journey
           </Button>
-          <Button size="lg" variant="outline" className="px-8 py-6 text-lg" onClick={handleLogin}>
+          <Button size="lg" variant="outline" className="px-8 py-6 text-lg backdrop-blur-sm bg-background/50" onClick={handleLogin}>
             Log in
           </Button>
         </div>
