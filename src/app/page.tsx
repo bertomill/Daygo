@@ -114,15 +114,15 @@ export default function Home() {
       {/* Hero Section */}
       {/* Designer: Main hero section with large text, description and CTA buttons */}
       <div className="container mx-auto px-4 pt-32 pb-24 flex flex-col items-center text-center relative overflow-hidden">
-        {/* Background journal books image */}
-        <div className="absolute right-0 -bottom-20 md:bottom-0 opacity-15 pointer-events-none z-0 w-full md:w-1/2 h-96">
+        {/* Background bookshelf image */}
+        <div className="absolute right-0 bottom-0 pointer-events-none z-0 w-full md:w-3/4 lg:w-2/3 h-[500px]">
           <Image 
-            src="/journal_books.png" 
-            alt="Journal books" 
+            src="/daygo_bookshelf.png" 
+            alt="Journal bookshelf" 
             fill
             priority
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="opacity-60 dark:opacity-25 mix-blend-luminosity object-contain object-right-bottom"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 75vw, 66vw"
+            className="opacity-75 dark:opacity-40 mix-blend-soft-light object-contain object-right-bottom"
           />
         </div>
         
