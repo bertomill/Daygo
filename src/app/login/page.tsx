@@ -35,7 +35,9 @@ export default function LoginPage() {
     try {
       await signInWithEmail(email, password);
       toast.success('Signed in successfully');
-      router.push('/');
+      
+      // Use replace instead of push for smoother navigation
+      router.replace('/home');
     } catch (error: unknown) {
       if (error instanceof FirebaseError) {
         // Handle Firebase errors
@@ -66,7 +68,9 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
       toast.success('Signed in successfully');
-      router.push('/');
+      
+      // Use replace instead of push for smoother navigation
+      router.replace('/home');
     } catch (error: unknown) {
       if (error instanceof FirebaseError) {
         setError('Google sign-in failed');

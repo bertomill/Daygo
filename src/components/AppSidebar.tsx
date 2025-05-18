@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarRail
 } from "@/components/ui/sidebar"
-import { File, FileText, LogOut, Plus, ShieldCheck, User, Book, Users } from "lucide-react"
+import { File, FileText, LogOut, Plus, ShieldCheck, User, Book, Users, Bot } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { getAuth, User as FirebaseUser } from "firebase/auth"
 import { useEffect, useState } from "react"
@@ -38,7 +38,7 @@ export function AppSidebar() {
     try {
       await signOut()
       toast.success("You have been signed out")
-      router.push("/login")
+      router.replace("/login")
     } catch (error) {
       console.error("Error signing out:", error)
       toast.error("Failed to sign out")
@@ -72,8 +72,8 @@ export function AppSidebar() {
           <h3 className="px-4 py-2 text-sm font-medium">Main Menu</h3>
           
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={pathname === "/"}>
-              <Link href="/">
+            <SidebarMenuButton asChild isActive={pathname === "/home"}>
+              <Link href="/home">
                 <FileText className="mr-2 h-4 w-4" />
                 <span>Home</span>
               </Link>
@@ -94,6 +94,15 @@ export function AppSidebar() {
               <Link href="/templates">
                 <FileText className="mr-2 h-4 w-4" />
                 <span>Templates</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={pathname.startsWith("/ai-chat")}>
+              <Link href="/ai-chat">
+                <Bot className="mr-2 h-4 w-4" />
+                <span>Talk to Daygo AI</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

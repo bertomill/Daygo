@@ -6,7 +6,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Button } from "@/components/ui/button";
 import { CalendarDays, BarChart2, Book } from "lucide-react"; 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { DayGoLogo } from '@/components/DayGoLogo';
 
@@ -16,24 +16,32 @@ import { DayGoLogo } from '@/components/DayGoLogo';
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   // Check authentication status on mount
   // Designer: This handles redirecting logged in users to their dashboard
   useEffect(() => {
+    // Skip authentication check if already redirecting
+    if (isRedirecting) return;
+
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsAuthenticated(!!user);
+      const isUserAuthenticated = !!user;
+      setIsAuthenticated(isUserAuthenticated);
       setIsLoading(false);
       
       // Redirect authenticated users to home dashboard
-      if (user) {
-        router.push('/home');
+      if (isUserAuthenticated && pathname === '/') {
+        console.log('User authenticated, redirecting to /home');
+        setIsRedirecting(true);
+        router.replace('/home');
       }
     });
     
     return () => unsubscribe();
-  }, [router]);
+  }, [router, pathname, isRedirecting]);
 
   // Navigation handlers
   const handleLogin = () => {
@@ -57,7 +65,6 @@ export default function Home() {
   // For authenticated users, we redirect in the useEffect hook
   // Designer: This is a fallback loading state while redirect happens
   if (isAuthenticated) {
-    // Don't call router.push here as it causes the "Cannot update a component while rendering a different component" error
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Redirecting to your dashboard...</div>
