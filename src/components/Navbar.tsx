@@ -14,9 +14,10 @@ export function Navbar() {
   }, []);
 
   const navLinks = [
-    { href: "/", label: "Home" },
+    { href: "/home", label: "Home" },
     { href: "/journal", label: "Journal" },
     { href: "/templates", label: "Templates" },
+    { href: "/ai-chat", label: "Talk to Daygo AI" },
     { href: "/journal/new", label: "New Journal Entry" },
     { href: "/templates/new", label: "New Template" },
     { href: "/account", label: "Account" },

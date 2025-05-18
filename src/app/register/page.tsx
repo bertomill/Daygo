@@ -36,7 +36,7 @@ export default function RegisterPage() {
     try {
       await registerUser(name, email, password);
       toast.success('Account created successfully');
-      router.push('/');
+      router.replace('/home');
     } catch (error: unknown) {
       if (error instanceof FirebaseError) {
         // Handle Firebase errors

@@ -64,7 +64,7 @@ export function TemplateSelector() {
             </Link>
           </Button>
           <Button variant="outline" onClick={handleSkipTemplate}>
-            Skip (Basic Entry)
+            Quick Note (Simple)
           </Button>
         </div>
       </div>

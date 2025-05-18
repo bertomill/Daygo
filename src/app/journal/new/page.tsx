@@ -81,8 +81,8 @@ export default function NewJournalEntryPage() {
           const serverTimestamp = Timestamp.now();
           setTemplate({
             id: 'basic',
-            name: 'Basic Entry',
-            description: 'A simple journal entry without a template',
+            name: 'Quick Note (Simple)',
+            description: 'A simple journal entry with just title and content',
             fields: [
               {
                 name: 'content',
@@ -136,22 +136,81 @@ export default function NewJournalEntryPage() {
 
     try {
       // Prepare the data
-      const templateFields = { ...formData };
-      delete templateFields.title; // Remove title from template fields
+      const templateFields: Record<string, string | undefined> = {};
+      
+      // Convert all values to appropriate types for storage
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'title') return; // Skip title
+        // Convert booleans to strings for storage
+        if (typeof value === 'boolean') {
+          templateFields[key] = value ? 'true' : 'false';
+        } else {
+          templateFields[key] = value as string;
+        }
+      });
       
       // Generate content from template fields
-      const content = generateContentFromTemplateFields(templateFields);
+      let content = '';
+      
+      // For Quick Note (Simple), ensure we use the content directly
+      if (template.id === 'basic' && template.name === 'Quick Note (Simple)') {
+        content = templateFields['content'] || '';
+        
+        // Log detailed info about the quick note for debugging
+        console.log('Quick Note (Simple) details:');
+        console.log('- Content length:', content.length);
+        console.log('- Template ID:', template.id);
+        console.log('- Title:', formData.title);
+        console.log('- Content preview:', content ? `${content.substring(0, 50)}...` : 'Empty content');
+        
+        // Sanity check for empty content
+        if (!content.trim()) {
+          console.warn('Warning: Empty content for Quick Note');
+        }
+      } else {
+        // For regular templates, generate formatted content
+        content = generateContentFromTemplateFields(templateFields);
+      }
+
+      // Prepare data for submission
+      const submissionData: {
+        title: string;
+        content: string;
+        templateId?: string;
+        templateFields: Record<string, string | undefined>;
+      } = {
+        title: formData.title as string,
+        content,
+        templateFields,
+      };
+      
+      // Special handling for Quick Notes - ensure content is properly saved
+      if (template.id === 'basic' && template.name === 'Quick Note (Simple)') {
+        // Make absolutely sure content is populated properly for Quick Notes
+        if (!content.trim() && templateFields['content']) {
+          submissionData.content = templateFields['content'];
+          console.log('Corrected empty content for Quick Note:', 
+            submissionData.content ? submissionData.content.substring(0, 50) + '...' : 'still empty');
+        }
+      }
+      
+      // Only add templateId for non-basic templates
+      if (template.id !== 'basic') {
+        submissionData.templateId = template.id;
+      }
 
       // Create the entry
-      const entryId = await addJournalEntry({
-        title: formData.title,
-        content,
-        templateId: template.id !== 'basic' ? template.id : undefined,
-        templateFields,
-      });
+      const entryId = await addJournalEntry(submissionData);
 
       toast.success('Journal entry saved successfully');
-      router.push(`/journal/${entryId}`);
+      
+      // Check if there was a successful embedding (look for success message in console)
+      // Note: This is a hacky way to check, but we can't directly access the embedding status
+      // We could improve this with a proper API response later
+      setTimeout(() => {
+        const journalUrl = `/journal/${entryId}`;
+        router.push(journalUrl);
+      }, 500); // Small delay to show the success toast
     } catch (error) {
       console.error('Error saving journal entry:', error);
       toast.error('Failed to save journal entry');
@@ -265,7 +324,7 @@ export default function NewJournalEntryPage() {
           </div>
         </header>
         
-        <main className="flex flex-1 flex-col gap-6 p-4 md:p-8 max-w-5xl mx-auto">
+        <main className="flex flex-1 flex-col gap-6 p-4 md:p-8 max-w-6xl mx-auto w-full">
           {loading ? (
             <div className="flex justify-center py-10">
               <div className="animate-pulse">Loading template...</div>

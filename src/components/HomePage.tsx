@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { getJournalEntries } from "@/services/journalService"
-import { CalendarDays, FileText, PlusCircle, Clock, Eye, BookOpen, Calendar, Edit, AlertTriangle } from "lucide-react"
+import { CalendarDays, FileText, PlusCircle, Clock, Eye, BookOpen, Calendar, Edit, AlertTriangle, Bot } from "lucide-react"
 import { format } from "date-fns"
 import { JournalEntryForm } from "./JournalEntryForm"
 import { getAuth, onAuthStateChanged } from "firebase/auth"
@@ -174,6 +174,10 @@ export function HomePage() {
     router.push("/templates/new")
   }
 
+  const handleAiChat = () => {
+    router.push("/ai-chat")
+  }
+
   const handleLogin = () => {
     router.push("/login")
   }
@@ -182,7 +186,7 @@ export function HomePage() {
     try {
       const auth = getAuth()
       await auth.signOut()
-      router.push('/login')
+      router.replace('/login')
       toast.success("Successfully signed out")
     } catch {
       toast.error("Failed to sign out")
@@ -275,6 +279,20 @@ export function HomePage() {
             </CardContent>
           </Card>
           
+          <Card className="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={handleAiChat}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-lg">
+                <Bot className="mr-2 h-5 w-5" />
+                Talk to Daygo AI
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Chat with AI that knows your journal entries and can provide insights.
+              </p>
+            </CardContent>
+          </Card>
+          
           <Card className="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={handleViewAllEntries}>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-lg">
@@ -285,20 +303,6 @@ export function HomePage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Browse through your previous journal entries.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={handleCreateTemplate}>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center text-lg">
-                <FileText className="mr-2 h-5 w-5" />
-                Create Template
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Design a new journal template for consistent entries.
               </p>
             </CardContent>
           </Card>
@@ -317,7 +321,7 @@ export function HomePage() {
       </div>
       
       {/* Quick Actions Section */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer" onClick={handleNewEntry}>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center text-lg">
@@ -328,6 +332,20 @@ export function HomePage() {
           <CardContent>
             <p className="text-sm text-muted-foreground">
               Record today&apos;s thoughts, feelings, and experiences.
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={handleAiChat}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg">
+              <Bot className="mr-2 h-5 w-5" />
+              Talk to Daygo AI
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Chat with AI that knows your journal entries and can provide insights.
             </p>
           </CardContent>
         </Card>

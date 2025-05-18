@@ -16,6 +16,7 @@ import {
   serverTimestamp 
 } from "firebase/firestore";
 import { JournalEntry } from "@/types/journal";
+import { toast } from "sonner";
 
 // Collection references - ensure we use the same collection name consistently
 // The app is using "journalEntries" in some places and "journal" in others
@@ -46,17 +47,64 @@ export const addJournalEntry = async (journalData: JournalEntryInput) => {
     const user = getCurrentUser();
     console.log("Current user:", user.uid);
     
-    // Create journal entry with required user data
-    const entryData = {
-      ...journalData,
+    // Create journal entry with required user data and remove undefined fields
+    const entryData: Record<string, any> = {
+      title: journalData.title,
+      content: journalData.content,
       userId: user.uid,
       createdAt: serverTimestamp()
     };
+    
+    // Only add templateId if it's defined
+    if (journalData.templateId) {
+      entryData.templateId = journalData.templateId;
+    }
+    
+    // Add templateFields if they exist
+    if (journalData.templateFields) {
+      entryData.templateFields = journalData.templateFields;
+    }
     
     console.log("Entry data to save:", entryData);
     
     const docRef = await addDoc(journalCollection(), entryData);
     console.log("Journal entry added with ID:", docRef.id);
+    
+    // Sync with Pinecone (client-side)
+    try {
+      // We'll implement this in a server action
+      // Note: We need to first get the complete entry with the ID
+      const entry = await getJournalEntry(docRef.id);
+      
+      // Add extra logging for debugging embedding issues
+      console.log(`Preparing to embed journal entry ${docRef.id}:`);
+      console.log(`- Title: "${entry.title}"`);
+      console.log(`- Content length: ${entry.content?.length || 0} characters`);
+      console.log(`- Is template-based: ${entry.templateId ? 'Yes' : 'No (Quick Note)'}`);
+      
+      // Create a server action to handle the embedding creation
+      // This is done via a fetch to avoid importing server code in client components
+      console.log("Creating embedding for journal entry:", docRef.id);
+      const embedResponse = await fetch('/api/journal/embedding/upsert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ journalEntry: entry }),
+      });
+      
+      if (!embedResponse.ok) {
+        const errorData = await embedResponse.json().catch(() => ({}));
+        console.error('Failed to create embedding for journal entry:', 
+          errorData.error || embedResponse.statusText);
+        toast.error('Failed to create embedding for journal entry');
+      } else {
+        console.log("Successfully created embedding for journal entry:", docRef.id);
+      }
+    } catch (embedError) {
+      // Don't block the UI flow if embedding fails
+      console.error('Error creating embedding:', embedError);
+    }
     
     return docRef.id;
   } catch (error) {
@@ -112,6 +160,31 @@ export const getJournalEntries = async (): Promise<JournalEntry[]> => {
   return entries;
 };
 
+// Get all journal entries for a specific user (for server-side operations)
+export const getAllJournalEntries = async (userId: string): Promise<JournalEntry[]> => {
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+  
+  const q = query(
+    journalCollection(),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  
+  const querySnapshot = await getDocs(q);
+  const entries: JournalEntry[] = [];
+  
+  querySnapshot.forEach((doc) => {
+    entries.push({
+      ...doc.data(),
+      id: doc.id
+    } as JournalEntry);
+  });
+  
+  return entries;
+};
+
 // Update a journal entry
 export const updateJournalEntry = async (id: string, updates: Partial<JournalEntryInput>) => {
   const user = getCurrentUser();
@@ -134,6 +207,27 @@ export const updateJournalEntry = async (id: string, updates: Partial<JournalEnt
     updatedAt: serverTimestamp()
   });
   
+  // Sync with Pinecone after update
+  try {
+    // Get the updated entry
+    const updatedEntry = await getJournalEntry(id);
+    
+    // Update embedding
+    const embedResponse = await fetch('/api/journal/embedding/upsert', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ journalEntry: updatedEntry }),
+    });
+    
+    if (!embedResponse.ok) {
+      console.error('Failed to update embedding for journal entry');
+    }
+  } catch (embedError) {
+    console.error('Error updating embedding:', embedError);
+  }
+  
   return id;
 };
 
@@ -155,13 +249,38 @@ export const deleteJournalEntry = async (id: string) => {
   // Delete the journal entry
   await deleteDoc(doc(db, "journalEntries", id));
   
+  // Remove from Pinecone
+  try {
+    const embedResponse = await fetch('/api/journal/embedding/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ journalId: id }),
+    });
+    
+    if (!embedResponse.ok) {
+      console.error('Failed to delete embedding for journal entry');
+    }
+  } catch (embedError) {
+    console.error('Error deleting embedding:', embedError);
+  }
+  
   return id;
 };
 
 // Helper function to generate content from template fields
 export const generateContentFromTemplateFields = (fields: Record<string, string | undefined>) => {
-  return Object.entries(fields)
-    .filter(([key]) => key !== 'title') // Skip title field
+  // Get entries excluding title
+  const entries = Object.entries(fields).filter(([key]) => key !== 'title');
+  
+  // If there's only a single "content" field, return it directly without formatting
+  if (entries.length === 1 && entries[0][0] === 'content') {
+    return entries[0][1] || '';
+  }
+  
+  // Otherwise format normally for templates with multiple fields
+  return entries
     .map(([key, value]) => {
       // Handle boolean values stored as strings
       if (value === 'true') return `${key}: Yes`;
