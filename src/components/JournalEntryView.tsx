@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { JournalEntry } from "@/types/journal";
+import { JournalEntry, TemplateField } from "@/types/journal";
 import { getJournalEntry, deleteJournalEntry } from "@/services/journalService";
+import { getTemplate } from "@/services/templateService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +38,7 @@ export function JournalEntryView() {
   const params = useParams();
   const router = useRouter();
   const [entry, setEntry] = useState<JournalEntry | null>(null);
+  const [template, setTemplate] = useState<{ fields: TemplateField[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -53,6 +55,17 @@ export function JournalEntryView() {
         setLoading(true);
         const data = await getJournalEntry(id);
         setEntry(data);
+        
+        // If the entry has a template, load it
+        if (data.templateId) {
+          try {
+            const templateData = await getTemplate(data.templateId);
+            setTemplate(templateData);
+          } catch (err) {
+            console.error("Error loading template:", err);
+            // Don't fail the whole page if template loading fails
+          }
+        }
       } catch (error) {
         console.error("Error fetching journal entry:", error);
         toast.error("Failed to load journal entry");
@@ -102,6 +115,78 @@ export function JournalEntryView() {
       minute: "2-digit",
     }).format(date);
   };
+  
+  // Render a template field based on its type
+  const renderField = (field: TemplateField) => {
+    if (!entry?.templateFields) return null;
+    const value = entry.templateFields[field.name];
+    
+    switch (field.type) {
+      case 'text':
+      case 'textarea':
+        return value ? (
+          <div className="mb-4">
+            <h3 className="text-base font-semibold mb-1">{field.label}</h3>
+            <div className="whitespace-pre-wrap">{value}</div>
+          </div>
+        ) : null;
+      
+      case 'boolean':
+        return (
+          <div className="mb-4">
+            <h3 className="text-base font-semibold mb-1">{field.label}</h3>
+            <div>{value === 'true' ? '✓ Yes' : '✗ No'}</div>
+          </div>
+        );
+      
+      case 'mantra':
+        return (
+          <div className="mb-4">
+            <h3 className="text-base font-semibold mb-1">{field.label}</h3>
+            <div className="p-4 border rounded-md bg-card shadow-sm">
+              <p className="font-medium whitespace-pre-wrap">{field.placeholder || ""}</p>
+            </div>
+            <div className="mt-1">
+              {value === 'true' ? '✓ Reflected on this mantra' : '✗ Not reflected on'}
+            </div>
+          </div>
+        );
+        
+      case 'table':
+        return field.tableData?.headers && field.tableData?.cells ? (
+          <div className="mb-4">
+            <h3 className="text-base font-semibold mb-1">{field.label}</h3>
+            <div className="border rounded-md overflow-x-auto">
+              <table className="w-full caption-bottom text-sm">
+                <thead className="[&_tr]:border-b">
+                  <tr className="border-b transition-colors">
+                    {field.tableData.headers.map((header, index) => (
+                      <th key={`${field.name}-header-${index}`} className="h-10 px-2 text-left align-middle font-medium">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="[&_tr:last-child]:border-0">
+                  {field.tableData.cells.map((row, rowIndex) => (
+                    <tr key={`${field.name}-row-${rowIndex}`} className="border-b transition-colors hover:bg-muted/50">
+                      {row.map((cell, cellIndex) => (
+                        <td key={`${field.name}-cell-${rowIndex}-${cellIndex}`} className="p-2 align-middle">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null;
+      
+      default:
+        return null;
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -137,6 +222,14 @@ export function JournalEntryView() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {template && template.fields && template.fields.length > 0 && (
+                  <div className="mb-6">
+                    {template.fields.map((field, index) => (
+                      <div key={`field-${index}`}>{renderField(field)}</div>
+                    ))}
+                    <div className="my-4 border-t border-border"></div>
+                  </div>
+                )}
                 <div className="whitespace-pre-wrap">{entry.content}</div>
               </CardContent>
               <CardFooter className="flex justify-between">

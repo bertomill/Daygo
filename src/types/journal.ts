@@ -12,10 +12,17 @@ export type JournalEntry = {
 
 export type TemplateField = {
   name: string;
-  type: 'text' | 'textarea' | 'boolean' | 'mantra';
+  type: 'text' | 'textarea' | 'boolean' | 'mantra' | 'table';
   label: string;
   placeholder?: string;
   required?: boolean;
+  tableData?: {
+    rows: number;
+    columns: number;
+    headers: string[];
+    cells?: string[][];
+    cellsJson?: string;
+  };
 };
 
 export type JournalTemplate = {

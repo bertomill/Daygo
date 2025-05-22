@@ -27,15 +27,36 @@ export async function addTemplate(template: Omit<JournalTemplate, "id" | "create
       await clearDefaultTemplates();
     }
     
-    // Ensure each field has a valid type
-    const validatedFields = Array.isArray(template.fields) ? template.fields.map(field => ({
-      ...field,
-      name: field.name || '',
-      type: field.type || 'text',
-      label: field.label || '',
-      placeholder: field.placeholder || '',
-      required: field.required || false
-    })) : [];
+    // Ensure each field has a valid type and handle nested arrays
+    const validatedFields = Array.isArray(template.fields) ? template.fields.map(field => {
+      // Handle table fields - convert nested arrays to a compatible format
+      if (field.type === 'table' && field.tableData) {
+        return {
+          ...field,
+          name: field.name || '',
+          type: field.type || 'text',
+          label: field.label || '',
+          placeholder: field.placeholder || '',
+          required: field.required || false,
+          tableData: {
+            rows: field.tableData.rows || 3,
+            columns: field.tableData.columns || 3,
+            headers: field.tableData.headers || [],
+            // Convert cells array to JSON string to avoid nested arrays
+            cellsJson: JSON.stringify(field.tableData.cells || [])
+          }
+        };
+      }
+      // Handle regular fields
+      return {
+        ...field,
+        name: field.name || '',
+        type: field.type || 'text',
+        label: field.label || '',
+        placeholder: field.placeholder || '',
+        required: field.required || false
+      };
+    }) : [];
     
     console.log("Validated fields to save:", validatedFields);
     
@@ -59,7 +80,16 @@ export async function addTemplate(template: Omit<JournalTemplate, "id" | "create
 }
 
 // Save a community template to user's personal templates
-export async function saveCommunityTemplate(template: any) {
+export async function saveCommunityTemplate(template: {
+  id: string | number;
+  name: string;
+  description: string;
+  fields: Array<{
+    name: string;
+    type?: string;
+    [key: string]: any;
+  }>;
+}) {
   try {
     if (!auth.currentUser) {
       throw new Error("User must be logged in to save templates");
@@ -69,13 +99,33 @@ export async function saveCommunityTemplate(template: any) {
     const templateToSave = {
       name: template.name,
       description: template.description,
-      fields: template.fields.map((field: any) => ({
-        name: field.name,
-        type: field.type || 'text',
-        label: field.name, // Use the name as the label
-        placeholder: '',
-        required: false
-      })),
+      fields: template.fields.map((field: {
+        name: string;
+        type?: string;
+        [key: string]: any;
+      }) => {
+        // Ensure type is compatible with TemplateField
+        let fieldType: 'text' | 'textarea' | 'boolean' | 'mantra' | 'table' = 'text';
+        
+        // Map external types to our internal types
+        if (field.type) {
+          if (['text', 'textarea', 'boolean', 'mantra', 'table'].includes(field.type)) {
+            fieldType = field.type as 'text' | 'textarea' | 'boolean' | 'mantra' | 'table';
+          } else if (field.type === 'longText') {
+            fieldType = 'textarea';
+          } else if (field.type === 'checkbox') {
+            fieldType = 'boolean';
+          }
+        }
+        
+        return {
+          name: field.name,
+          type: fieldType,
+          label: field.name, // Use the name as the label
+          placeholder: '',
+          required: false
+        };
+      }),
       source: 'community',
       sourceId: template.id
     };
@@ -105,14 +155,35 @@ export async function updateTemplate(id: string, template: Partial<JournalTempla
     // Ensure fields are properly formatted if present
     const updatedTemplate = {...template};
     if (template.fields) {
-      const validatedFields = Array.isArray(template.fields) ? template.fields.map(field => ({
-        ...field,
-        name: field.name || '',
-        type: field.type || 'text',
-        label: field.label || '',
-        placeholder: field.placeholder || '',
-        required: field.required || false
-      })) : [];
+      const validatedFields = Array.isArray(template.fields) ? template.fields.map(field => {
+        // Handle table fields - convert nested arrays to compatible format
+        if (field.type === 'table' && field.tableData) {
+          return {
+            ...field,
+            name: field.name || '',
+            type: field.type || 'text',
+            label: field.label || '',
+            placeholder: field.placeholder || '',
+            required: field.required || false,
+            tableData: {
+              rows: field.tableData.rows || 3,
+              columns: field.tableData.columns || 3,
+              headers: field.tableData.headers || [],
+              // Convert cells array to JSON string to avoid nested arrays
+              cellsJson: JSON.stringify(field.tableData.cells || [])
+            }
+          };
+        }
+        // Handle regular fields
+        return {
+          ...field,
+          name: field.name || '',
+          type: field.type || 'text',
+          label: field.label || '',
+          placeholder: field.placeholder || '',
+          required: field.required || false
+        };
+      }) : [];
       
       console.log("Validated fields for update:", validatedFields);
       updatedTemplate.fields = validatedFields;
@@ -172,7 +243,54 @@ export async function getTemplate(id: string) {
     console.log("Template fields from Firebase:", data.fields);
     
     // Ensure fields are correctly formatted
-    const parsedFields = Array.isArray(data.fields) ? data.fields : [];
+    const parsedFields = Array.isArray(data.fields) ? data.fields.map(field => {
+      // Debug logging for table fields
+      if (field.type === 'table') {
+        console.log("Found table field:", field.name);
+        console.log("Table data:", field.tableData);
+        
+        // Convert cellsJson back to cells array if present
+        if (field.tableData && field.tableData.cellsJson) {
+          try {
+            const cells = JSON.parse(field.tableData.cellsJson);
+            return {
+              ...field,
+              name: field.name || '',
+              type: field.type || 'text',
+              label: field.label || '',
+              placeholder: field.placeholder || '',
+              required: field.required || false,
+              tableData: {
+                rows: field.tableData.rows || 3,
+                columns: field.tableData.columns || 3,
+                headers: field.tableData.headers || [],
+                cells: cells
+              }
+            };
+          } catch (e) {
+            console.error("Error parsing cellsJson:", e);
+          }
+        }
+      }
+      
+      return {
+        ...field,
+        name: field.name || '',
+        type: field.type || 'text',
+        label: field.label || '',
+        placeholder: field.placeholder || '',
+        required: field.required || false,
+        // Ensure tableData is properly preserved if it exists
+        ...(field.type === 'table' && field.tableData ? {
+          tableData: {
+            rows: field.tableData.rows || 3,
+            columns: field.tableData.columns || 3,
+            headers: field.tableData.headers || [],
+            cells: field.tableData.cells || []
+          }
+        } : {})
+      };
+    }) : [];
     console.log("Parsed fields:", parsedFields);
     
     return {

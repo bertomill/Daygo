@@ -18,7 +18,8 @@ import {
   AlignLeft,
   Save,
   MoreHorizontal,
-  Plus
+  Plus,
+  Table as TableIcon
 } from "lucide-react";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 // Generate a valid field name from a display label
 const generateFieldName = (label: string): string => {
@@ -46,7 +48,8 @@ const FIELD_TYPES = [
   { id: "text", label: "Short Text", icon: Type },
   { id: "textarea", label: "Long Text", icon: AlignLeft },
   { id: "boolean", label: "Checkbox", icon: ToggleLeft },
-  { id: "mantra", label: "Mantra", icon: Quote }
+  { id: "mantra", label: "Mantra", icon: Quote },
+  { id: "table", label: "Table", icon: TableIcon }
 ];
 
 // Interface for a template field item
@@ -113,7 +116,7 @@ export function TemplateFormPage() {
     }
   }, [params, router]);
   
-  // Add a new field at specific index
+  // Initialize a new field when adding a field type
   const addFieldAtIndex = (type: TemplateField["type"], index: number) => {
     const newField: FieldItem = {
       id: "field-" + Date.now(),
@@ -121,7 +124,16 @@ export function TemplateFormPage() {
       type: type,
       label: getDefaultLabel(type),
       placeholder: getDefaultPlaceholder(type),
-      required: false
+      required: false,
+      // Initialize table data with default headers if it's a table
+      ...(type === 'table' ? {
+        tableData: {
+          rows: 3,
+          columns: 3,
+          headers: ["Column 1", "Column 2", "Column 3"],
+          cells: Array(3).fill(Array(3).fill(""))
+        }
+      } : {})
     };
     
     const updatedFields = [...fields];
@@ -145,6 +157,7 @@ export function TemplateFormPage() {
       case "textarea": return "Long Text Field";
       case "boolean": return "Yes/No Question";
       case "mantra": return "Daily Mantra";
+      case "table": return "Data Table";
       default: return "New Field";
     }
   };
@@ -156,6 +169,7 @@ export function TemplateFormPage() {
       case "textarea": return "Write your thoughts here...";
       case "boolean": return "";
       case "mantra": return "I am capable of achieving my goals";
+      case "table": return "";
       default: return "";
     }
   };
@@ -174,6 +188,293 @@ export function TemplateFormPage() {
     } else {
       toast.error("Template must have at least one field");
     }
+  };
+  
+  // Table Editor Component
+  const TableEditor = ({ field, onUpdate }: { field: FieldItem, onUpdate: (updates: Partial<FieldItem>) => void }) => {
+    // Initialize table data if it doesn't exist
+    const tableData = field.tableData || { rows: 3, columns: 3, headers: Array(3).fill(""), cells: Array(3).fill(Array(3).fill("")) };
+    
+    // Use local state for inputs to prevent focus loss
+    const [localHeaders, setLocalHeaders] = useState<string[]>(Array.isArray(tableData.headers) ? tableData.headers : []);
+    const [localCells, setLocalCells] = useState<string[][]>(Array.isArray(tableData.cells) ? tableData.cells : []);
+    
+    // Update local state when tableData changes from outside
+    useEffect(() => {
+      setLocalHeaders(Array.isArray(tableData.headers) ? tableData.headers : []);
+      setLocalCells(Array.isArray(tableData.cells) ? tableData.cells : []);
+    }, [tableData.rows, tableData.columns, tableData.headers, tableData.cells]);
+    
+    // Handle header change locally (prevents losing focus)
+    const handleHeaderChange = (index: number, value: string) => {
+      const newHeaders = [...localHeaders];
+      newHeaders[index] = value;
+      setLocalHeaders(newHeaders);
+    };
+    
+    // Save header changes on blur
+    const handleHeaderBlur = () => {
+      onUpdate({ tableData: { ...tableData, headers: localHeaders } });
+    };
+    
+    // Handle cell change locally (prevents losing focus)
+    const handleCellChange = (rowIndex: number, colIndex: number, value: string) => {
+      const newCells = [...localCells];
+      // Ensure the row exists
+      if (!newCells[rowIndex]) {
+        newCells[rowIndex] = Array(tableData.columns).fill("");
+      }
+      
+      // Create a copy of the row to modify
+      const newRow = [...(newCells[rowIndex] || [])];
+      newRow[colIndex] = value;
+      newCells[rowIndex] = newRow;
+      
+      setLocalCells(newCells);
+    };
+    
+    // Save cell changes on blur
+    const handleCellBlur = () => {
+      onUpdate({ tableData: { ...tableData, cells: localCells } });
+    };
+    
+    // Handle row count change
+    const handleRowCountChange = (newRowCount: number) => {
+      const newCells = [...tableData.cells];
+      
+      if (newRowCount > tableData.rows) {
+        // Add new rows
+        for (let i = tableData.rows; i < newRowCount; i++) {
+          newCells[i] = Array(tableData.columns).fill("");
+        }
+      } else {
+        // Remove rows
+        newCells.splice(newRowCount);
+      }
+      
+      const updatedData = { ...tableData, rows: newRowCount, cells: newCells };
+      onUpdate({ tableData: updatedData });
+      setLocalCells(newCells);
+    };
+    
+    // Handle column count change
+    const handleColumnCountChange = (newColumnCount: number) => {
+      const newHeaders = [...tableData.headers];
+      const newCells = [...tableData.cells];
+      
+      if (newColumnCount > tableData.columns) {
+        // Add new columns
+        newHeaders.push(...Array(newColumnCount - tableData.columns).fill(""));
+        
+        // Add new cells for each row
+        newCells.forEach((row, rowIndex) => {
+          newCells[rowIndex] = [...row, ...Array(newColumnCount - tableData.columns).fill("")];
+        });
+      } else {
+        // Remove columns
+        newHeaders.splice(newColumnCount);
+        
+        // Remove cells for each row
+        newCells.forEach((row, rowIndex) => {
+          newCells[rowIndex] = row.slice(0, newColumnCount);
+        });
+      }
+      
+      const updatedData = { ...tableData, columns: newColumnCount, headers: newHeaders, cells: newCells };
+      onUpdate({ tableData: updatedData });
+      setLocalHeaders(newHeaders);
+      setLocalCells(newCells);
+    };
+    
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Rows</label>
+            <Select 
+              value={tableData.rows.toString()} 
+              onValueChange={(value) => handleRowCountChange(parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Number of rows" />
+              </SelectTrigger>
+              <SelectContent>
+                {[2, 3, 4, 5, 6, 7, 8].map(count => (
+                  <SelectItem key={count} value={count.toString()}>{count} rows</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Columns</label>
+            <Select 
+              value={tableData.columns.toString()} 
+              onValueChange={(value) => handleColumnCountChange(parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Number of columns" />
+              </SelectTrigger>
+              <SelectContent>
+                {[2, 3, 4, 5, 6].map(count => (
+                  <SelectItem key={count} value={count.toString()}>{count} columns</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium mb-1 block">Header Presets</label>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              onClick={() => {
+                const newHeaders = Array(tableData.columns).fill("").map((_, i) => `Column ${i + 1}`);
+                setLocalHeaders(newHeaders);
+                onUpdate({ tableData: { ...tableData, headers: newHeaders } });
+              }}
+            >
+              Column Numbers
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              onClick={() => {
+                const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+                const newHeaders = Array(tableData.columns).fill("").map((_, i) => days[i % 7]);
+                setLocalHeaders(newHeaders);
+                onUpdate({ tableData: { ...tableData, headers: newHeaders } });
+              }}
+            >
+              Days of Week
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              onClick={() => {
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const newHeaders = Array(tableData.columns).fill("").map((_, i) => months[i % 12]);
+                setLocalHeaders(newHeaders);
+                onUpdate({ tableData: { ...tableData, headers: newHeaders } });
+              }}
+            >
+              Months
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              onClick={() => {
+                const newHeaders = Array(tableData.columns).fill("");
+                setLocalHeaders(newHeaders);
+                onUpdate({ tableData: { ...tableData, headers: newHeaders } });
+              }}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium mb-1 block">Content Presets</label>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              onClick={() => {
+                // Fill cells with row/col coordinates
+                const newCells = Array(tableData.rows).fill(null).map((_, rowIdx) => 
+                  Array(tableData.columns).fill(null).map((_, colIdx) => 
+                    `R${rowIdx+1}C${colIdx+1}`
+                  )
+                );
+                setLocalCells(newCells);
+                onUpdate({ tableData: { ...tableData, cells: newCells } });
+              }}
+            >
+              Fill Coordinates
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              onClick={() => {
+                // Generate a checkerboard pattern
+                const newCells = Array(tableData.rows).fill(null).map((_, rowIdx) => 
+                  Array(tableData.columns).fill(null).map((_, colIdx) => 
+                    (rowIdx + colIdx) % 2 === 0 ? "✓" : ""
+                  )
+                );
+                setLocalCells(newCells);
+                onUpdate({ tableData: { ...tableData, cells: newCells } });
+              }}
+            >
+              Checkerboard
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              onClick={() => {
+                const emptyCells = Array(tableData.rows).fill(null).map(() => Array(tableData.columns).fill(""));
+                setLocalCells(emptyCells);
+                onUpdate({ tableData: { ...tableData, cells: emptyCells } });
+              }}
+            >
+              Clear Cells
+            </Button>
+          </div>
+        </div>
+        
+        <div className="border rounded-md overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {Array.from({ length: tableData.columns }).map((_, colIndex) => (
+                  <TableHead key={colIndex}>
+                    <Input
+                      value={localHeaders[colIndex] || ''}
+                      onChange={(e) => handleHeaderChange(colIndex, e.target.value)}
+                      onBlur={handleHeaderBlur}
+                      placeholder={`Header ${colIndex + 1}`}
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-1 h-auto"
+                    />
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: tableData.rows }).map((_, rowIndex) => (
+                <TableRow key={rowIndex}>
+                  {Array.from({ length: tableData.columns }).map((_, colIndex) => {
+                    // Get the value safely (handle if cells array is not properly initialized)
+                    const cellValue = localCells[rowIndex] ? 
+                      localCells[rowIndex][colIndex] || '' : '';
+                    
+                    return (
+                      <TableCell key={`${rowIndex}-${colIndex}`}>
+                        <Input
+                          value={cellValue}
+                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                          onBlur={handleCellBlur}
+                          placeholder={`Cell ${rowIndex+1},${colIndex+1}`}
+                          className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-1 h-auto"
+                        />
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
   };
   
   // Handle drag and drop reordering
@@ -217,9 +518,19 @@ export function TemplateFormPage() {
           type: field.type,
           label: field.label,
           placeholder: field.placeholder || "",
-          required: field.required || false
+          required: field.required || false,
+          // Include tableData for table fields
+          ...(field.type === 'table' && field.tableData ? {
+            tableData: field.tableData
+          } : {})
         }))
       };
+      
+      // Debug: Check if table fields have tableData included
+      const tableFields = templateData.fields.filter(field => field.type === 'table');
+      if (tableFields.length > 0) {
+        console.log(`Saving ${tableFields.length} table fields:`, tableFields);
+      }
       
       if (isEditing && templateId) {
         await updateTemplate(templateId, templateData);
@@ -465,7 +776,7 @@ export function TemplateFormPage() {
                                               </p>
                                             </div>
                                             
-                                            {field.type !== "boolean" && (
+                                            {field.type !== "boolean" && field.type !== "table" && (
                                               <div>
                                                 <label className="text-sm font-medium mb-2 block">
                                                   {field.type === "mantra" ? "Mantra Text" : "Placeholder"}
@@ -489,6 +800,21 @@ export function TemplateFormPage() {
                                                     ? "The actual mantra text that will be displayed to the user" 
                                                     : "Helper text shown in the input field"}
                                                 </p>
+                                              </div>
+                                            )}
+                                            
+                                            {field.type === "table" && (
+                                              <div className="col-span-2 mt-4">
+                                                <label className="text-sm font-medium mb-2 block">
+                                                  Table Data
+                                                </label>
+                                                <p className="text-sm text-muted-foreground mb-4">
+                                                  Configure your table structure and pre-fill data
+                                                </p>
+                                                <TableEditor 
+                                                  field={field} 
+                                                  onUpdate={(updates) => updateField(field.id, updates)} 
+                                                />
                                               </div>
                                             )}
                                           </div>

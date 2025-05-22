@@ -55,7 +55,9 @@ export default function NewJournalEntryPage() {
                 type: field.type || 'text',
                 label: field.name,
                 placeholder: '',
-                required: false
+                required: false,
+                // Preserve tableData if present
+                ...(field.tableData ? { tableData: field.tableData } : {})
               })),
               userId: 'community',
               createdAt: serverTimestamp
@@ -72,6 +74,14 @@ export default function NewJournalEntryPage() {
         // Using user's saved template
         else if (templateId) {
           const fetchedTemplate = await getTemplate(templateId);
+          console.log("Loaded template:", fetchedTemplate);
+          
+          // Log table fields specifically for debugging
+          if (fetchedTemplate.fields) {
+            const tableFields = fetchedTemplate.fields.filter(f => f.type === 'table');
+            console.log(`Found ${tableFields.length} table fields:`, tableFields);
+          }
+          
           setTemplate(fetchedTemplate);
           setFormData(prev => ({ ...prev, title: `${fetchedTemplate.name} - ${new Date().toLocaleDateString()}` }));
         } 
@@ -264,8 +274,8 @@ export default function NewJournalEntryPage() {
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>{field.label} {field.required && <span className="text-destructive">*</span>}</Label>
-            <div className="p-4 border rounded-md bg-muted/50">
-              <p className="italic text-muted-foreground">{field.placeholder || "No mantra text provided"}</p>
+            <div className="p-4 border rounded-md bg-card shadow-sm">
+              <p className="font-medium text-foreground whitespace-pre-wrap">{field.placeholder || "No mantra text provided"}</p>
             </div>
             <div className="flex items-center gap-2 mt-2">
               <Checkbox
@@ -277,6 +287,40 @@ export default function NewJournalEntryPage() {
                 I have read and reflected on this mantra
               </Label>
             </div>
+          </div>
+        );
+      case 'table':
+        return (
+          <div key={field.name} className="space-y-2">
+            <Label htmlFor={field.name}>{field.label} {field.required && <span className="text-destructive">*</span>}</Label>
+            {field.tableData?.headers && field.tableData?.cells ? (
+              <div className="border rounded-md overflow-x-auto">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="[&_tr]:border-b">
+                    <tr className="border-b transition-colors">
+                      {field.tableData.headers.map((header, index) => (
+                        <th key={`${field.name}-header-${index}`} className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="[&_tr:last-child]:border-0">
+                    {field.tableData.cells.map((row, rowIndex) => (
+                      <tr key={`${field.name}-row-${rowIndex}`} className="border-b transition-colors hover:bg-muted/50">
+                        {row.map((cell, cellIndex) => (
+                          <td key={`${field.name}-cell-${rowIndex}-${cellIndex}`} className="p-2 align-middle">
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-4 border rounded-md bg-muted/50 text-muted-foreground">Table data not available</div>
+            )}
           </div>
         );
       default:
