@@ -207,4 +207,55 @@ export const habitsService = {
       if (error) throw error
     }
   },
+
+  async getHabitCompletionStats(
+    userId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<{ habit: Habit; completionCount: number }[]> {
+    // Get all active habits
+    const { data: habits, error: habitsError } = await supabase
+      .from('habits')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+
+    if (habitsError) throw habitsError
+
+    // Get completed logs for this user (optionally filtered by date range)
+    let logsQuery = supabase
+      .from('habit_logs')
+      .select('habit_id')
+      .eq('user_id', userId)
+      .eq('completed', true)
+
+    if (startDate) {
+      logsQuery = logsQuery.gte('date', startDate)
+    }
+    if (endDate) {
+      logsQuery = logsQuery.lte('date', endDate)
+    }
+
+    const { data: logs, error: logsError } = await logsQuery
+
+    if (logsError) throw logsError
+
+    const typedHabits = habits as Habit[] ?? []
+    const typedLogs = (logs as { habit_id: string }[]) ?? []
+
+    // Count completions per habit
+    const completionCounts = new Map<string, number>()
+    for (const log of typedLogs) {
+      const count = completionCounts.get(log.habit_id) || 0
+      completionCounts.set(log.habit_id, count + 1)
+    }
+
+    // Map habits to their completion counts and sort
+    return typedHabits
+      .map((habit) => ({
+        habit,
+        completionCount: completionCounts.get(habit.id) || 0,
+      }))
+      .sort((a, b) => b.completionCount - a.completionCount)
+  },
 }

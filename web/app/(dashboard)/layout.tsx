@@ -48,7 +48,7 @@ export default function DashboardLayout({
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
         <div className="max-w-lg mx-auto flex justify-around">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -58,7 +58,7 @@ export default function DashboardLayout({
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center py-3 px-6 transition-colors ${
-                  isActive ? 'text-accent' : 'text-slate-500 hover:text-slate-300'
+                  isActive ? 'text-accent' : 'text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300'
                 }`}
               >
                 <Icon className="w-6 h-6" />

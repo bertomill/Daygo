@@ -26,7 +26,7 @@ export function ScoreRing({ score, size = 120, strokeWidth = 8 }: ScoreRingProps
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#334155"
+          className="stroke-gray-200 dark:stroke-slate-700"
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -45,7 +45,7 @@ export function ScoreRing({ score, size = 120, strokeWidth = 8 }: ScoreRingProps
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl font-bold text-white">{Math.round(score)}%</span>
+        <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(score)}%</span>
       </div>
     </div>
   )

@@ -11,12 +11,12 @@ interface MantraCardProps {
 export function MantraCard({ mantra, onEdit }: MantraCardProps) {
   return (
     <div
-      className="bg-gradient-to-r from-mantra/20 to-mantra/10 border border-mantra/30 rounded-xl p-4 cursor-pointer hover:from-mantra/30 hover:to-mantra/20 transition-all"
+      className="bg-gradient-to-r from-mantra/10 to-mantra/5 dark:from-mantra/20 dark:to-mantra/10 border border-mantra/30 rounded-xl p-4 cursor-pointer hover:from-mantra/20 hover:to-mantra/10 dark:hover:from-mantra/30 dark:hover:to-mantra/20 transition-all"
       onClick={() => onEdit?.(mantra)}
     >
       <div className="flex items-start gap-3">
         <Sparkles className="w-5 h-5 text-mantra flex-shrink-0 mt-0.5" />
-        <p className="text-white italic">{mantra.text}</p>
+        <p className="text-gray-900 dark:text-white italic">{mantra.text}</p>
       </div>
     </div>
   )

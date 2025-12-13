@@ -19,10 +19,10 @@ export function JournalCard({ prompt, onSave }: JournalCardProps) {
   }
 
   return (
-    <div className="bg-gradient-to-r from-journal/20 to-journal/10 border border-journal/30 rounded-xl p-4">
+    <div className="bg-gradient-to-r from-journal/10 to-journal/5 dark:from-journal/20 dark:to-journal/10 border border-journal/30 rounded-xl p-4">
       <div className="flex items-start gap-3 mb-3">
         <BookOpen className="w-5 h-5 text-journal flex-shrink-0 mt-0.5" />
-        <p className="text-white font-medium">{prompt.prompt}</p>
+        <p className="text-gray-900 dark:text-white font-medium">{prompt.prompt}</p>
       </div>
 
       {isEditing ? (
@@ -30,7 +30,7 @@ export function JournalCard({ prompt, onSave }: JournalCardProps) {
           <textarea
             value={entry}
             onChange={(e) => setEntry(e.target.value)}
-            className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-journal resize-none"
+            className="w-full p-3 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-journal resize-none"
             rows={3}
             placeholder="Write your reflection..."
             autoFocus
@@ -47,7 +47,7 @@ export function JournalCard({ prompt, onSave }: JournalCardProps) {
                 setEntry(prompt.todayEntry || '')
                 setIsEditing(false)
               }}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg text-sm font-medium transition-colors"
             >
               Cancel
             </button>
@@ -61,10 +61,10 @@ export function JournalCard({ prompt, onSave }: JournalCardProps) {
           {prompt.todayEntry ? (
             <div className="flex items-start gap-2">
               <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />
-              <p className="text-slate-300">{prompt.todayEntry}</p>
+              <p className="text-gray-700 dark:text-slate-300">{prompt.todayEntry}</p>
             </div>
           ) : (
-            <p className="text-slate-500 italic">Tap to write...</p>
+            <p className="text-gray-400 dark:text-slate-500 italic">Tap to write...</p>
           )}
         </div>
       )}

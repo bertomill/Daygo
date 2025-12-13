@@ -101,8 +101,8 @@ export default function GoalDetailPage() {
     return (
       <div className="max-w-lg mx-auto px-4 py-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-800 rounded w-1/3" />
-          <div className="h-32 bg-slate-800 rounded-xl" />
+          <div className="h-8 bg-gray-100 dark:bg-slate-800 rounded w-1/3" />
+          <div className="h-32 bg-gray-100 dark:bg-slate-800 rounded-xl" />
         </div>
       </div>
     )
@@ -111,7 +111,7 @@ export default function GoalDetailPage() {
   if (!goal) {
     return (
       <div className="max-w-lg mx-auto px-4 py-6">
-        <p className="text-slate-400">Goal not found</p>
+        <p className="text-gray-500 dark:text-slate-400">Goal not found</p>
       </div>
     )
   }
@@ -133,27 +133,27 @@ export default function GoalDetailPage() {
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => router.back()}
-          className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
         >
-          <ArrowLeft className="w-6 h-6 text-slate-400" />
+          <ArrowLeft className="w-6 h-6 text-gray-400 dark:text-slate-500" />
         </button>
-        <h1 className="text-2xl font-bold text-white flex-1">Goal Details</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex-1">Goal Details</h1>
         <button
           onClick={() => setShowDeleteConfirm(true)}
-          className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
+          className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
         >
-          <Trash2 className="w-5 h-5 text-red-400" />
+          <Trash2 className="w-5 h-5 text-red-500" />
         </button>
       </div>
 
       {/* Goal Info */}
-      <div className="bg-slate-800 rounded-xl p-6 mb-6">
+      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 mb-6 shadow-sm">
         <div className="flex items-start gap-4 mb-4">
           <span className="text-4xl">{iconMap[goal.icon || ''] || '🎯'}</span>
           <div>
-            <h2 className="text-xl font-semibold text-white">{goal.title}</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{goal.title}</h2>
             {goal.description && (
-              <p className="text-slate-400 mt-1">{goal.description}</p>
+              <p className="text-gray-500 dark:text-slate-400 mt-1">{goal.description}</p>
             )}
           </div>
         </div>
@@ -161,18 +161,18 @@ export default function GoalDetailPage() {
         {/* Progress */}
         <div className="mb-4">
           <div className="flex justify-between text-sm mb-2">
-            <span className="text-slate-400">{goal.metric_name}</span>
-            <span className="text-white font-medium">
+            <span className="text-gray-500 dark:text-slate-400">{goal.metric_name}</span>
+            <span className="text-gray-900 dark:text-white font-medium">
               {goal.metric_current} / {goal.metric_target}
             </span>
           </div>
-          <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-3 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
             <div
               className={`h-full ${getProgressColor(goal.progress)} transition-all`}
               style={{ width: `${goal.progress}%` }}
             />
           </div>
-          <p className="text-center text-2xl font-bold text-white mt-3">
+          <p className="text-center text-2xl font-bold text-gray-900 dark:text-white mt-3">
             {Math.round(goal.progress)}%
           </p>
         </div>
@@ -180,7 +180,7 @@ export default function GoalDetailPage() {
         {/* Deadline */}
         {daysRemaining !== null && (
           <div className={`text-center py-2 rounded-lg ${
-            daysRemaining < 7 ? 'bg-red-500/20 text-red-400' : 'bg-slate-700 text-slate-300'
+            daysRemaining < 7 ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300'
           }`}>
             {daysRemaining > 0
               ? `${daysRemaining} days remaining`
@@ -192,8 +192,8 @@ export default function GoalDetailPage() {
       </div>
 
       {/* Update Progress */}
-      <div className="bg-slate-800 rounded-xl p-4 mb-6">
-        <h3 className="text-sm font-medium text-slate-400 mb-3 uppercase tracking-wide">
+      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mb-6 shadow-sm">
+        <h3 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
           Update Progress
         </h3>
         <div className="flex gap-3">
@@ -201,7 +201,7 @@ export default function GoalDetailPage() {
             type="number"
             value={newProgress}
             onChange={(e) => setNewProgress(e.target.value)}
-            className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+            className="flex-1 px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
             placeholder={`Current: ${goal.metric_current}`}
           />
           <button
@@ -216,15 +216,15 @@ export default function GoalDetailPage() {
 
       {/* Linked Habits */}
       {goal.habits.length > 0 && (
-        <div className="bg-slate-800 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-slate-400 mb-3 uppercase tracking-wide">
+        <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
             Linked Habits
           </h3>
           <div className="space-y-2">
             {goal.habits.map((habit) => (
               <div
                 key={habit.id}
-                className="p-3 bg-slate-700 rounded-lg text-white"
+                className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg text-gray-900 dark:text-white"
               >
                 {habit.name}
               </div>
@@ -236,15 +236,15 @@ export default function GoalDetailPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-sm">
-            <h2 className="text-xl font-semibold text-white mb-2">Delete Goal?</h2>
-            <p className="text-slate-400 mb-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Delete Goal?</h2>
+            <p className="text-gray-500 dark:text-slate-400 mb-6">
               This will permanently delete "{goal.title}" and cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+                className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
               >
                 Cancel
               </button>

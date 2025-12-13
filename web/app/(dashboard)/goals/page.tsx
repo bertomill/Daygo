@@ -127,17 +127,17 @@ export default function GoalsPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-white mb-6">Goals</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Goals</h1>
 
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2].map((i) => (
-            <div key={i} className="h-32 bg-slate-800 rounded-xl animate-pulse" />
+            <div key={i} className="h-32 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : goals.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-slate-400 mb-4">No goals yet. Create your first goal!</p>
+          <p className="text-gray-500 dark:text-slate-400 mb-4">No goals yet. Create your first goal!</p>
         </div>
       ) : (
         <div className="flex flex-col gap-6">
@@ -158,19 +158,19 @@ export default function GoalsPage() {
       {/* Create Goal Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
-            <h2 className="text-xl font-semibold text-white mb-4">Create Goal</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-xl">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Create Goal</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Title
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="e.g., Run a marathon"
                 />
               </div>
@@ -181,21 +181,21 @@ export default function GoalsPage() {
                 }`}
               >
                 <div className="overflow-hidden">
-                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Description (optional)
                   </label>
                   <input
                     type="text"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
                     placeholder="What's this goal about?"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Icon
                 </label>
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1">
@@ -206,7 +206,7 @@ export default function GoalsPage() {
                       className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-colors flex-shrink-0 ${
                         icon === i.id
                           ? 'bg-accent'
-                          : 'bg-slate-700 hover:bg-slate-600'
+                          : 'bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600'
                       }`}
                     >
                       {i.emoji}
@@ -217,61 +217,61 @@ export default function GoalsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Metric Name
                   </label>
                   <input
                     type="text"
                     value={metricName}
                     onChange={(e) => setMetricName(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
                     placeholder="e.g., Miles"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Target
                   </label>
                   <input
                     type="number"
                     value={metricTarget}
                     onChange={(e) => setMetricTarget(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
                     placeholder="e.g., 26"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Deadline (optional)
                 </label>
                 <input
                   type="date"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               {habits.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Link Habits (optional)
                   </label>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
                     {habits.map((habit) => (
                       <label
                         key={habit.id}
-                        className="flex items-center gap-3 p-2 bg-slate-700 rounded-lg cursor-pointer hover:bg-slate-600"
+                        className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-slate-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600"
                       >
                         <input
                           type="checkbox"
                           checked={linkedHabitIds.includes(habit.id)}
                           onChange={() => toggleHabitLink(habit.id)}
-                          className="w-4 h-4 rounded border-slate-500"
+                          className="w-4 h-4 rounded border-gray-300 dark:border-slate-500"
                         />
-                        <span className="text-white">{habit.name}</span>
+                        <span className="text-gray-900 dark:text-white">{habit.name}</span>
                       </label>
                     ))}
                   </div>
@@ -282,7 +282,7 @@ export default function GoalsPage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={resetForm}
-                className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+                className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
               >
                 Cancel
               </button>
