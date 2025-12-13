@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# App Store screenshots
+screenshot*.png
+simulator_screenshot*.png

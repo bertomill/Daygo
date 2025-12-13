@@ -1,0 +1,9 @@
+Demo account has pre-populated sample data to demonstrate app functionality.
+
+To test core features:
+1. TODAY TAB - View and complete daily habits. Tap checkboxes to mark complete and watch the score update.
+2. DASHBOARD TAB - View 7-day progress history and streak.
+3. GOALS TAB - View long-term goals and progress tracking.
+4. PROFILE TAB - Access privacy policy and account deletion.
+
+The app requires an internet connection to sync data.
