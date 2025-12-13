@@ -140,7 +140,7 @@ export default function GoalsPage() {
           <p className="text-slate-400 mb-4">No goals yet. Create your first goal!</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           {goals.map((goal) => (
             <GoalCard key={goal.id} goal={goal} />
           ))}
@@ -157,8 +157,8 @@ export default function GoalsPage() {
 
       {/* Create Goal Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md my-8">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <h2 className="text-xl font-semibold text-white mb-4">Create Goal</h2>
 
             <div className="space-y-4">
