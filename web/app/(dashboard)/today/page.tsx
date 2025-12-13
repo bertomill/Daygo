@@ -3,11 +3,27 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { useAuthStore } from '@/lib/auth-store'
 import { habitsService } from '@/lib/services/habits'
 import { mantrasService } from '@/lib/services/mantras'
 import { journalService } from '@/lib/services/journal'
-import { HabitCard } from '@/components/HabitCard'
+import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { MantraCard } from '@/components/MantraCard'
 import { JournalCard } from '@/components/JournalCard'
 import { ScoreRing } from '@/components/ScoreRing'
@@ -125,6 +141,37 @@ export default function TodayPage() {
     },
   })
 
+  const reorderHabitsMutation = useMutation({
+    mutationFn: (orderedIds: string[]) => habitsService.reorderHabits(orderedIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits'] })
+    },
+  })
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = habits.findIndex((h) => h.id === active.id)
+      const newIndex = habits.findIndex((h) => h.id === over.id)
+      const newOrder = arrayMove(habits, oldIndex, newIndex)
+      const orderedIds = newOrder.map((h) => h.id)
+      reorderHabitsMutation.mutate(orderedIds)
+    }
+  }
+
   const handlePrevDay = () => {
     const newDate = new Date(selectedDate)
     newDate.setDate(newDate.getDate() - 1)
@@ -205,18 +252,29 @@ export default function TodayPage() {
               <h2 className="text-sm font-medium text-slate-400 mb-3 uppercase tracking-wide">
                 Habits
               </h2>
-              <div className="space-y-3">
-                {habits.map((habit) => (
-                  <HabitCard
-                    key={habit.id}
-                    habit={habit}
-                    onToggle={(habitId, completed) =>
-                      toggleHabitMutation.mutate({ habitId, completed })
-                    }
-                    onEdit={(h) => setSelectedHabit(h)}
-                  />
-                ))}
-              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={habits.map((h) => h.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3">
+                    {habits.map((habit) => (
+                      <SortableHabitCard
+                        key={habit.id}
+                        habit={habit}
+                        onToggle={(habitId, completed) =>
+                          toggleHabitMutation.mutate({ habitId, completed })
+                        }
+                        onEdit={(h) => setSelectedHabit(h)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </section>
           )}
 
@@ -283,20 +341,25 @@ export default function TodayPage() {
               ))}
             </div>
 
-            <input
-              type="text"
-              value={newItemText}
-              onChange={(e) => setNewItemText(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent mb-3"
-              placeholder={
-                addType === 'habit'
-                  ? 'Habit name...'
-                  : addType === 'mantra'
-                  ? 'Your mantra...'
-                  : 'Journal prompt...'
-              }
-              autoFocus
-            />
+            {addType === 'mantra' ? (
+              <textarea
+                value={newItemText}
+                onChange={(e) => setNewItemText(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent mb-3 resize-none"
+                placeholder="Your mantra..."
+                rows={4}
+                autoFocus
+              />
+            ) : (
+              <input
+                type="text"
+                value={newItemText}
+                onChange={(e) => setNewItemText(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent mb-3"
+                placeholder={addType === 'habit' ? 'Habit name...' : 'Journal prompt...'}
+                autoFocus
+              />
+            )}
 
             {addType === 'habit' && (
               <input
