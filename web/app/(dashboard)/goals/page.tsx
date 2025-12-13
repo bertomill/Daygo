@@ -140,7 +140,7 @@ export default function GoalsPage() {
           <p className="text-slate-400 mb-4">No goals yet. Create your first goal!</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {goals.map((goal) => (
             <GoalCard key={goal.id} goal={goal} />
           ))}
