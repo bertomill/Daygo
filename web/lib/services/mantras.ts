@@ -1,5 +1,5 @@
 import { supabase } from '../supabase'
-import type { Mantra } from '../../../src/types/database'
+import type { Mantra } from '../types/database'
 
 export const mantrasService = {
   async getMantras(userId: string): Promise<Mantra[]> {

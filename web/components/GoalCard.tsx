@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import type { GoalWithHabits } from '../../src/types/database'
+import type { GoalWithHabits } from '@/lib/types/database'
 
 interface GoalCardProps {
   goal: GoalWithHabits

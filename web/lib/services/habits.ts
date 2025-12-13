@@ -1,5 +1,5 @@
 import { supabase } from '../supabase'
-import type { Habit, HabitLog, HabitWithLog } from '../../../src/types/database'
+import type { Habit, HabitLog, HabitWithLog } from '../types/database'
 
 export const habitsService = {
   async getHabits(userId: string): Promise<Habit[]> {

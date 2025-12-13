@@ -1,5 +1,5 @@
 import { supabase } from '../supabase'
-import type { Goal, GoalWithHabits, Habit } from '../../../src/types/database'
+import type { Goal, GoalWithHabits, Habit } from '../types/database'
 
 export const goalsService = {
   async getGoals(userId: string): Promise<Goal[]> {

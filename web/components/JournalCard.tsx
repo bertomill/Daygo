@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { BookOpen, Check } from 'lucide-react'
-import type { JournalPromptWithEntry } from '../../src/types/database'
+import type { JournalPromptWithEntry } from '@/lib/types/database'
 
 interface JournalCardProps {
   prompt: JournalPromptWithEntry

@@ -1,7 +1,7 @@
 'use client'
 
 import { Sparkles } from 'lucide-react'
-import type { Mantra } from '../../src/types/database'
+import type { Mantra } from '@/lib/types/database'
 
 interface MantraCardProps {
   mantra: Mantra

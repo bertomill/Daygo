@@ -11,7 +11,7 @@ import { HabitCard } from '@/components/HabitCard'
 import { MantraCard } from '@/components/MantraCard'
 import { JournalCard } from '@/components/JournalCard'
 import { ScoreRing } from '@/components/ScoreRing'
-import type { HabitWithLog } from '../../../src/types/database'
+import type { HabitWithLog } from '@/lib/types/database'
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]

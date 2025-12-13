@@ -1,5 +1,5 @@
 import { supabase } from '../supabase'
-import type { JournalPrompt, JournalEntry, JournalPromptWithEntry } from '../../../src/types/database'
+import type { JournalPrompt, JournalEntry, JournalPromptWithEntry } from '../types/database'
 
 export const journalService = {
   async getPrompts(userId: string): Promise<JournalPrompt[]> {

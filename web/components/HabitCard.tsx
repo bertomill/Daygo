@@ -1,7 +1,7 @@
 'use client'
 
 import { Check } from 'lucide-react'
-import type { HabitWithLog } from '../../src/types/database'
+import type { HabitWithLog } from '@/lib/types/database'
 
 interface HabitCardProps {
   habit: HabitWithLog
