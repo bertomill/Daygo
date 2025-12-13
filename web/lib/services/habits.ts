@@ -142,16 +142,60 @@ export const habitsService = {
     startDate: string,
     endDate: string
   ): Promise<{ date: string; score: number }[]> {
-    const { data, error } = await supabase
-      .from('daily_scores')
-      .select('date, score')
+    // Get all habits (including deactivated ones for historical accuracy)
+    const { data: habits, error: habitsError } = await supabase
+      .from('habits')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+
+    if (habitsError) throw habitsError
+
+    // Get all logs in the date range
+    const { data: logs, error: logsError } = await supabase
+      .from('habit_logs')
+      .select('*')
       .eq('user_id', userId)
       .gte('date', startDate)
       .lte('date', endDate)
-      .order('date', { ascending: true })
 
-    if (error) throw error
-    return (data as any[]) ?? []
+    if (logsError) throw logsError
+
+    const typedHabits = habits as Habit[] ?? []
+    const typedLogs = logs as HabitLog[] ?? []
+
+    // Calculate score for each day in the range
+    const results: { date: string; score: number }[] = []
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0]
+
+      // Filter habits that existed on this day
+      const dayHabits = typedHabits.filter((habit: any) => {
+        const habitCreatedDate = habit.created_at.split('T')[0]
+        const wasCreatedBefore = habitCreatedDate <= dateStr
+        const isNotDeactivated = !habit.deactivated_at
+        const wasDeactivatedAfter = habit.deactivated_at && habit.deactivated_at > dateStr
+        return wasCreatedBefore && (isNotDeactivated || wasDeactivatedAfter)
+      })
+
+      if (dayHabits.length === 0) {
+        results.push({ date: dateStr, score: 0 })
+        continue
+      }
+
+      // Count completed habits for this day
+      const dayLogs = typedLogs.filter(log => log.date === dateStr && log.completed)
+      const completedHabitIds = new Set(dayLogs.map(log => log.habit_id))
+      const completedCount = dayHabits.filter(h => completedHabitIds.has(h.id)).length
+
+      const score = Math.round((completedCount / dayHabits.length) * 100)
+      results.push({ date: dateStr, score })
+    }
+
+    return results
   },
 
   async reorderHabits(orderedIds: string[]): Promise<void> {
