@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'DayGo Feedback <feedback@daygo.app>',
+      from: 'DayGo Feedback <onboarding@resend.dev>',
       to: 'bertmill19@gmail.com',
       subject: `DayGo Feedback from ${userEmail || 'Anonymous User'}`,
       html: `
@@ -30,12 +30,14 @@ export async function POST(request: Request) {
     })
 
     if (error) {
-      console.error('Resend error:', error)
+      console.error('Resend error:', JSON.stringify(error, null, 2))
       return NextResponse.json(
-        { error: 'Failed to send feedback' },
+        { error: 'Failed to send feedback', details: error.message },
         { status: 500 }
       )
     }
+
+    console.log('Feedback sent successfully:', data?.id)
 
     return NextResponse.json({ success: true, id: data?.id })
   } catch (error) {
