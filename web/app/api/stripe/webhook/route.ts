@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
             .update({
               stripe_customer_id: customerId,
               stripe_subscription_id: subscriptionId,
-              subscription_tier: 'pro',
-              subscription_status: 'active',
+              subscription_tier: 'pro' as const,
+              subscription_status: 'active' as const,
               subscription_current_period_end: periodEnd,
             })
             .eq('id', userId)
@@ -69,15 +69,18 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (profile) {
-          const status = subscription.status === 'active' ? 'active' :
-                        subscription.status === 'past_due' ? 'past_due' :
-                        subscription.status === 'canceled' ? 'canceled' : 'inactive'
+          const status: 'active' | 'past_due' | 'canceled' | 'inactive' =
+            subscription.status === 'active' ? 'active' :
+            subscription.status === 'past_due' ? 'past_due' :
+            subscription.status === 'canceled' ? 'canceled' : 'inactive'
+
+          const tier: 'pro' | 'free' = status === 'active' ? 'pro' : 'free'
 
           await supabaseAdmin
             .from('profiles')
             .update({
               subscription_status: status,
-              subscription_tier: status === 'active' ? 'pro' : 'free',
+              subscription_tier: tier,
               subscription_current_period_end: periodEnd
                 ? new Date(periodEnd * 1000).toISOString()
                 : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -102,8 +105,8 @@ export async function POST(request: NextRequest) {
           await supabaseAdmin
             .from('profiles')
             .update({
-              subscription_tier: 'free',
-              subscription_status: 'canceled',
+              subscription_tier: 'free' as const,
+              subscription_status: 'canceled' as const,
             })
             .eq('id', profile.id)
         }
