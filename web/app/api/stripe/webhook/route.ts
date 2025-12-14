@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
         const periodEnd = (subscription as { current_period_end?: number }).current_period_end
+        const cancelAtPeriodEnd = (subscription as { cancel_at_period_end?: boolean }).cancel_at_period_end
 
         // Find user by customer ID
         const { data: profile } = await supabaseAdmin
@@ -69,11 +70,15 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (profile) {
-          const status = subscription.status === 'active' ? 'active' :
+          // If subscription is set to cancel at period end, mark as canceled
+          // but user keeps pro access until the period ends
+          const status = cancelAtPeriodEnd ? 'canceled' :
+            subscription.status === 'active' ? 'active' :
             subscription.status === 'past_due' ? 'past_due' :
             subscription.status === 'canceled' ? 'canceled' : 'inactive'
 
-          const tier = status === 'active' ? 'pro' : 'free'
+          // Keep pro tier if still active or canceled but within period
+          const tier = (subscription.status === 'active' || cancelAtPeriodEnd) ? 'pro' : 'free'
 
           await supabaseAdmin
             .from('profiles')
