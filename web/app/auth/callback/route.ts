@@ -10,7 +10,20 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
-    await supabase.auth.exchangeCodeForSession(code)
+    const { data: { session } } = await supabase.auth.exchangeCodeForSession(code)
+
+    // Check if user has completed onboarding
+    if (session?.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', session.user.id)
+        .single()
+
+      if (!profile?.onboarding_completed) {
+        return NextResponse.redirect(new URL('/onboarding', requestUrl.origin))
+      }
+    }
   }
 
   // Redirect to the app after successful authentication

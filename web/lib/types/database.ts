@@ -19,6 +19,7 @@ export interface Database {
           stripe_subscription_id: string | null;
           subscription_status: 'inactive' | 'active' | 'canceled' | 'past_due';
           subscription_current_period_end: string | null;
+          onboarding_completed: boolean;
         };
         Insert: {
           id: string;
@@ -29,6 +30,7 @@ export interface Database {
           stripe_subscription_id?: string | null;
           subscription_status?: 'inactive' | 'active' | 'canceled' | 'past_due';
           subscription_current_period_end?: string | null;
+          onboarding_completed?: boolean;
         };
         Update: {
           id?: string;
@@ -39,6 +41,7 @@ export interface Database {
           stripe_subscription_id?: string | null;
           subscription_status?: 'inactive' | 'active' | 'canceled' | 'past_due';
           subscription_current_period_end?: string | null;
+          onboarding_completed?: boolean;
         };
       };
       habits: {

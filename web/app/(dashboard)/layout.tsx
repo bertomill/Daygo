@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/lib/auth-store'
+import { supabase } from '@/lib/supabase'
 import { Calendar, BarChart3, Target, User } from 'lucide-react'
 
 const navItems = [
@@ -21,6 +22,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const pathname = usePathname()
   const { user, initialized } = useAuthStore()
+  const [onboardingChecked, setOnboardingChecked] = useState(false)
 
   useEffect(() => {
     if (initialized && !user) {
@@ -28,7 +30,30 @@ export default function DashboardLayout({
     }
   }, [user, initialized, router])
 
-  if (!initialized || !user) {
+  // Check onboarding status
+  useEffect(() => {
+    async function checkOnboarding() {
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', user.id)
+        .single() as { data: { onboarding_completed: boolean } | null }
+
+      if (profile && !profile.onboarding_completed) {
+        router.replace('/onboarding')
+      } else {
+        setOnboardingChecked(true)
+      }
+    }
+
+    if (initialized && user) {
+      checkOnboarding()
+    }
+  }, [user, initialized, router])
+
+  if (!initialized || !user || !onboardingChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse">

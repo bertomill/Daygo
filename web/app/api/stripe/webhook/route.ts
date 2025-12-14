@@ -59,8 +59,22 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
-        const periodEnd = (subscription as { current_period_end?: number }).current_period_end
-        const cancelAtPeriodEnd = (subscription as { cancel_at_period_end?: boolean }).cancel_at_period_end
+
+        // Get cancel_at - if set, subscription is scheduled to cancel
+        const cancelAt = (subscription as { cancel_at?: number | null }).cancel_at
+        const isCanceled = cancelAt !== null && cancelAt !== undefined
+
+        // Get period end from items array (newer API structure)
+        const items = (subscription as { items?: { data?: Array<{ current_period_end?: number }> } }).items
+        const periodEnd = items?.data?.[0]?.current_period_end
+
+        console.log('customer.subscription.updated:', {
+          customerId,
+          status: subscription.status,
+          cancelAt,
+          isCanceled,
+          periodEnd
+        })
 
         // Find user by customer ID
         const { data: profile } = await supabaseAdmin
@@ -69,18 +83,21 @@ export async function POST(request: NextRequest) {
           .eq('stripe_customer_id', customerId)
           .single()
 
+        console.log('Found profile:', profile)
+
         if (profile) {
-          // If subscription is set to cancel at period end, mark as canceled
-          // but user keeps pro access until the period ends
-          const status = cancelAtPeriodEnd ? 'canceled' :
+          // If cancel_at is set, subscription is scheduled to cancel
+          const status = isCanceled ? 'canceled' :
             subscription.status === 'active' ? 'active' :
             subscription.status === 'past_due' ? 'past_due' :
             subscription.status === 'canceled' ? 'canceled' : 'inactive'
 
-          // Keep pro tier if still active or canceled but within period
-          const tier = (subscription.status === 'active' || cancelAtPeriodEnd) ? 'pro' : 'free'
+          // Keep pro tier if still active (even if scheduled to cancel)
+          const tier = subscription.status === 'active' ? 'pro' : 'free'
 
-          await supabaseAdmin
+          console.log('Updating to:', { status, tier })
+
+          const { data, error } = await supabaseAdmin
             .from('profiles')
             .update({
               subscription_status: status,
@@ -90,6 +107,9 @@ export async function POST(request: NextRequest) {
                 : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             })
             .eq('id', profile.id)
+            .select()
+
+          console.log('Subscription update result:', { data, error })
         }
         break
       }

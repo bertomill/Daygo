@@ -64,7 +64,28 @@ export default function TodayPage() {
   const [selectedHabit, setSelectedHabit] = useState<HabitWithLog | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [selectedMantra, setSelectedMantra] = useState<Mantra | null>(null)
+  const [showAddHint, setShowAddHint] = useState(false)
   const pepTalkTextareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Check if we should show the onboarding hint
+  useEffect(() => {
+    const hintDismissed = localStorage.getItem('daygo-add-hint-dismissed')
+    const justOnboarded = localStorage.getItem('daygo-just-onboarded')
+
+    if (justOnboarded && !hintDismissed) {
+      // Small delay so the page loads first
+      const timer = setTimeout(() => {
+        setShowAddHint(true)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  const dismissAddHint = () => {
+    setShowAddHint(false)
+    localStorage.setItem('daygo-add-hint-dismissed', 'true')
+    localStorage.removeItem('daygo-just-onboarded')
+  }
 
   // Auto-resize pep talk textarea
   useEffect(() => {
@@ -406,12 +427,40 @@ export default function TodayPage() {
       )}
 
       {/* Floating Add Button */}
-      <button
-        onClick={() => setShowAddModal(true)}
-        className="fixed bottom-24 right-4 w-14 h-14 bg-accent hover:bg-accent/90 rounded-full flex items-center justify-center shadow-lg transition-colors"
-      >
-        <Plus className="w-7 h-7 text-white" />
-      </button>
+      <div className="fixed bottom-24 right-4">
+        {/* Onboarding hint tooltip */}
+        {showAddHint && (
+          <div className="absolute bottom-16 right-0 mb-2 animate-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 p-4 w-64">
+              <p className="text-gray-900 dark:text-white font-medium mb-1">
+                Add habits here
+              </p>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
+                Tap the + button to add habits, mantras, and journal prompts.
+              </p>
+              <button
+                onClick={dismissAddHint}
+                className="text-sm text-accent hover:text-accent/80 font-medium transition-colors"
+              >
+                Got it
+              </button>
+            </div>
+            {/* Arrow pointing to button */}
+            <div className="absolute -bottom-2 right-5 w-4 h-4 bg-white dark:bg-slate-800 border-r border-b border-gray-200 dark:border-slate-700 transform rotate-45" />
+          </div>
+        )}
+        <button
+          onClick={() => {
+            setShowAddModal(true)
+            if (showAddHint) dismissAddHint()
+          }}
+          className={`w-14 h-14 bg-accent hover:bg-accent/90 rounded-full flex items-center justify-center shadow-lg transition-all ${
+            showAddHint ? 'ring-4 ring-accent/30 animate-pulse' : ''
+          }`}
+        >
+          <Plus className="w-7 h-7 text-white" />
+        </button>
+      </div>
 
       {/* Add Modal */}
       {showAddModal && (
