@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useAuthStore } from '@/lib/auth-store'
 
 export default function RegisterPage() {
@@ -72,6 +73,13 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
+          <Image
+            src="/logo.png"
+            alt="DayGo"
+            width={80}
+            height={80}
+            className="mx-auto mb-4"
+          />
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">DayGo</h1>
           <p className="text-gray-500 dark:text-slate-400">Create your account to get started.</p>
         </div>

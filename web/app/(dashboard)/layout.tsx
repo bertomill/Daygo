@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useAuthStore } from '@/lib/auth-store'
 import { supabase } from '@/lib/supabase'
 import { Calendar, BarChart3, Target, User } from 'lucide-react'
@@ -68,6 +69,17 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Logo */}
+      <div className="fixed top-4 left-4 z-40">
+        <Image
+          src="/logo.png"
+          alt="DayGo"
+          width={36}
+          height={36}
+          className="rounded-lg"
+        />
+      </div>
+
       {/* Feedback Button */}
       <FeedbackButton />
 
