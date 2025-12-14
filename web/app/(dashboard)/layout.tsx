@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/lib/auth-store'
 import { supabase } from '@/lib/supabase'
 import { Calendar, BarChart3, Target, User } from 'lucide-react'
+import { FeedbackButton } from '@/components/FeedbackButton'
 
 const navItems = [
   { href: '/today', label: 'Today', icon: Calendar },
@@ -67,6 +68,9 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Feedback Button */}
+      <FeedbackButton />
+
       {/* Main Content */}
       <main className="flex-1 pb-20">
         {children}
