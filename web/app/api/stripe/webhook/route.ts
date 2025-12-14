@@ -31,23 +31,10 @@ export async function POST(request: NextRequest) {
         console.log('checkout.session.completed:', { userId, customerId, subscriptionId })
 
         if (userId && subscriptionId) {
-          // Get subscription details for the period end date
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-
-          console.log('Subscription data:', {
-            current_period_end: subscription.current_period_end,
-            status: subscription.status
-          })
-
-          // Calculate period end date (default to 1 month from now if not available)
-          let periodEnd: string
-          if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
-            periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
-          } else {
-            const oneMonthFromNow = new Date()
-            oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1)
-            periodEnd = oneMonthFromNow.toISOString()
-          }
+          // Calculate period end date (1 month from now)
+          const oneMonthFromNow = new Date()
+          oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1)
+          const periodEnd = oneMonthFromNow.toISOString()
 
           // Update profile with all subscription info
           const { data, error } = await supabaseAdmin
@@ -72,6 +59,7 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
+        const periodEnd = (subscription as { current_period_end?: number }).current_period_end
 
         // Find user by customer ID
         const { data: profile } = await supabaseAdmin
@@ -90,9 +78,9 @@ export async function POST(request: NextRequest) {
             .update({
               subscription_status: status,
               subscription_tier: status === 'active' ? 'pro' : 'free',
-              subscription_current_period_end: new Date(
-                subscription.current_period_end * 1000
-              ).toISOString(),
+              subscription_current_period_end: periodEnd
+                ? new Date(periodEnd * 1000).toISOString()
+                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             })
             .eq('id', profile.id)
         }
