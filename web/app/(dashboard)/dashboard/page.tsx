@@ -241,17 +241,25 @@ export default function DashboardPage() {
 
       {/* Chart */}
       <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
-        <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-4 uppercase tracking-wide">
-          Last 7 Days
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+            Score History
+          </h2>
+          <RangeToggle
+            options={['week', 'month', 'year', '10years'] as ChartRange[]}
+            value={chartRange}
+            onChange={setChartRange}
+            labels={{ week: '1W', month: '1M', year: '1Y', '10years': '10Y' }}
+          />
+        </div>
 
         {isLoading ? (
           <div className="h-48 flex items-center justify-center">
             <div className="animate-pulse text-gray-400 dark:text-slate-500">Loading...</div>
           </div>
         ) : (
-          <div className="h-48 flex items-end justify-between gap-2">
-            {last7Days.map((day) => {
+          <div className="h-48 flex items-end justify-between gap-1">
+            {chartData.map((day) => {
               const height = maxScore > 0 ? (day.score / maxScore) * 100 : 0
               const getColor = (score: number) => {
                 if (score >= 80) return 'bg-success'
@@ -262,15 +270,15 @@ export default function DashboardPage() {
               }
 
               return (
-                <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
-                  <div className="w-full h-36 flex items-end">
+                <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full h-32 flex items-end">
                     <div
                       className={`w-full ${getColor(day.score)} rounded-t-md transition-all`}
                       style={{ height: `${Math.max(height, 4)}%` }}
                     />
                   </div>
-                  <span className="text-xs text-gray-400 dark:text-slate-500">{day.label}</span>
-                  <span className="text-xs text-gray-500 dark:text-slate-400">{day.score}%</span>
+                  <span className="text-[10px] text-gray-400 dark:text-slate-500">{day.label}</span>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400">{day.score}%</span>
                 </div>
               )
             })}
@@ -281,10 +289,18 @@ export default function DashboardPage() {
       {/* Top 5 Habits */}
       {topHabits.length > 0 && (
         <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mt-6 shadow-sm">
-          <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-4 uppercase tracking-wide flex items-center gap-2">
-            <Award className="w-4 h-4" />
-            Top Habits by Completions
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-2">
+              <Award className="w-4 h-4" />
+              Top Habits
+            </h2>
+            <RangeToggle
+              options={['week', 'month', 'year', '10years', 'all'] as HabitsRange[]}
+              value={habitsRange}
+              onChange={setHabitsRange}
+              labels={{ week: '1W', month: '1M', year: '1Y', '10years': '10Y', all: 'All' }}
+            />
+          </div>
           <div className="space-y-3">
             {topHabits.map((item, index) => {
               const maxCount = topHabits[0]?.completionCount || 1

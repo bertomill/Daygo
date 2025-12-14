@@ -14,16 +14,31 @@ export interface Database {
           id: string;
           display_name: string | null;
           created_at: string;
+          subscription_tier: 'free' | 'pro';
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          subscription_status: 'inactive' | 'active' | 'canceled' | 'past_due';
+          subscription_current_period_end: string | null;
         };
         Insert: {
           id: string;
           display_name?: string | null;
           created_at?: string;
+          subscription_tier?: 'free' | 'pro';
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          subscription_status?: 'inactive' | 'active' | 'canceled' | 'past_due';
+          subscription_current_period_end?: string | null;
         };
         Update: {
           id?: string;
           display_name?: string | null;
           created_at?: string;
+          subscription_tier?: 'free' | 'pro';
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          subscription_status?: 'inactive' | 'active' | 'canceled' | 'past_due';
+          subscription_current_period_end?: string | null;
         };
       };
       habits: {
