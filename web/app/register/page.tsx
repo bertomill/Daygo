@@ -13,7 +13,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,7 +32,8 @@ export default function RegisterPage() {
     if (error) {
       setError(error.message)
     } else {
-      setSuccess(true)
+      // Redirect directly to onboarding
+      router.push('/onboarding')
     }
   }
 
@@ -43,30 +43,6 @@ export default function RegisterPage() {
     if (error) {
       setError(error.message)
     }
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Check your email</h2>
-          <p className="text-gray-500 dark:text-slate-400 mb-6">
-            We've sent a verification link to <span className="text-gray-900 dark:text-white">{email}</span>
-          </p>
-          <Link
-            href="/login"
-            className="inline-block px-6 py-3 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg transition-colors"
-          >
-            Back to Sign In
-          </Link>
-        </div>
-      </div>
-    )
   }
 
   return (
