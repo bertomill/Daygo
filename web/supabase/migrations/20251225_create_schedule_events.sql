@@ -7,6 +7,7 @@ create table schedule_events (
   date date not null,
   start_time time without time zone not null,
   end_time time without time zone not null,
+  is_ai_generated boolean default false not null,
   created_at timestamp with time zone default now() not null,
 
   -- Ensure end_time is after start_time

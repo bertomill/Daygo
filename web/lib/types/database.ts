@@ -346,6 +346,7 @@ export interface Database {
           start_time: string;
           end_time: string;
           is_ai_generated: boolean;
+          completed: boolean;
           created_at: string;
         };
         Insert: {
@@ -357,6 +358,7 @@ export interface Database {
           start_time: string;
           end_time: string;
           is_ai_generated?: boolean;
+          completed?: boolean;
           created_at?: string;
         };
         Update: {
@@ -368,6 +370,7 @@ export interface Database {
           start_time?: string;
           end_time?: string;
           is_ai_generated?: boolean;
+          completed?: boolean;
           created_at?: string;
         };
       };
@@ -423,6 +426,38 @@ export interface Database {
           created_at?: string;
         };
       };
+      google_calendar_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          access_token: string;
+          refresh_token: string;
+          token_expiry: string;
+          calendar_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          access_token: string;
+          refresh_token: string;
+          token_expiry: string;
+          calendar_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          access_token?: string;
+          refresh_token?: string;
+          token_expiry?: string;
+          calendar_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -454,6 +489,8 @@ export type Vision = Database['public']['Tables']['visions']['Row'];
 export type Note = Database['public']['Tables']['notes']['Row'];
 export type ScheduleEvent = Database['public']['Tables']['schedule_events']['Row'];
 export type HabitMissNote = Database['public']['Tables']['habit_miss_notes']['Row'];
+export type CalendarRule = Database['public']['Tables']['calendar_rules']['Row'];
+export type GoogleCalendarToken = Database['public']['Tables']['google_calendar_tokens']['Row'];
 export type DailyScore = Database['public']['Views']['daily_scores']['Row'];
 
 // Extended types for UI

@@ -17,6 +17,3 @@ alter table calendar_rules enable row level security;
 -- Policy: Users can only access their own calendar rules
 create policy "Users can manage their own calendar rules"
   on calendar_rules for all using (auth.uid() = user_id);
-
--- Add is_ai_generated column to schedule_events to distinguish AI-created events
-alter table schedule_events add column is_ai_generated boolean default false not null;

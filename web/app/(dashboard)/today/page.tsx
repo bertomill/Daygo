@@ -29,16 +29,20 @@ import { pepTalksService, type PepTalk } from '@/lib/services/pepTalks'
 import { todosService } from '@/lib/services/todos'
 import { visionsService } from '@/lib/services/visions'
 import { scheduleService } from '@/lib/services/schedule'
+import { calendarRulesService } from '@/lib/services/calendarRules'
 import { habitMissNotesService } from '@/lib/services/habitMissNotes'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { ScheduleGrid } from '@/components/ScheduleGrid'
+import { CalendarRulesPanel } from '@/components/CalendarRulesPanel'
 import { TimePicker } from '@/components/TimePicker'
 import { MantraCard } from '@/components/MantraCard'
 import { JournalCard } from '@/components/JournalCard'
 import { TodoCard } from '@/components/TodoCard'
 import { VisionCard } from '@/components/VisionCard'
 import { ScoreRing } from '@/components/ScoreRing'
-import type { HabitWithLog, Mantra, Todo, Vision, JournalPromptWithEntry, ScheduleEvent } from '@/lib/types/database'
+import { RichTextEditor } from '@/components/RichTextEditor'
+import type { HabitWithLog, Mantra, Todo, Vision, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal } from '@/lib/types/database'
+import { calculateMissionScore } from '@/lib/services/missionScore'
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]
@@ -83,6 +87,7 @@ export default function TodayPage() {
   const [showAddHint, setShowAddHint] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [planningStatus, setPlanningStatus] = useState<string>('')
   const [newEventTitle, setNewEventTitle] = useState('')
   const [newEventDescription, setNewEventDescription] = useState('')
   const [newEventStartTime, setNewEventStartTime] = useState('09:00:00')
@@ -272,6 +277,12 @@ export default function TodayPage() {
     enabled: !!user,
   })
 
+  const { data: calendarRules = [] } = useQuery({
+    queryKey: ['calendar-rules', user?.id],
+    queryFn: () => calendarRulesService.getRules(user!.id),
+    enabled: !!user,
+  })
+
   const { data: todaysPepTalk } = useQuery({
     queryKey: ['pep-talk', user?.id, dateStr],
     queryFn: () => pepTalksService.getPepTalkForDate(user!.id, dateStr),
@@ -304,9 +315,10 @@ export default function TodayPage() {
     },
   })
 
-  // Calculate score from displayed habits (only habits created on or before selected date)
-  const score = habits.length > 0
-    ? Math.round((habits.filter(h => h.completed).length / habits.length) * 100)
+  // Calculate mission score (based on schedule completion only)
+  const missionScore = calculateMissionScore(habits, todos, scheduleEvents)
+  const score = scheduleEvents.length > 0
+    ? Math.round((scheduleEvents.filter(e => e.completed).length / scheduleEvents.length) * 100)
     : 0
 
   const toggleHabitMutation = useMutation({
@@ -495,6 +507,121 @@ export default function TodayPage() {
     },
   })
 
+  const clearAiEventsMutation = useMutation({
+    mutationFn: () => scheduleService.deleteAiEvents(user!.id, dateStr),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
+    },
+  })
+
+  const toggleEventCompletionMutation = useMutation({
+    mutationFn: ({ eventId, completed }: { eventId: string; completed: boolean }) =>
+      scheduleService.toggleEventCompletion(eventId, completed),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
+    },
+  })
+
+  const resizeEventMutation = useMutation({
+    mutationFn: ({ eventId, endTime }: { eventId: string; endTime: string }) =>
+      scheduleService.updateEvent(eventId, { end_time: endTime }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
+    },
+  })
+
+  const createRuleMutation = useMutation({
+    mutationFn: (ruleText: string) => calendarRulesService.createRule(user!.id, ruleText),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-rules', user?.id] })
+    },
+  })
+
+  const updateRuleMutation = useMutation({
+    mutationFn: ({ ruleId, isActive }: { ruleId: string; isActive: boolean }) =>
+      calendarRulesService.updateRule(ruleId, { is_active: isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-rules', user?.id] })
+    },
+  })
+
+  const deleteRuleMutation = useMutation({
+    mutationFn: (ruleId: string) => calendarRulesService.deleteRule(ruleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-rules', user?.id] })
+    },
+  })
+
+  const applyRulesMutation = useMutation({
+    mutationFn: async () => {
+      setPlanningStatus('Analyzing your day...')
+      console.log('Calling AI to plan day...')
+
+      const response = await fetch('/api/calendar-rules/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rules: calendarRules,
+          existingEvents: scheduleEvents,
+          habits: habits.map(h => ({ name: h.name, description: h.description })),
+          todos: todos.map(t => ({ text: t.text, completed: t.completed })),
+          goals: goals.map(g => ({ title: g.title, description: g.description })),
+          visions: visions.map(v => ({ text: v.text })),
+          mantras: mantras.map(m => ({ text: m.text })),
+          date: dateStr,
+        }),
+      })
+
+      setPlanningStatus('AI is thinking...')
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API error:', errorText)
+        throw new Error('Failed to apply rules')
+      }
+      const data = await response.json()
+      console.log('AI returned events:', data.events)
+      console.log('DEBUG INFO:', data.debug)
+      return data.events as { title: string; start_time: string; end_time: string; description?: string }[]
+    },
+    onSuccess: async (events) => {
+      if (events.length === 0) {
+        setPlanningStatus('No events to add')
+        setTimeout(() => setPlanningStatus(''), 2000)
+        return
+      }
+
+      // Create all AI-generated events with progress
+      for (let i = 0; i < events.length; i++) {
+        const event = events[i]
+        setPlanningStatus(`Adding ${i + 1}/${events.length}: ${event.title}`)
+        try {
+          await scheduleService.createEvent(
+            user!.id,
+            event.title,
+            dateStr,
+            event.start_time,
+            event.end_time,
+            event.description,
+            true // is_ai_generated
+          )
+          console.log('Created event:', event.title)
+        } catch (err) {
+          console.error('Failed to create event:', event.title, err)
+        }
+      }
+
+      setPlanningStatus(`Done! Added ${events.length} events`)
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
+      setTimeout(() => setPlanningStatus(''), 2000)
+    },
+    onError: (error) => {
+      console.error('Apply rules mutation error:', error)
+      setPlanningStatus('Error planning day')
+      setTimeout(() => setPlanningStatus(''), 3000)
+    },
+  })
+
   const createMissNoteMutation = useMutation({
     mutationFn: ({ habitId, note }: { habitId: string; note: string }) =>
       habitMissNotesService.createMissNote(user!.id, habitId, dateStr, note),
@@ -584,7 +711,7 @@ export default function TodayPage() {
   const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || scheduleLoading
 
   return (
-    <div {...swipeHandlers} className="max-w-lg mx-auto px-4 py-6 min-h-screen">
+    <div {...swipeHandlers} className="max-w-lg mx-auto px-4 py-6 pb-32 min-h-screen">
       {/* Header with date navigation */}
       <div className="flex items-center justify-between mb-6">
         <button
@@ -605,8 +732,15 @@ export default function TodayPage() {
       </div>
 
       {/* Score Ring */}
-      <div className="flex justify-center mb-8">
+      <div className="flex flex-col items-center mb-8">
         <ScoreRing score={score} />
+        {/* Schedule completion breakdown */}
+        {scheduleEvents.length > 0 && (
+          <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
+            <span className="text-schedule font-medium">{scheduleEvents.filter(e => e.completed).length}</span>
+            /{scheduleEvents.length} schedule items completed
+          </p>
+        )}
       </div>
 
       {isLoading ? (
@@ -676,9 +810,27 @@ export default function TodayPage() {
 
           {/* Schedule */}
           <section>
-            <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
-              Schedule
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                Schedule
+              </h2>
+              {scheduleEvents.length > 0 && (
+                <span className="text-xs text-gray-400 dark:text-slate-500">
+                  {scheduleEvents.filter(e => e.completed).length}/{scheduleEvents.length} completed
+                </span>
+              )}
+            </div>
+            <CalendarRulesPanel
+              rules={calendarRules}
+              onAddRule={(ruleText) => createRuleMutation.mutate(ruleText)}
+              onToggleRule={(ruleId, isActive) => updateRuleMutation.mutate({ ruleId, isActive })}
+              onDeleteRule={(ruleId) => deleteRuleMutation.mutate(ruleId)}
+              onApplyRules={() => applyRulesMutation.mutate()}
+              onClearAiEvents={() => clearAiEventsMutation.mutate()}
+              isApplying={applyRulesMutation.isPending}
+              hasAiEvents={scheduleEvents.some(e => e.is_ai_generated)}
+              planningStatus={planningStatus}
+            />
             <ScheduleGrid
               events={scheduleEvents}
               selectedDate={selectedDate}
@@ -688,6 +840,12 @@ export default function TodayPage() {
                 setShowScheduleModal(true)
               }}
               onEditEvent={(event) => setSelectedEvent(event)}
+              onToggleComplete={(eventId, completed) =>
+                toggleEventCompletionMutation.mutate({ eventId, completed })
+              }
+              onResizeEvent={(eventId, newEndTime) =>
+                resizeEventMutation.mutate({ eventId, endTime: newEndTime })
+              }
             />
           </section>
 
@@ -994,12 +1152,20 @@ export default function TodayPage() {
               </div>
             ) : (
               <>
-                {addType === 'mantra' || addType === 'vision' ? (
+                {addType === 'vision' ? (
+                  <div className="mb-3">
+                    <RichTextEditor
+                      content={newItemText}
+                      onChange={setNewItemText}
+                      placeholder="Your vision for the future..."
+                    />
+                  </div>
+                ) : addType === 'mantra' ? (
                   <textarea
                     value={newItemText}
                     onChange={(e) => setNewItemText(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent mb-3 resize-none"
-                    placeholder={addType === 'mantra' ? 'Your mantra...' : 'Your vision for the future...'}
+                    placeholder="Your mantra..."
                     rows={4}
                     autoFocus
                   />
@@ -1303,7 +1469,7 @@ export default function TodayPage() {
           }}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-xl shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -1324,12 +1490,11 @@ export default function TodayPage() {
 
             {isEditingVision ? (
               <>
-                <textarea
-                  value={editVisionText}
-                  onChange={(e) => setEditVisionText(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 resize-none"
-                  rows={4}
-                  autoFocus
+                <RichTextEditor
+                  content={editVisionText}
+                  onChange={setEditVisionText}
+                  placeholder="Your vision for the future..."
+                  className="mb-4 [&_.ProseMirror]:min-h-[200px]"
                 />
                 <div className="flex gap-3">
                   <button
@@ -1343,11 +1508,11 @@ export default function TodayPage() {
                   </button>
                   <button
                     onClick={() => {
-                      if (editVisionText.trim()) {
+                      if (editVisionText.trim() && editVisionText !== '<p></p>') {
                         updateVisionMutation.mutate({ id: selectedVision.id, text: editVisionText })
                       }
                     }}
-                    disabled={!editVisionText.trim() || updateVisionMutation.isPending}
+                    disabled={!editVisionText.trim() || editVisionText === '<p></p>' || updateVisionMutation.isPending}
                     className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
                   >
                     {updateVisionMutation.isPending ? 'Saving...' : 'Save'}
@@ -1356,7 +1521,10 @@ export default function TodayPage() {
               </>
             ) : (
               <>
-                <p className="text-gray-600 dark:text-slate-300 mb-6 whitespace-pre-wrap">{selectedVision.text}</p>
+                <div
+                  className="text-gray-600 dark:text-slate-300 mb-6 prose prose-sm dark:prose-invert max-w-none [&_p]:m-0"
+                  dangerouslySetInnerHTML={{ __html: selectedVision.text }}
+                />
                 <div className="space-y-3">
                   <button
                     onClick={() => {
