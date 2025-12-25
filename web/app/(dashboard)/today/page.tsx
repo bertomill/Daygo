@@ -34,6 +34,7 @@ import { habitMissNotesService } from '@/lib/services/habitMissNotes'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { ScheduleGrid } from '@/components/ScheduleGrid'
 import { CalendarRulesPanel } from '@/components/CalendarRulesPanel'
+import { GoogleCalendarPanel } from '@/components/GoogleCalendarPanel'
 import { TimePicker } from '@/components/TimePicker'
 import { MantraCard } from '@/components/MantraCard'
 import { JournalCard } from '@/components/JournalCard'
@@ -94,7 +95,25 @@ export default function TodayPage() {
   const [newEventEndTime, setNewEventEndTime] = useState('09:30:00')
   const [showMissNoteModal, setShowMissNoteModal] = useState(false)
   const [missNoteText, setMissNoteText] = useState('')
+  const [gcalNotification, setGcalNotification] = useState<string | null>(null)
   const pepTalkTextareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Check for Google Calendar connection callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('gcal_connected') === 'true') {
+      setGcalNotification('Google Calendar connected successfully!')
+      queryClient.invalidateQueries({ queryKey: ['gcal-status'] })
+      // Clean up URL
+      window.history.replaceState({}, '', '/today')
+      setTimeout(() => setGcalNotification(null), 4000)
+    } else if (params.get('gcal_error')) {
+      const error = params.get('gcal_error')
+      setGcalNotification(`Failed to connect: ${error}`)
+      window.history.replaceState({}, '', '/today')
+      setTimeout(() => setGcalNotification(null), 4000)
+    }
+  }, [queryClient])
 
   // Check if we should show the onboarding hint
   useEffect(() => {
@@ -282,6 +301,23 @@ export default function TodayPage() {
     queryFn: () => calendarRulesService.getRules(user!.id),
     enabled: !!user,
   })
+
+  // Google Calendar connection status
+  const { data: gcalStatus } = useQuery({
+    queryKey: ['gcal-status'],
+    queryFn: async () => {
+      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+      if (!session?.access_token) return { connected: false }
+      const response = await fetch('/api/google-calendar/status', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!response.ok) return { connected: false }
+      return response.json()
+    },
+    enabled: !!user,
+  })
+
+  const isGcalConnected = gcalStatus?.connected || false
 
   const { data: todaysPepTalk } = useQuery({
     queryKey: ['pep-talk', user?.id, dateStr],
@@ -530,6 +566,97 @@ export default function TodayPage() {
     },
   })
 
+  // Google Calendar mutations
+  const connectGcalMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Not authenticated')
+      const response = await fetch('/api/google-calendar/auth', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!response.ok) throw new Error('Failed to get auth URL')
+      const { authUrl } = await response.json()
+      window.location.href = authUrl
+    },
+  })
+
+  const disconnectGcalMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Not authenticated')
+      const response = await fetch('/api/google-calendar/disconnect', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!response.ok) throw new Error('Failed to disconnect')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gcal-status'] })
+    },
+  })
+
+  const importGcalEventsMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Not authenticated')
+      const response = await fetch(`/api/google-calendar/events?date=${dateStr}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!response.ok) throw new Error('Failed to fetch events')
+      const { events } = await response.json()
+
+      // Create Daygo events from Google Calendar events
+      for (const event of events) {
+        if (!event.is_all_day) {
+          await scheduleService.createEvent(
+            user!.id,
+            event.title,
+            dateStr,
+            event.start_time,
+            event.end_time,
+            event.description || undefined,
+            false // not AI generated
+          )
+        }
+      }
+      return events.length
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
+      alert(`Imported ${count} events from Google Calendar`)
+    },
+  })
+
+  const exportGcalEventsMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Not authenticated')
+
+      let exported = 0
+      for (const event of scheduleEvents) {
+        const response = await fetch('/api/google-calendar/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            title: event.title,
+            date: dateStr,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            description: event.description,
+          }),
+        })
+        if (response.ok) exported++
+      }
+      return exported
+    },
+    onSuccess: (count) => {
+      alert(`Exported ${count} events to Google Calendar`)
+    },
+  })
+
   const createRuleMutation = useMutation({
     mutationFn: (ruleText: string) => calendarRulesService.createRule(user!.id, ruleText),
     onSuccess: () => {
@@ -569,6 +696,10 @@ export default function TodayPage() {
           visions: visions.map(v => ({ text: v.text })),
           mantras: mantras.map(m => ({ text: m.text })),
           date: dateStr,
+          preferences: {
+            wake_time: '07:00',
+            bed_time: '22:00',
+          },
         }),
       })
 
@@ -712,6 +843,16 @@ export default function TodayPage() {
 
   return (
     <div {...swipeHandlers} className="max-w-lg mx-auto px-4 py-6 pb-32 min-h-screen">
+      {/* Google Calendar notification toast */}
+      {gcalNotification && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 bg-green-500 text-white rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+          <span className="text-sm font-medium">{gcalNotification}</span>
+          <button onClick={() => setGcalNotification(null)} className="text-white/80 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header with date navigation */}
       <div className="flex items-center justify-between mb-6">
         <button
@@ -820,6 +961,15 @@ export default function TodayPage() {
                 </span>
               )}
             </div>
+            <GoogleCalendarPanel
+              isConnected={isGcalConnected}
+              onConnect={() => connectGcalMutation.mutate()}
+              onDisconnect={() => disconnectGcalMutation.mutate()}
+              onImportEvents={() => importGcalEventsMutation.mutate()}
+              onExportEvents={() => exportGcalEventsMutation.mutate()}
+              isImporting={importGcalEventsMutation.isPending}
+              isExporting={exportGcalEventsMutation.isPending}
+            />
             <CalendarRulesPanel
               rules={calendarRules}
               onAddRule={(ruleText) => createRuleMutation.mutate(ruleText)}

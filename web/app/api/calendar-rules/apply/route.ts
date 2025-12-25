@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import OpenAI from 'openai'
 
+// Define the shape of an individual calendar rule from the DB/user
 interface CalendarRule {
   id: string
   rule_text: string
@@ -8,6 +9,7 @@ interface CalendarRule {
   priority: number
 }
 
+// Event format for a scheduled event
 interface ScheduleEvent {
   title: string
   start_time: string
@@ -15,42 +17,57 @@ interface ScheduleEvent {
   description?: string
 }
 
+// User habit definition
 interface Habit {
   name: string
   description: string | null
 }
 
+// User todo item
 interface Todo {
   text: string
   completed: boolean
 }
 
+// User goal structure
 interface Goal {
   title: string
   description: string | null
 }
 
+// User vision statement
 interface Vision {
   text: string
 }
 
+// User mantra (affirmation)
 interface Mantra {
   text: string
 }
 
-interface RequestBody {
-  rules: CalendarRule[]
-  existingEvents: ScheduleEvent[]
-  habits: Habit[]
-  todos: Todo[]
-  goals: Goal[]
-  visions: Vision[]
-  mantras: Mantra[]
-  date: string
+// User scheduling preferences
+interface SchedulingPreferences {
+  wake_time: string  // e.g., "07:00"
+  bed_time: string   // e.g., "22:00"
 }
 
+// Format of the incoming POST request body
+interface RequestBody {
+  rules: CalendarRule[]           // List of calendar rules the user has
+  existingEvents: ScheduleEvent[] // Already scheduled events for the day
+  habits: Habit[]                 // User's daily habits
+  todos: Todo[]                   // User's todos for the day
+  goals: Goal[]                   // User's goals
+  visions: Vision[]               // User's vision statements (long term)
+  mantras: Mantra[]               // User's mantras/affirmations
+  date: string                    // The date being scheduled (YYYY-MM-DD)
+  preferences?: SchedulingPreferences // User's scheduling preferences
+}
+
+// The entrypoint for POST requests to this route
 export async function POST(request: NextRequest) {
   try {
+    // Make sure we have an OpenAI API key in our environment
     if (!process.env.OPENAI_API_KEY) {
       console.error('OPENAI_API_KEY is not set')
       return new Response(
@@ -59,17 +76,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Initialize OpenAI client
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
 
+    // Parse JSON body from incoming request
     const body = await request.json() as RequestBody
-    const { rules, existingEvents, habits, todos, goals, visions, mantras, date } = body
+    const { rules, existingEvents, habits, todos, goals, visions, mantras, date, preferences } = body
 
-    // Filter only active rules
+    // Default scheduling preferences
+    const wakeTime = preferences?.wake_time || '07:00'
+    const bedTime = preferences?.bed_time || '22:00'
+
+    // Only use active rules for the AI context, and order by priority (lower comes first)
     const activeRules = rules.filter(r => r.is_active)
 
-    // Build context for the AI
+    // Prepare a string summarizing all active rules
     const rulesContext = activeRules.length > 0
       ? activeRules
           .sort((a, b) => a.priority - b.priority)
@@ -77,99 +100,94 @@ export async function POST(request: NextRequest) {
           .join('\n')
       : 'No specific rules - plan the day intelligently based on context'
 
+    // Summarize existing events for the day
     const existingEventsContext = existingEvents.length > 0
       ? existingEvents.map(e => `- ${e.title}: ${e.start_time} - ${e.end_time}`).join('\n')
       : 'No existing events - the day is open'
 
+    // Summarize habits for the AI's context
     const habitsContext = habits.length > 0
       ? habits.map(h => `- ${h.name}${h.description ? `: ${h.description}` : ''}`).join('\n')
       : 'No habits defined'
 
+    // Summarize todos (only incomplete)
     const todosContext = todos.length > 0
       ? todos.filter(t => !t.completed).map(t => `- ${t.text}`).join('\n')
       : 'No pending todos'
 
+    // Number of completed todos (for context)
     const completedTodosContext = todos.filter(t => t.completed).length
 
+    // Summarize goals
     const goalsContext = goals.length > 0
       ? goals.map(g => `- ${g.title}${g.description ? `: ${g.description}` : ''}`).join('\n')
       : 'No goals defined'
 
+    // Summarize user visions
     const visionsContext = visions.length > 0
       ? visions.map(v => `- ${v.text}`).join('\n')
       : 'No visions defined'
 
+    // Summarize mantras (affirmations)
     const mantrasContext = mantras.length > 0
       ? mantras.map(m => `- "${m.text}"`).join('\n')
       : 'No mantras defined'
 
-    const systemPrompt = `You are an intelligent daily planner AI. Your job is to create a productive, balanced day schedule based on the user's context - their vision, goals, habits, todos, and any specific scheduling rules.
+    // This is the "system" prompt for OpenAI - kept minimal, user's rules drive the scheduling
+    const systemPrompt = `You are a daily planner AI. Create a schedule based on the user's context and their scheduling preferences/rules.
 
-IMPORTANT: ALWAYS create a schedule. Even if the user has minimal context, create a productive day structure.
+IMPORTANT: ALWAYS create a schedule that fills the day. Even with minimal context, create a productive structure.
 
-PLANNING PHILOSOPHY:
-- Create a realistic, achievable schedule that respects human energy levels
-- Morning (6-12): Best for focused, creative, or challenging work
-- Early afternoon (12-2): Good for lunch and lighter tasks
-- Afternoon (2-5): Good for collaborative work, meetings, or routine tasks
-- Evening (5-10): Wind down, exercise, personal time, reflection
-
-SCHEDULING RULES:
-1. Only schedule between 6:00 AM (06:00:00) and 10:00 PM (22:00:00)
-2. NEVER overlap with existing events
-3. Use 30-minute increments ONLY (e.g., 09:00, 09:30, 10:00, 10:30)
-4. MINIMUM event duration is 30 minutes - NO shorter events
-5. DO NOT create "Break" events - gaps between events ARE the breaks
-6. Schedule todos as focused work blocks (30-90 min each)
-7. Consider habits when planning - if they have a habit, schedule time for it
-8. Align work blocks with their goals and vision
-9. Leave gaps between events for natural breaks and transitions
-
-EVENT DURATIONS (all must be 30+ minutes):
-- Focused work: 60-90 minutes
-- Exercise/habits: 30-60 minutes
-- Meals: 30-45 minutes
-- Quick tasks: 30 minutes minimum
+CONSTRAINTS:
+1. Only schedule between ${wakeTime} and ${bedTime} (user's wake and bed times)
+2. Fill the entire day from wake time to bed time
+3. NEVER overlap with existing events
+4. Use 30-minute increments ONLY (e.g., 09:00, 09:30, 10:00)
+5. MINIMUM event duration is 30 minutes
+6. DO NOT create "Break" events - gaps between events ARE the breaks
+7. Follow the user's SCHEDULING PREFERENCES/RULES closely - they define how the day should be structured
 
 RESPONSE FORMAT:
 Respond with ONLY a valid JSON array. No explanation, no markdown, no code blocks.
 Each event:
-- "title": string (clear, action-oriented name - NOT "Break")
-- "start_time": "HH:MM:00" (24-hour format, 30-min increments only: 00 or 30)
-- "end_time": "HH:MM:00" (24-hour format, 30-min increments only: 00 or 30)
+- "title": string (clear, action-oriented name)
+- "start_time": "HH:MM:00" (24-hour format, 30-min increments only)
+- "end_time": "HH:MM:00" (24-hour format, 30-min increments only)
 - "description": string (optional, brief context)
 
-Example response (just the array, nothing else):
-[{"title": "Morning Focus Block", "start_time": "09:00:00", "end_time": "10:30:00", "description": "Deep work session"}, {"title": "Lunch", "start_time": "12:00:00", "end_time": "12:30:00"}]
+Example: [{"title": "Deep Work", "start_time": "09:00:00", "end_time": "10:30:00"}]
 
-NEVER return an empty array unless ALL time slots are already filled with existing events.`
+NEVER return an empty array unless ALL time slots are filled.`
 
+    // This is the "user" prompt for OpenAI, which provides all relevant context for the day
     const userPrompt = `Today's date: ${date}
+Wake time: ${wakeTime} | Bed time: ${bedTime}
 
-=== USER'S VISION (their bigger picture) ===
-${visionsContext}
-
-=== USER'S MANTRAS (their daily affirmations) ===
-${mantrasContext}
-
-=== USER'S GOALS (what they're working toward) ===
-${goalsContext}
-
-=== USER'S HABITS (daily practices to maintain) ===
-${habitsContext}
-
-=== TODAY'S TODOS (tasks to complete) ===
-${todosContext}
-${completedTodosContext > 0 ? `(${completedTodosContext} already completed today)` : ''}
+=== SCHEDULING PREFERENCES/RULES (FOLLOW THESE CLOSELY) ===
+${rulesContext}
 
 === EXISTING EVENTS (DO NOT OVERLAP) ===
 ${existingEventsContext}
 
-=== SCHEDULING PREFERENCES/RULES ===
-${rulesContext}
+=== TODAY'S TODOS ===
+${todosContext}
+${completedTodosContext > 0 ? `(${completedTodosContext} already completed today)` : ''}
 
-Based on all this context, create a productive day schedule. Consider their vision and goals when prioritizing tasks. Schedule their habits at appropriate times. Create focused work blocks for their todos. Remember to only respond with a JSON array.`
+=== HABITS ===
+${habitsContext}
 
+=== GOALS ===
+${goalsContext}
+
+=== VISION ===
+${visionsContext}
+
+=== MANTRAS ===
+${mantrasContext}
+
+Create a schedule from ${wakeTime} to ${bedTime} following the user's rules. Respond with only a JSON array.`
+
+    // Logging what we're about to send to OpenAI
     console.log('Calling OpenAI to plan day...')
     console.log('Context:', {
       rulesCount: activeRules.length,
@@ -181,24 +199,27 @@ Based on all this context, create a productive day schedule. Consider their visi
       mantrasCount: mantras.length,
     })
 
+    // Call the OpenAI Chat Completion API
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: 'gpt-5.2',   // Use GPT-5.2 model
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      max_completion_tokens: 4000,
-      temperature: 0.5,
+      max_completion_tokens: 4000, // Large enough to cover full schedules
+      temperature: 0.5,            // Some randomness, but not too much
     })
 
+    // Log the full OpenAI completion response
     console.log('Full completion response:', JSON.stringify(completion, null, 2))
+    // Extract the text portion of the result
     const responseText = completion.choices[0]?.message?.content || '[]'
     console.log('OpenAI response:', responseText)
 
-    // Parse the JSON response
+    // Parse the JSON response, which should be an array schedule
     let events: ScheduleEvent[] = []
     try {
-      // Clean up the response - remove markdown code blocks if present
+      // Remove common Markdown/formatting code blocks (defensive against AI outputs)
       let cleanedResponse = responseText
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
@@ -206,7 +227,7 @@ Based on all this context, create a productive day schedule. Consider their visi
 
       console.log('Cleaned response:', cleanedResponse)
 
-      // Try to extract JSON from the response (in case there's extra text)
+      // Extract the first JSON array found in the string
       const jsonMatch = cleanedResponse.match(/\[[\s\S]*\]/)
       if (jsonMatch) {
         events = JSON.parse(jsonMatch[0])
@@ -215,6 +236,7 @@ Based on all this context, create a productive day schedule. Consider their visi
         console.log('No JSON array found in response')
       }
     } catch (parseError) {
+      // If anything goes wrong parsing, notify the client but don't 500
       console.error('Failed to parse AI response:', responseText, parseError)
       return new Response(
         JSON.stringify({ error: 'Failed to parse scheduling response', events: [] }),
@@ -222,13 +244,15 @@ Based on all this context, create a productive day schedule. Consider their visi
       )
     }
 
-    // Normalize and validate events
+    // Normalize and validate all proposed events
+    // - Add :00 seconds if missing in start_time or end_time
+    // - Drop events with bad/missing fields, wrong order, or bad time formats
     const validEvents = events.map(event => {
-      // Normalize time format - add :00 seconds if missing
+      // Ensure time fields are in "HH:MM:00" format
       let startTime = event.start_time
       let endTime = event.end_time
 
-      // If time is in HH:MM format, add :00
+      // If time is in HH:MM only, expand to HH:MM:00
       if (startTime && /^\d{1,2}:\d{2}$/.test(startTime)) {
         startTime = startTime.padStart(5, '0') + ':00'
       }
@@ -238,17 +262,18 @@ Based on all this context, create a productive day schedule. Consider their visi
 
       return { ...event, start_time: startTime, end_time: endTime }
     }).filter(event => {
+      // Drop events with missing required fields
       if (!event.title || !event.start_time || !event.end_time) {
         console.log('Invalid event (missing fields):', event)
         return false
       }
-      // Validate time format (with or without leading zero)
+      // Drop events with malformed time strings
       const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]:00$/
       if (!timeRegex.test(event.start_time) || !timeRegex.test(event.end_time)) {
         console.log('Invalid event (bad time format):', event)
         return false
       }
-      // Ensure end is after start
+      // Drop events where end is BEFORE OR EQUAL TO start
       if (event.start_time >= event.end_time) {
         console.log('Invalid event (end before start):', event)
         return false
@@ -256,14 +281,16 @@ Based on all this context, create a productive day schedule. Consider their visi
       return true
     })
 
-    // Remove overlapping events (keep earlier ones)
+    // Remove any overlapping events (prefer keeping earlier ones)
     const nonOverlappingEvents: typeof validEvents = []
+    // Sort chronologically by start_time
     for (const event of validEvents.sort((a, b) => a.start_time.localeCompare(b.start_time))) {
+      // Check if overlaps with another event already added
       const overlaps = nonOverlappingEvents.some(existing => {
-        // Check if event overlaps with existing
+        // Events overlap if their times are not strictly apart
         return (event.start_time < existing.end_time && event.end_time > existing.start_time)
       })
-      // Also check against original existing events
+      // Check overlap with original existing (user-supplied) events too
       const overlapsExisting = existingEvents.some(existing => {
         return (event.start_time < existing.end_time && event.end_time > existing.start_time)
       })
@@ -274,12 +301,13 @@ Based on all this context, create a productive day schedule. Consider their visi
       }
     }
 
+    // Final response: Only non-overlapping, valid events
     console.log('Returning', nonOverlappingEvents.length, 'non-overlapping events')
     return new Response(
       JSON.stringify({
-        events: nonOverlappingEvents,
-        debug: {
-          rawResponse: responseText.substring(0, 500),
+        events: nonOverlappingEvents,  // The AI-generated, validated, non-overlapping schedule
+        debug: {                      // Debugging info for the frontend/client
+          rawResponse: responseText.substring(0, 500), // Truncated for big completions
           parsedCount: events.length,
           validCount: validEvents.length,
           context: {
@@ -296,6 +324,7 @@ Based on all this context, create a productive day schedule. Consider their visi
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    // On any unhandled/internal error, return a generic message and 500 status
     console.error('Error applying calendar rules:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return new Response(
