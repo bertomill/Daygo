@@ -1,5 +1,5 @@
 import { supabase } from '../supabase'
-import type { Habit, HabitLog, HabitWithLog } from '../types/database'
+import type { Habit, HabitLog, HabitWithLog, HabitMissNote } from '../types/database'
 
 export const habitsService = {
   async getHabits(userId: string): Promise<Habit[]> {
@@ -32,9 +32,26 @@ export const habitsService = {
 
     if (logsError) throw logsError
 
+    // Fetch miss notes for the date (gracefully handle if table doesn't exist yet)
+    let typedMissNotes: HabitMissNote[] = []
+    try {
+      const { data: missNotes, error: missNotesError } = await supabase
+        .from('habit_miss_notes')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', date)
+
+      if (!missNotesError) {
+        typedMissNotes = (missNotes as HabitMissNote[]) ?? []
+      }
+    } catch {
+      // Table might not exist yet, continue without miss notes
+    }
+
     const typedHabits = habits as Habit[] ?? []
     const typedLogs = logs as HabitLog[] ?? []
     const logsMap = new Map(typedLogs.map((log) => [log.habit_id, log]))
+    const missNotesMap = new Map(typedMissNotes.map((note) => [note.habit_id, note]))
 
     // Filter habits to only show ones:
     // 1. Created on or before the selected date
@@ -50,6 +67,7 @@ export const habitsService = {
     return filteredHabits.map((habit) => ({
       ...habit,
       completed: logsMap.get(habit.id)?.completed ?? false,
+      missNote: missNotesMap.get(habit.id)?.note ?? null,
     }))
   },
 

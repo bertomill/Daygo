@@ -15,6 +15,7 @@ module.exports = {
         success: '#22c55e',
         mantra: '#9333ea',
         journal: '#f97316',
+        schedule: '#10b981',
       },
     },
   },

@@ -6,12 +6,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useAuthStore } from '@/lib/auth-store'
 import { supabase } from '@/lib/supabase'
-import { Calendar, BarChart3, Target, User } from 'lucide-react'
+import { Calendar, BarChart3, Target, User, FileText } from 'lucide-react'
 import { FeedbackButton } from '@/components/FeedbackButton'
 
 const navItems = [
   { href: '/today', label: 'Today', icon: Calendar },
-  { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { href: '/notes', label: 'Notes', icon: FileText },
   { href: '/goals', label: 'Goals', icon: Target },
   { href: '/profile', label: 'Profile', icon: User },
 ]

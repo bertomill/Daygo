@@ -34,7 +34,7 @@ export function VisionCard({ vision, onEdit }: VisionCardProps) {
         <Eye className={`w-5 h-5 flex-shrink-0 mt-0.5 transition-all duration-200 ${
           isGlowing ? 'text-blue-500 scale-125' : 'text-blue-500'
         }`} />
-        <p className="text-gray-900 dark:text-white flex-1">{vision.text}</p>
+        <p className="text-gray-900 dark:text-white flex-1 whitespace-pre-wrap">{vision.text}</p>
         <button
           onClick={handleOptionsClick}
           className="p-1 -m-1 hover:bg-blue-500/20 rounded-lg transition-colors flex-shrink-0"

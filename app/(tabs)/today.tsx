@@ -1093,6 +1093,8 @@ export default function TodayScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+        </SafeAreaView>
+      </View>
+    </PanGestureHandler>
   );
 }

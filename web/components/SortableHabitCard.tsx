@@ -2,7 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Check, MoreHorizontal } from 'lucide-react'
+import { GripVertical, Check, MoreHorizontal, X } from 'lucide-react'
 import type { HabitWithLog } from '@/lib/types/database'
 
 interface SortableHabitCardProps {
@@ -26,6 +26,8 @@ export function SortableHabitCard({ habit, onToggle, onEdit }: SortableHabitCard
     transition,
   }
 
+  const isMissed = !!habit.missNote && !habit.completed
+
   const handleCardClick = () => {
     onToggle(habit.id, !habit.completed)
   }
@@ -45,7 +47,9 @@ export function SortableHabitCard({ habit, onToggle, onEdit }: SortableHabitCard
           ? 'opacity-50 shadow-lg scale-[1.02]'
           : habit.completed
             ? 'shadow-[0_0_25px_8px_rgba(20,184,166,0.35)] scale-[1.01] border-teal/60'
-            : 'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm'
+            : isMissed
+              ? 'shadow-[0_0_25px_8px_rgba(239,68,68,0.25)] scale-[1.01] border-red-400/60'
+              : 'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm'
       }`}
     >
       {/* Drag Handle */}
@@ -63,10 +67,13 @@ export function SortableHabitCard({ habit, onToggle, onEdit }: SortableHabitCard
         className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
           habit.completed
             ? 'bg-teal border-teal scale-110'
-            : 'border-gray-300 dark:border-slate-500'
+            : isMissed
+              ? 'bg-red-500 border-red-500 scale-110'
+              : 'border-gray-300 dark:border-slate-500'
         }`}
       >
         {habit.completed && <Check className="w-5 h-5 text-white" />}
+        {isMissed && <X className="w-5 h-5 text-white" />}
       </div>
 
       {/* Content */}
@@ -74,12 +81,19 @@ export function SortableHabitCard({ habit, onToggle, onEdit }: SortableHabitCard
         <h3 className={`font-medium transition-colors duration-200 ${
           habit.completed
             ? 'text-gray-400 dark:text-slate-500 line-through'
-            : 'text-gray-900 dark:text-white'
+            : isMissed
+              ? 'text-red-500 dark:text-red-400'
+              : 'text-gray-900 dark:text-white'
         }`}>
           {habit.name}
         </h3>
-        {habit.description && (
+        {habit.description && !isMissed && (
           <p className="text-sm text-gray-400 dark:text-slate-500 truncate">{habit.description}</p>
+        )}
+        {isMissed && (
+          <p className="text-sm text-red-400 dark:text-red-400/80 truncate italic">
+            {habit.missNote}
+          </p>
         )}
       </div>
 

@@ -336,6 +336,64 @@ export interface Database {
           updated_at?: string;
         };
       };
+      schedule_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          description: string | null;
+          date: string;
+          start_time: string;
+          end_time: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          description?: string | null;
+          date: string;
+          start_time: string;
+          end_time: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          description?: string | null;
+          date?: string;
+          start_time?: string;
+          end_time?: string;
+          created_at?: string;
+        };
+      };
+      habit_miss_notes: {
+        Row: {
+          id: string;
+          user_id: string;
+          habit_id: string;
+          date: string;
+          note: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          habit_id: string;
+          date: string;
+          note: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          habit_id?: string;
+          date?: string;
+          note?: string;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -365,11 +423,14 @@ export type JournalEntry = Database['public']['Tables']['journal_entries']['Row'
 export type Todo = Database['public']['Tables']['todos']['Row'];
 export type Vision = Database['public']['Tables']['visions']['Row'];
 export type Note = Database['public']['Tables']['notes']['Row'];
+export type ScheduleEvent = Database['public']['Tables']['schedule_events']['Row'];
+export type HabitMissNote = Database['public']['Tables']['habit_miss_notes']['Row'];
 export type DailyScore = Database['public']['Views']['daily_scores']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {
   completed: boolean;
+  missNote: string | null;
 };
 
 export type GoalWithHabits = Goal & {

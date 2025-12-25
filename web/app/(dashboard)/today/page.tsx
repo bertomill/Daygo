@@ -28,13 +28,17 @@ import { goalsService } from '@/lib/services/goals'
 import { pepTalksService, type PepTalk } from '@/lib/services/pepTalks'
 import { todosService } from '@/lib/services/todos'
 import { visionsService } from '@/lib/services/visions'
+import { scheduleService } from '@/lib/services/schedule'
+import { habitMissNotesService } from '@/lib/services/habitMissNotes'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
+import { ScheduleGrid } from '@/components/ScheduleGrid'
+import { TimePicker } from '@/components/TimePicker'
 import { MantraCard } from '@/components/MantraCard'
 import { JournalCard } from '@/components/JournalCard'
 import { TodoCard } from '@/components/TodoCard'
 import { VisionCard } from '@/components/VisionCard'
 import { ScoreRing } from '@/components/ScoreRing'
-import type { HabitWithLog, Mantra, Todo, Vision, JournalPromptWithEntry } from '@/lib/types/database'
+import type { HabitWithLog, Mantra, Todo, Vision, JournalPromptWithEntry, ScheduleEvent } from '@/lib/types/database'
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]
@@ -63,7 +67,7 @@ export default function TodayPage() {
   const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision'>('habit')
+  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'schedule' | null>(null)
   const [newItemText, setNewItemText] = useState('')
   const [newItemDescription, setNewItemDescription] = useState('')
   const [selectedHabit, setSelectedHabit] = useState<HabitWithLog | null>(null)
@@ -71,10 +75,20 @@ export default function TodayPage() {
   const [selectedMantra, setSelectedMantra] = useState<Mantra | null>(null)
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null)
   const [selectedVision, setSelectedVision] = useState<Vision | null>(null)
+  const [isEditingVision, setIsEditingVision] = useState(false)
+  const [editVisionText, setEditVisionText] = useState('')
   const [selectedJournal, setSelectedJournal] = useState<JournalPromptWithEntry | null>(null)
   const [isEditingJournal, setIsEditingJournal] = useState(false)
   const [editJournalText, setEditJournalText] = useState('')
   const [showAddHint, setShowAddHint] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [newEventTitle, setNewEventTitle] = useState('')
+  const [newEventDescription, setNewEventDescription] = useState('')
+  const [newEventStartTime, setNewEventStartTime] = useState('09:00:00')
+  const [newEventEndTime, setNewEventEndTime] = useState('09:30:00')
+  const [showMissNoteModal, setShowMissNoteModal] = useState(false)
+  const [missNoteText, setMissNoteText] = useState('')
   const pepTalkTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Check if we should show the onboarding hint
@@ -111,10 +125,14 @@ export default function TodayPage() {
       if (e.key === 'Escape') {
         if (showAddModal) {
           setShowAddModal(false)
+          setAddType(null)
           setNewItemText('')
           setNewItemDescription('')
         }
-        if (showDeleteConfirm) {
+        if (showMissNoteModal) {
+          setShowMissNoteModal(false)
+          setMissNoteText('')
+        } else if (showDeleteConfirm) {
           setShowDeleteConfirm(false)
           setSelectedHabit(null)
         } else if (selectedHabit) {
@@ -128,17 +146,87 @@ export default function TodayPage() {
         }
         if (selectedVision) {
           setSelectedVision(null)
+          setIsEditingVision(false)
+          setEditVisionText('')
         }
         if (selectedJournal) {
           setSelectedJournal(null)
           setIsEditingJournal(false)
           setEditJournalText('')
         }
+        if (selectedEvent) {
+          setSelectedEvent(null)
+        }
+        if (showScheduleModal) {
+          setShowScheduleModal(false)
+          setNewEventTitle('')
+          setNewEventDescription('')
+          setNewEventStartTime('09:00:00')
+          setNewEventEndTime('09:30:00')
+        }
       }
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [showAddModal, showDeleteConfirm, selectedHabit, selectedMantra, selectedTodo, selectedVision, selectedJournal])
+  }, [showAddModal, showDeleteConfirm, showMissNoteModal, selectedHabit, selectedMantra, selectedTodo, selectedVision, selectedJournal, selectedEvent, showScheduleModal])
+
+  // Keyboard shortcuts for Add modal type selection
+  useEffect(() => {
+    const handleTypeShortcut = (e: KeyboardEvent) => {
+      // Only when add modal is open and no type is selected yet
+      if (!showAddModal || addType !== null) return
+
+      const key = e.key.toLowerCase()
+      const shortcuts: Record<string, 'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'schedule'> = {
+        'h': 'habit',
+        'm': 'mantra',
+        'j': 'journal',
+        't': 'todo',
+        'v': 'vision',
+        'p': 'pep-talk',
+        's': 'schedule',
+      }
+
+      if (shortcuts[key]) {
+        e.preventDefault()
+        setAddType(shortcuts[key])
+      }
+    }
+    document.addEventListener('keydown', handleTypeShortcut)
+    return () => document.removeEventListener('keydown', handleTypeShortcut)
+  }, [showAddModal, addType])
+
+  // Arrow key navigation for days
+  useEffect(() => {
+    const handleArrowKeys = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input/textarea or modal is open
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return
+      }
+      if (showAddModal || showScheduleModal || selectedHabit || selectedMantra || selectedTodo || selectedVision || selectedJournal || selectedEvent) {
+        return
+      }
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        setSelectedDate(prev => {
+          const newDate = new Date(prev)
+          newDate.setDate(newDate.getDate() - 1)
+          return newDate
+        })
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        setSelectedDate(prev => {
+          const newDate = new Date(prev)
+          newDate.setDate(newDate.getDate() + 1)
+          return newDate
+        })
+      }
+    }
+    document.addEventListener('keydown', handleArrowKeys)
+    return () => document.removeEventListener('keydown', handleArrowKeys)
+  }, [showAddModal, showScheduleModal, selectedHabit, selectedMantra, selectedTodo, selectedVision, selectedJournal, selectedEvent])
 
   const dateStr = formatDate(selectedDate)
 
@@ -175,6 +263,12 @@ export default function TodayPage() {
   const { data: visions = [], isLoading: visionsLoading } = useQuery({
     queryKey: ['visions', user?.id],
     queryFn: () => visionsService.getVisions(user!.id),
+    enabled: !!user,
+  })
+
+  const { data: scheduleEvents = [], isLoading: scheduleLoading } = useQuery({
+    queryKey: ['schedule', user?.id, dateStr],
+    queryFn: () => scheduleService.getEvents(user!.id, dateStr),
     enabled: !!user,
   })
 
@@ -286,6 +380,17 @@ export default function TodayPage() {
     },
   })
 
+  const updateVisionMutation = useMutation({
+    mutationFn: ({ id, text }: { id: string; text: string }) =>
+      visionsService.updateVision(id, text),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visions'] })
+      setSelectedVision(null)
+      setIsEditingVision(false)
+      setEditVisionText('')
+    },
+  })
+
   const toggleTodoMutation = useMutation({
     mutationFn: ({ todoId, completed }: { todoId: string; completed: boolean }) =>
       todosService.toggleTodo(todoId, completed),
@@ -361,6 +466,54 @@ export default function TodayPage() {
     },
   })
 
+  const createEventMutation = useMutation({
+    mutationFn: () =>
+      scheduleService.createEvent(
+        user!.id,
+        newEventTitle,
+        dateStr,
+        newEventStartTime,
+        newEventEndTime,
+        newEventDescription || undefined
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
+      setShowScheduleModal(false)
+      setShowAddModal(false)
+      setNewEventTitle('')
+      setNewEventDescription('')
+      setNewEventStartTime('09:00:00')
+      setNewEventEndTime('09:30:00')
+    },
+  })
+
+  const deleteEventMutation = useMutation({
+    mutationFn: (eventId: string) => scheduleService.deleteEvent(eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
+      setSelectedEvent(null)
+    },
+  })
+
+  const createMissNoteMutation = useMutation({
+    mutationFn: ({ habitId, note }: { habitId: string; note: string }) =>
+      habitMissNotesService.createMissNote(user!.id, habitId, dateStr, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits', user?.id, dateStr] })
+      setShowMissNoteModal(false)
+      setSelectedHabit(null)
+      setMissNoteText('')
+    },
+  })
+
+  const deleteMissNoteMutation = useMutation({
+    mutationFn: (habitId: string) =>
+      habitMissNotesService.deleteMissNote(habitId, dateStr),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits', user?.id, dateStr] })
+    },
+  })
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -385,30 +538,30 @@ export default function TodayPage() {
     }
   }
 
-  const handlePrevDay = () => {
-    const newDate = new Date(selectedDate)
-    newDate.setDate(newDate.getDate() - 1)
-    setSelectedDate(newDate)
-  }
+  const handlePrevDay = useCallback(() => {
+    setSelectedDate(prev => {
+      const newDate = new Date(prev)
+      newDate.setDate(newDate.getDate() - 1)
+      return newDate
+    })
+  }, [])
 
   const handleNextDay = useCallback(() => {
-    const newDate = new Date(selectedDate)
-    newDate.setDate(newDate.getDate() + 1)
-    setSelectedDate(newDate)
-  }, [selectedDate])
+    setSelectedDate(prev => {
+      const newDate = new Date(prev)
+      newDate.setDate(newDate.getDate() + 1)
+      return newDate
+    })
+  }, [])
 
-  const handlePrevDayCallback = useCallback(() => {
-    const newDate = new Date(selectedDate)
-    newDate.setDate(newDate.getDate() - 1)
-    setSelectedDate(newDate)
-  }, [selectedDate])
-
-  // Swipe handlers for day navigation
+  // Swipe/drag handlers for day navigation
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: handleNextDay,
-    onSwipedRight: handlePrevDayCallback,
+    onSwipedLeft: () => handleNextDay(),
+    onSwipedRight: () => handlePrevDay(),
     trackMouse: true,
+    trackTouch: true,
     delta: 50,
+    swipeDuration: 500,
     preventScrollOnSwipe: false,
   })
 
@@ -428,7 +581,7 @@ export default function TodayPage() {
     }
   }
 
-  const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading
+  const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || scheduleLoading
 
   return (
     <div {...swipeHandlers} className="max-w-lg mx-auto px-4 py-6 min-h-screen">
@@ -520,6 +673,23 @@ export default function TodayPage() {
               </div>
             </section>
           )}
+
+          {/* Schedule */}
+          <section>
+            <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
+              Schedule
+            </h2>
+            <ScheduleGrid
+              events={scheduleEvents}
+              selectedDate={selectedDate}
+              onAddEvent={(startTime, endTime) => {
+                setNewEventStartTime(startTime)
+                setNewEventEndTime(endTime)
+                setShowScheduleModal(true)
+              }}
+              onEditEvent={(event) => setSelectedEvent(event)}
+            />
+          </section>
 
           {/* Habits */}
           {habits.length > 0 && (
@@ -648,6 +818,7 @@ export default function TodayPage() {
           className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
           onClick={() => {
             setShowAddModal(false)
+            setAddType(null)
             setNewItemText('')
             setNewItemDescription('')
           }}
@@ -656,36 +827,56 @@ export default function TodayPage() {
             className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Add New Item</h2>
+            {/* Step 1: Type Selection */}
+            {addType === null ? (
+              <>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Add New Item</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { type: 'habit' as const, label: 'Habit', key: 'H', color: 'bg-teal hover:bg-teal/90' },
+                    { type: 'mantra' as const, label: 'Mantra', key: 'M', color: 'bg-mantra hover:bg-mantra/90' },
+                    { type: 'journal' as const, label: 'Journal', key: 'J', color: 'bg-journal hover:bg-journal/90' },
+                    { type: 'todo' as const, label: 'To-Do', key: 'T', color: 'bg-blue-500 hover:bg-blue-600' },
+                    { type: 'vision' as const, label: 'Vision', key: 'V', color: 'bg-blue-600 hover:bg-blue-700' },
+                    { type: 'schedule' as const, label: 'Schedule', key: 'S', color: 'bg-schedule hover:bg-schedule/90' },
+                    { type: 'pep-talk' as const, label: 'Pep Talk', key: 'P', color: 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' },
+                  ].map(({ type, label, key, color }) => (
+                    <button
+                      key={type}
+                      onClick={() => setAddType(type)}
+                      className={`${color} text-white py-4 px-4 rounded-xl font-medium transition-all flex items-center justify-between`}
+                    >
+                      <span>{label}</span>
+                      <span className="text-white/60 text-sm font-mono">{key}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-center text-gray-400 dark:text-slate-500 text-sm mt-4">
+                  Press a key to quickly select
+                </p>
+              </>
+            ) : (
+              <>
+                {/* Header with back button */}
+                <div className="flex items-center gap-3 mb-4">
+                  <button
+                    onClick={() => {
+                      setAddType(null)
+                      setNewItemText('')
+                      setNewItemDescription('')
+                      setNewEventTitle('')
+                      setNewEventDescription('')
+                    }}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-slate-400" />
+                  </button>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white capitalize">
+                    Add {addType === 'pep-talk' ? 'Pep Talk' : addType === 'todo' ? 'To-Do' : addType}
+                  </h2>
+                </div>
 
-            {/* Type selector */}
-            <div className="flex gap-2 mb-4 flex-wrap">
-              {(['habit', 'mantra', 'journal', 'todo', 'vision', 'pep-talk'] as const).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setAddType(type)}
-                  className={`flex-1 py-2 px-3 rounded-lg font-medium capitalize transition-colors text-sm ${
-                    addType === type
-                      ? type === 'habit'
-                        ? 'bg-teal text-white'
-                        : type === 'mantra'
-                        ? 'bg-mantra text-white'
-                        : type === 'journal'
-                        ? 'bg-journal text-white'
-                        : type === 'todo'
-                        ? 'bg-blue-500 text-white'
-                        : type === 'vision'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                      : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
-                  }`}
-                >
-                  {type === 'pep-talk' ? 'Pep Talk' : type === 'todo' ? 'To-Do' : type}
-                </button>
-              ))}
-            </div>
-
-            {addType === 'pep-talk' ? (
+                {addType === 'pep-talk' ? (
               <div className="space-y-3">
                 <textarea
                   ref={pepTalkTextareaRef}
@@ -715,13 +906,12 @@ export default function TodayPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => {
-                      setShowAddModal(false)
+                      setAddType(null)
                       setNewItemText('')
-                      setNewItemDescription('')
                     }}
                     className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
                   >
-                    Cancel
+                    Back
                   </button>
                   <button
                     onClick={() => {
@@ -733,6 +923,72 @@ export default function TodayPage() {
                     className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
                   >
                     {savePepTalkMutation.isPending ? 'Saving...' : 'Save for Today'}
+                  </button>
+                </div>
+              </div>
+            ) : addType === 'schedule' ? (
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  value={newEventTitle}
+                  onChange={(e) => setNewEventTitle(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
+                  placeholder="Event title..."
+                  autoFocus
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <TimePicker
+                    label="Start Time"
+                    value={newEventStartTime}
+                    onChange={(time) => {
+                      setNewEventStartTime(time)
+                      if (time >= newEventEndTime) {
+                        const [h, m] = time.split(':').map(Number)
+                        const newEndMinutes = (h * 60 + m + 30) % (24 * 60)
+                        const newEndHours = Math.floor(newEndMinutes / 60)
+                        const newEndMins = newEndMinutes % 60
+                        setNewEventEndTime(
+                          `${newEndHours.toString().padStart(2, '0')}:${newEndMins.toString().padStart(2, '0')}:00`
+                        )
+                      }
+                    }}
+                  />
+                  <TimePicker
+                    label="End Time"
+                    value={newEventEndTime}
+                    onChange={setNewEventEndTime}
+                    minTime={newEventStartTime}
+                  />
+                </div>
+
+                <input
+                  type="text"
+                  value={newEventDescription}
+                  onChange={(e) => setNewEventDescription(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
+                  placeholder="Description (optional)..."
+                />
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setAddType(null)
+                      setNewEventTitle('')
+                      setNewEventDescription('')
+                      setNewEventStartTime('09:00:00')
+                      setNewEventEndTime('09:30:00')
+                    }}
+                    className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={() => createEventMutation.mutate()}
+                    disabled={!newEventTitle.trim() || createEventMutation.isPending}
+                    className="flex-1 py-3 bg-schedule hover:bg-schedule/90 disabled:bg-schedule/50 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {createEventMutation.isPending ? 'Adding...' : 'Add Event'}
                   </button>
                 </div>
               </div>
@@ -771,13 +1027,13 @@ export default function TodayPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => {
-                      setShowAddModal(false)
+                      setAddType(null)
                       setNewItemText('')
                       setNewItemDescription('')
                     }}
                     className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
                   >
-                    Cancel
+                    Back
                   </button>
                   <button
                     onClick={handleAddItem}
@@ -789,12 +1045,14 @@ export default function TodayPage() {
                 </div>
               </>
             )}
+              </>
+            )}
           </div>
         </div>
       )}
 
       {/* Habit Detail Modal */}
-      {selectedHabit && !showDeleteConfirm && (
+      {selectedHabit && !showDeleteConfirm && !showMissNoteModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
           onClick={() => setSelectedHabit(null)}
@@ -818,18 +1076,116 @@ export default function TodayPage() {
               </button>
             </div>
 
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <Trash2 className="w-5 h-5" />
-              Delete Habit
-            </button>
+            {/* Show existing miss note if any */}
+            {selectedHabit.missNote && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg">
+                <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">Missed - Action Plan:</p>
+                <p className="text-sm text-red-500 dark:text-red-300 italic">{selectedHabit.missNote}</p>
+                <button
+                  onClick={() => deleteMissNoteMutation.mutate(selectedHabit.id)}
+                  className="mt-2 text-xs text-red-400 hover:text-red-500 underline"
+                >
+                  Remove miss note
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {/* Mark as Missed button - only show if not already completed */}
+              {!selectedHabit.completed && !selectedHabit.missNote && (
+                <button
+                  onClick={() => setShowMissNoteModal(true)}
+                  className="w-full py-3 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <X className="w-5 h-5" />
+                  Mark as Missed
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-5 h-5" />
+                Delete Habit
+              </button>
+            </div>
 
             <p className="text-sm text-gray-400 dark:text-slate-500 mt-3 text-center">
               Deleting removes this habit from today and future days only.
               Previous days will keep this habit.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Miss Note Modal */}
+      {showMissNoteModal && selectedHabit && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setShowMissNoteModal(false)
+            setMissNoteText('')
+          }}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Mark as Missed</h2>
+                <p className="text-gray-500 dark:text-slate-400 mt-1">{selectedHabit.name}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowMissNoteModal(false)
+                  setMissNoteText('')
+                }}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-slate-300 mb-3">
+              What will you do differently to make sure this doesn&apos;t happen again?
+            </p>
+
+            <textarea
+              value={missNoteText}
+              onChange={(e) => setMissNoteText(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none mb-4"
+              placeholder="e.g., Set a reminder for 8am, prepare the night before..."
+              rows={3}
+              autoFocus
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowMissNoteModal(false)
+                  setMissNoteText('')
+                }}
+                className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (missNoteText.trim()) {
+                    createMissNoteMutation.mutate({
+                      habitId: selectedHabit.id,
+                      note: missNoteText.trim(),
+                    })
+                  }
+                }}
+                disabled={!missNoteText.trim() || createMissNoteMutation.isPending}
+                className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white rounded-lg font-medium transition-colors"
+              >
+                {createMissNoteMutation.isPending ? 'Saving...' : 'Save'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -940,29 +1296,327 @@ export default function TodayPage() {
       {selectedVision && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-          onClick={() => setSelectedVision(null)}
+          onClick={() => {
+            setSelectedVision(null)
+            setIsEditingVision(false)
+            setEditVisionText('')
+          }}
         >
           <div
             className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Vision</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {isEditingVision ? 'Edit Vision' : 'Vision'}
+              </h2>
               <button
-                onClick={() => setSelectedVision(null)}
+                onClick={() => {
+                  setSelectedVision(null)
+                  setIsEditingVision(false)
+                  setEditVisionText('')
+                }}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
               </button>
             </div>
-            <p className="text-gray-600 dark:text-slate-300 mb-6">{selectedVision.text}</p>
+
+            {isEditingVision ? (
+              <>
+                <textarea
+                  value={editVisionText}
+                  onChange={(e) => setEditVisionText(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 resize-none"
+                  rows={4}
+                  autoFocus
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setIsEditingVision(false)
+                      setEditVisionText('')
+                    }}
+                    className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (editVisionText.trim()) {
+                        updateVisionMutation.mutate({ id: selectedVision.id, text: editVisionText })
+                      }
+                    }}
+                    disabled={!editVisionText.trim() || updateVisionMutation.isPending}
+                    className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {updateVisionMutation.isPending ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-600 dark:text-slate-300 mb-6 whitespace-pre-wrap">{selectedVision.text}</p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setEditVisionText(selectedVision.text)
+                      setIsEditingVision(true)
+                    }}
+                    className="w-full py-3 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Pencil className="w-5 h-5" />
+                    Edit Vision
+                  </button>
+                  <button
+                    onClick={() => deleteVisionMutation.mutate(selectedVision.id)}
+                    disabled={deleteVisionMutation.isPending}
+                    className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    {deleteVisionMutation.isPending ? 'Deleting...' : 'Delete Vision'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Journal Prompt Detail Modal */}
+      {selectedJournal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setSelectedJournal(null)
+            setIsEditingJournal(false)
+            setEditJournalText('')
+          }}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Journal Prompt</h2>
+              <button
+                onClick={() => {
+                  setSelectedJournal(null)
+                  setIsEditingJournal(false)
+                  setEditJournalText('')
+                }}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
+              </button>
+            </div>
+
+            {isEditingJournal ? (
+              <div className="space-y-3 mb-4">
+                <input
+                  type="text"
+                  value={editJournalText}
+                  onChange={(e) => setEditJournalText(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-journal"
+                  placeholder="Journal prompt..."
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setIsEditingJournal(false)
+                      setEditJournalText(selectedJournal.prompt)
+                    }}
+                    className="flex-1 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (editJournalText.trim() && editJournalText !== selectedJournal.prompt) {
+                        updateJournalPromptMutation.mutate({ id: selectedJournal.id, prompt: editJournalText })
+                      }
+                    }}
+                    disabled={!editJournalText.trim() || editJournalText === selectedJournal.prompt || updateJournalPromptMutation.isPending}
+                    className="flex-1 py-2 bg-journal hover:bg-journal/90 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {updateJournalPromptMutation.isPending ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-gray-600 dark:text-slate-300 mb-4">{selectedJournal.prompt}</p>
+                <button
+                  onClick={() => setIsEditingJournal(true)}
+                  className="w-full py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 mb-3"
+                >
+                  <Pencil className="w-5 h-5" />
+                  Edit Prompt
+                </button>
+              </>
+            )}
+
             <button
-              onClick={() => deleteVisionMutation.mutate(selectedVision.id)}
-              disabled={deleteVisionMutation.isPending}
+              onClick={() => deleteJournalPromptMutation.mutate(selectedJournal.id)}
+              disabled={deleteJournalPromptMutation.isPending}
               className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
               <Trash2 className="w-5 h-5" />
-              {deleteVisionMutation.isPending ? 'Deleting...' : 'Delete Vision'}
+              {deleteJournalPromptMutation.isPending ? 'Deleting...' : 'Delete Prompt'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Add Modal (when clicking on grid) */}
+      {showScheduleModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setShowScheduleModal(false)
+            setNewEventTitle('')
+            setNewEventDescription('')
+            setNewEventStartTime('09:00:00')
+            setNewEventEndTime('09:30:00')
+          }}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Add Event</h2>
+              <button
+                onClick={() => {
+                  setShowScheduleModal(false)
+                  setNewEventTitle('')
+                  setNewEventDescription('')
+                  setNewEventStartTime('09:00:00')
+                  setNewEventEndTime('09:30:00')
+                }}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={newEventTitle}
+                onChange={(e) => setNewEventTitle(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
+                placeholder="Event title..."
+                autoFocus
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <TimePicker
+                  label="Start Time"
+                  value={newEventStartTime}
+                  onChange={(time) => {
+                    setNewEventStartTime(time)
+                    if (time >= newEventEndTime) {
+                      const [h, m] = time.split(':').map(Number)
+                      const newEndMinutes = (h * 60 + m + 30) % (24 * 60)
+                      const newEndHours = Math.floor(newEndMinutes / 60)
+                      const newEndMins = newEndMinutes % 60
+                      setNewEventEndTime(
+                        `${newEndHours.toString().padStart(2, '0')}:${newEndMins.toString().padStart(2, '0')}:00`
+                      )
+                    }
+                  }}
+                />
+                <TimePicker
+                  label="End Time"
+                  value={newEventEndTime}
+                  onChange={setNewEventEndTime}
+                  minTime={newEventStartTime}
+                />
+              </div>
+
+              <input
+                type="text"
+                value={newEventDescription}
+                onChange={(e) => setNewEventDescription(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
+                placeholder="Description (optional)..."
+              />
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowScheduleModal(false)
+                    setNewEventTitle('')
+                    setNewEventDescription('')
+                    setNewEventStartTime('09:00:00')
+                    setNewEventEndTime('09:30:00')
+                  }}
+                  className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => createEventMutation.mutate()}
+                  disabled={!newEventTitle.trim() || createEventMutation.isPending}
+                  className="flex-1 py-3 bg-schedule hover:bg-schedule/90 disabled:bg-schedule/50 text-white rounded-lg font-medium transition-colors"
+                >
+                  {createEventMutation.isPending ? 'Adding...' : 'Add Event'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Event Detail Modal */}
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {selectedEvent.title}
+                </h2>
+                <p className="text-schedule mt-1">
+                  {(() => {
+                    const formatTime = (timeStr: string) => {
+                      const [hours, minutes] = timeStr.split(':').map(Number)
+                      const period = hours >= 12 ? 'PM' : 'AM'
+                      const displayHour = hours % 12 || 12
+                      return `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}`
+                    }
+                    return `${formatTime(selectedEvent.start_time)} - ${formatTime(selectedEvent.end_time)}`
+                  })()}
+                </p>
+                {selectedEvent.description && (
+                  <p className="text-gray-500 dark:text-slate-400 mt-2">
+                    {selectedEvent.description}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
+              </button>
+            </div>
+
+            <button
+              onClick={() => deleteEventMutation.mutate(selectedEvent.id)}
+              disabled={deleteEventMutation.isPending}
+              className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <Trash2 className="w-5 h-5" />
+              {deleteEventMutation.isPending ? 'Deleting...' : 'Delete Event'}
             </button>
           </div>
         </div>
