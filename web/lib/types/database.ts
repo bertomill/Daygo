@@ -458,6 +458,58 @@ export interface Database {
           updated_at?: string;
         };
       };
+      user_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          wake_time: string;
+          bed_time: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          wake_time?: string;
+          bed_time?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          wake_time?: string;
+          bed_time?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      daily_notes: {
+        Row: {
+          id: string;
+          user_id: string;
+          date: string;
+          note: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          date: string;
+          note?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          date?: string;
+          note?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -491,6 +543,8 @@ export type ScheduleEvent = Database['public']['Tables']['schedule_events']['Row
 export type HabitMissNote = Database['public']['Tables']['habit_miss_notes']['Row'];
 export type CalendarRule = Database['public']['Tables']['calendar_rules']['Row'];
 export type GoogleCalendarToken = Database['public']['Tables']['google_calendar_tokens']['Row'];
+export type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
+export type DailyNote = Database['public']['Tables']['daily_notes']['Row'];
 export type DailyScore = Database['public']['Views']['daily_scores']['Row'];
 
 // Extended types for UI

@@ -61,6 +61,7 @@ interface RequestBody {
   visions: Vision[]               // User's vision statements (long term)
   mantras: Mantra[]               // User's mantras/affirmations
   date: string                    // The date being scheduled (YYYY-MM-DD)
+  dailyNote?: string              // User's notes about the day (e.g., "dinner with family 6-8pm")
   preferences?: SchedulingPreferences // User's scheduling preferences
 }
 
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     // Parse JSON body from incoming request
     const body = await request.json() as RequestBody
-    const { rules, existingEvents, habits, todos, goals, visions, mantras, date, preferences } = body
+    const { rules, existingEvents, habits, todos, goals, visions, mantras, date, dailyNote, preferences } = body
 
     // Default scheduling preferences
     const wakeTime = preferences?.wake_time || '07:00'
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
     // This is the "system" prompt for OpenAI - kept minimal, user's rules drive the scheduling
     const systemPrompt = `You are a daily planner AI. Create a schedule based on the user's context and their scheduling preferences/rules.
 
-IMPORTANT: ALWAYS create a schedule that fills the day. Even with minimal context, create a productive structure.
+IMPORTANT: ALWAYS create a schedule that fills the ENTIRE day from wake time to bed time. Ignore the current time - schedule ALL time slots even if they appear to be "in the past." The user wants a complete day plan.
 
 CONSTRAINTS:
 1. Only schedule between ${wakeTime} and ${bedTime} (user's wake and bed times)
@@ -168,6 +169,9 @@ ${rulesContext}
 
 === EXISTING EVENTS (DO NOT OVERLAP) ===
 ${existingEventsContext}
+
+=== TODAY'S NOTES (IMPORTANT CONTEXT - schedule around these) ===
+${dailyNote || 'No specific notes for today'}
 
 === TODAY'S TODOS ===
 ${todosContext}

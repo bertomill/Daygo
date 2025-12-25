@@ -31,10 +31,14 @@ import { visionsService } from '@/lib/services/visions'
 import { scheduleService } from '@/lib/services/schedule'
 import { calendarRulesService } from '@/lib/services/calendarRules'
 import { habitMissNotesService } from '@/lib/services/habitMissNotes'
+import { userPreferencesService } from '@/lib/services/userPreferences'
+import { dailyNotesService } from '@/lib/services/dailyNotes'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { ScheduleGrid } from '@/components/ScheduleGrid'
 import { CalendarRulesPanel } from '@/components/CalendarRulesPanel'
 import { GoogleCalendarPanel } from '@/components/GoogleCalendarPanel'
+import { SchedulePreferences } from '@/components/SchedulePreferences'
+import { DailyNotes } from '@/components/DailyNotes'
 import { TimePicker } from '@/components/TimePicker'
 import { MantraCard } from '@/components/MantraCard'
 import { JournalCard } from '@/components/JournalCard'
@@ -299,6 +303,20 @@ export default function TodayPage() {
   const { data: calendarRules = [] } = useQuery({
     queryKey: ['calendar-rules', user?.id],
     queryFn: () => calendarRulesService.getRules(user!.id),
+    enabled: !!user,
+  })
+
+  // User scheduling preferences (wake/bed time)
+  const { data: userPreferences } = useQuery({
+    queryKey: ['user-preferences', user?.id],
+    queryFn: () => userPreferencesService.getOrCreatePreferences(user!.id),
+    enabled: !!user,
+  })
+
+  // Daily notes for context
+  const { data: dailyNote } = useQuery({
+    queryKey: ['daily-note', user?.id, dateStr],
+    queryFn: () => dailyNotesService.getNote(user!.id, dateStr),
     enabled: !!user,
   })
 
@@ -679,6 +697,24 @@ export default function TodayPage() {
     },
   })
 
+  const updatePreferencesMutation = useMutation({
+    mutationFn: ({ wakeTime, bedTime }: { wakeTime: string; bedTime: string }) =>
+      userPreferencesService.updatePreferences(user!.id, {
+        wake_time: userPreferencesService.formatTimeForDB(wakeTime),
+        bed_time: userPreferencesService.formatTimeForDB(bedTime),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-preferences', user?.id] })
+    },
+  })
+
+  const saveDailyNoteMutation = useMutation({
+    mutationFn: (note: string) => dailyNotesService.saveNote(user!.id, dateStr, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-note', user?.id, dateStr] })
+    },
+  })
+
   const applyRulesMutation = useMutation({
     mutationFn: async () => {
       setPlanningStatus('Analyzing your day...')
@@ -696,9 +732,10 @@ export default function TodayPage() {
           visions: visions.map(v => ({ text: v.text })),
           mantras: mantras.map(m => ({ text: m.text })),
           date: dateStr,
+          dailyNote: dailyNote?.note || '',
           preferences: {
-            wake_time: '07:00',
-            bed_time: '22:00',
+            wake_time: userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00',
+            bed_time: userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00',
           },
         }),
       })
@@ -969,6 +1006,17 @@ export default function TodayPage() {
               onExportEvents={() => exportGcalEventsMutation.mutate()}
               isImporting={importGcalEventsMutation.isPending}
               isExporting={exportGcalEventsMutation.isPending}
+            />
+            <SchedulePreferences
+              wakeTime={userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'}
+              bedTime={userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'}
+              onUpdate={(wake, bed) => updatePreferencesMutation.mutate({ wakeTime: wake, bedTime: bed })}
+              isUpdating={updatePreferencesMutation.isPending}
+            />
+            <DailyNotes
+              note={dailyNote?.note || ''}
+              onSave={(note) => saveDailyNoteMutation.mutate(note)}
+              isSaving={saveDailyNoteMutation.isPending}
             />
             <CalendarRulesPanel
               rules={calendarRules}
