@@ -1,6 +1,6 @@
 'use client'
 
-import { Check } from 'lucide-react'
+import { Check, MoreHorizontal } from 'lucide-react'
 import type { HabitWithLog } from '@/lib/types/database'
 
 interface HabitCardProps {
@@ -10,32 +10,57 @@ interface HabitCardProps {
 }
 
 export function HabitCard({ habit, onToggle, onEdit }: HabitCardProps) {
+  const handleCardClick = () => {
+    onToggle(habit.id, !habit.completed)
+  }
+
+  const handleOptionsClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onEdit?.(habit)
+  }
+
   return (
     <div
-      className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
-      onClick={() => onEdit?.(habit)}
+      onClick={handleCardClick}
+      className={`bg-white dark:bg-slate-800 border rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all duration-200 ${
+        habit.completed
+          ? 'shadow-[0_0_25px_8px_rgba(20,184,166,0.35)] scale-[1.01] border-teal/60'
+          : 'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm'
+      }`}
     >
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onToggle(habit.id, !habit.completed)
-        }}
-        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+      {/* Checkbox */}
+      <div
+        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
           habit.completed
-            ? 'bg-teal border-teal'
-            : 'border-gray-300 dark:border-slate-500 hover:border-teal'
+            ? 'bg-teal border-teal scale-110'
+            : 'border-gray-300 dark:border-slate-500'
         }`}
       >
         {habit.completed && <Check className="w-5 h-5 text-white" />}
-      </button>
+      </div>
+
+      {/* Content */}
       <div className="flex-1 min-w-0">
-        <h3 className={`font-medium ${habit.completed ? 'text-gray-400 dark:text-slate-500 line-through' : 'text-gray-900 dark:text-white'}`}>
+        <h3 className={`font-medium transition-colors duration-200 ${
+          habit.completed
+            ? 'text-gray-400 dark:text-slate-500 line-through'
+            : 'text-gray-900 dark:text-white'
+        }`}>
           {habit.name}
         </h3>
         {habit.description && (
           <p className="text-sm text-gray-400 dark:text-slate-500 truncate">{habit.description}</p>
         )}
       </div>
+
+      {/* Options Button */}
+      <button
+        onClick={handleOptionsClick}
+        className="p-1 -m-1 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors flex-shrink-0"
+        aria-label="Habit options"
+      >
+        <MoreHorizontal className="w-5 h-5 text-gray-400 dark:text-slate-500" />
+      </button>
     </div>
   )
 }
