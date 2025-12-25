@@ -82,6 +82,18 @@ export const journalService = {
     return data as JournalEntry
   },
 
+  async updatePrompt(id: string, prompt: string): Promise<JournalPrompt> {
+    const { data, error } = await (supabase
+      .from('journal_prompts') as any)
+      .update({ prompt })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as JournalPrompt
+  },
+
   async deletePrompt(id: string): Promise<void> {
     const { error } = await (supabase
       .from('journal_prompts') as any)

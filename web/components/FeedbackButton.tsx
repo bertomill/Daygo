@@ -17,7 +17,8 @@ export function FeedbackButton() {
 
     setIsSending(true)
     try {
-      const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
         .from('feedback')
         .insert({
           user_email: user?.email || null,

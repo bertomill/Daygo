@@ -36,7 +36,8 @@ export default function AdminFeedbackPage() {
     async function fetchFeedback() {
       if (!user || user.email !== ADMIN_EMAIL) return
 
-      const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
         .from('feedback')
         .select('*')
         .order('created_at', { ascending: false })
@@ -54,7 +55,8 @@ export default function AdminFeedbackPage() {
 
   const toggleResolved = async (id: string, currentResolved: boolean) => {
     setUpdating(id)
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('feedback')
       .update({ resolved: !currentResolved })
       .eq('id', id)

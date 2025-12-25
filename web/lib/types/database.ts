@@ -261,6 +261,81 @@ export interface Database {
           created_at?: string;
         };
       };
+      visions: {
+        Row: {
+          id: string;
+          user_id: string;
+          text: string;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          text: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          text?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
+      feedback: {
+        Row: {
+          id: string;
+          user_email: string | null;
+          message: string;
+          resolved: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_email?: string | null;
+          message: string;
+          resolved?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_email?: string | null;
+          message?: string;
+          resolved?: boolean;
+          created_at?: string;
+        };
+      };
+      notes: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          content: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          content?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          content?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -288,6 +363,8 @@ export type Mantra = Database['public']['Tables']['mantras']['Row'];
 export type JournalPrompt = Database['public']['Tables']['journal_prompts']['Row'];
 export type JournalEntry = Database['public']['Tables']['journal_entries']['Row'];
 export type Todo = Database['public']['Tables']['todos']['Row'];
+export type Vision = Database['public']['Tables']['visions']['Row'];
+export type Note = Database['public']['Tables']['notes']['Row'];
 export type DailyScore = Database['public']['Views']['daily_scores']['Row'];
 
 // Extended types for UI
@@ -309,4 +386,5 @@ export type TodayItem =
   | { type: 'mantra'; data: Mantra }
   | { type: 'habit'; data: HabitWithLog }
   | { type: 'journal'; data: JournalPromptWithEntry }
-  | { type: 'todo'; data: Todo };
+  | { type: 'todo'; data: Todo }
+  | { type: 'vision'; data: Vision };

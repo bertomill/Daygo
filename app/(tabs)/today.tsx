@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
   ActionSheetIOS,
   Platform,
   FlatList,
+  Animated,
 } from 'react-native';
+import { PanGestureHandler, State, GestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { HabitWithLog, Mantra, JournalPromptWithEntry, TodayItem, Vision } from '../../src/types/database';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -73,6 +75,22 @@ export default function TodayScreen() {
     setSelectedDate(today);
   };
 
+  // Swipe gesture handler for day navigation
+  const onSwipeGesture = useCallback((event: GestureHandlerStateChangeEvent) => {
+    if (event.nativeEvent.state === State.END) {
+      const { translationX } = event.nativeEvent as any;
+      const SWIPE_THRESHOLD = 50;
+
+      if (translationX < -SWIPE_THRESHOLD) {
+        // Swipe left -> next day
+        goToNextDay();
+      } else if (translationX > SWIPE_THRESHOLD) {
+        // Swipe right -> previous day
+        goToPreviousDay();
+      }
+    }
+  }, [selectedDate]);
+
   // Modal states
   const [addTypeModalVisible, setAddTypeModalVisible] = useState(false);
   const [habitModalVisible, setHabitModalVisible] = useState(false);
@@ -120,19 +138,28 @@ export default function TodayScreen() {
   const deleteJournalPrompt = useDeleteJournalPrompt();
   const saveJournalEntry = useSaveJournalEntry();
 
-  const isLoading = habitsLoading || mantrasLoading || promptsLoading;
+  // Visions
+  const { data: visions, isLoading: visionsLoading, refetch: refetchVisions } = useVisions();
+  const createVision = useCreateVision();
+  const deleteVision = useDeleteVision();
+
+  const isLoading = habitsLoading || mantrasLoading || promptsLoading || visionsLoading;
   const isRefetching = habitsRefetching;
 
   const refetch = () => {
     refetchHabits();
     refetchMantras();
     refetchPrompts();
+    refetchVisions();
   };
 
   // Combine all items into a single list
   const allItems: TodayItem[] = useMemo(() => {
     const items: TodayItem[] = [];
 
+    if (visions) {
+      visions.forEach((v) => items.push({ type: 'vision', data: v }));
+    }
     if (mantras) {
       mantras.forEach((m) => items.push({ type: 'mantra', data: m }));
     }
@@ -144,7 +171,7 @@ export default function TodayScreen() {
     }
 
     return items;
-  }, [mantras, habits, journalPrompts]);
+  }, [visions, mantras, habits, journalPrompts]);
 
   // Get habit index for reordering
   const getHabitIndex = useCallback((habitId: string) => {
@@ -175,6 +202,14 @@ export default function TodayScreen() {
 
   // Render item for the list
   const renderItem = useCallback(({ item }: { item: TodayItem }) => {
+    if (item.type === 'vision') {
+      return (
+        <VisionCard
+          vision={item.data}
+          onPress={() => handleVisionPress(item.data)}
+        />
+      );
+    }
     if (item.type === 'mantra') {
       return (
         <MantraCard
@@ -271,6 +306,21 @@ export default function TodayScreen() {
     }
   };
 
+  const handleAddVision = async () => {
+    if (!newVisionText.trim()) {
+      Alert.alert('Error', 'Please enter your vision');
+      return;
+    }
+
+    try {
+      await createVision.mutateAsync(newVisionText.trim());
+      setNewVisionText('');
+      setVisionModalVisible(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create vision');
+    }
+  };
+
   const handleSaveJournalEntry = async () => {
     if (!selectedPrompt || !journalEntry.trim()) return;
 
@@ -315,6 +365,33 @@ export default function TodayScreen() {
     }
   };
 
+  const handleVisionPress = (vision: Vision) => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Delete'],
+          destructiveButtonIndex: 1,
+          cancelButtonIndex: 0,
+          title: 'Vision',
+          message: vision.text,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            Alert.alert('Delete Vision', 'Are you sure?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete', style: 'destructive', onPress: () => deleteVision.mutate(vision.id) },
+            ]);
+          }
+        }
+      );
+    } else {
+      Alert.alert('Vision', vision.text, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteVision.mutate(vision.id) },
+      ]);
+    }
+  };
+
   const handleJournalPromptPress = (prompt: JournalPromptWithEntry) => {
     setSelectedPrompt(prompt);
     setJournalEntry('');
@@ -327,6 +404,7 @@ export default function TodayScreen() {
       if (type === 'habit') setHabitModalVisible(true);
       else if (type === 'mantra') setMantraModalVisible(true);
       else if (type === 'journal') setJournalModalVisible(true);
+      else if (type === 'vision') setVisionModalVisible(true);
     }, 300);
   };
 
@@ -424,8 +502,13 @@ export default function TodayScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['bottom']}>
-      <View className="flex-1 px-4">
+    <PanGestureHandler
+      onHandlerStateChange={onSwipeGesture}
+      activeOffsetX={[-20, 20]}
+    >
+      <View style={{ flex: 1 }}>
+        <SafeAreaView className="flex-1 bg-gray-50" edges={['bottom']}>
+          <View className="flex-1 px-4">
         {/* Header */}
         <View className="items-center py-6">
           <View className="flex-row items-center justify-center w-full">
@@ -550,6 +633,19 @@ export default function TodayScreen() {
               <View className="flex-1">
                 <Text className="text-lg font-semibold text-gray-800">Journal Prompt</Text>
                 <Text className="text-gray-500">Question to reflect on daily</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-row items-center p-4 bg-blue-50 rounded-xl mb-3 border border-blue-100"
+              onPress={() => handleAddTypeSelect('vision')}
+            >
+              <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mr-4">
+                <Ionicons name="eye-outline" size={24} color="#3b82f6" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-lg font-semibold text-gray-800">Vision</Text>
+                <Text className="text-gray-500">Your vision for the future</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -719,6 +815,61 @@ export default function TodayScreen() {
               >
                 <Text className="text-white text-center font-semibold">
                   {createJournalPrompt.isPending ? 'Adding...' : 'Add Prompt'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add Vision Modal */}
+      <Modal
+        visible={visionModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setVisionModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl p-6">
+            <Text className="text-xl font-bold text-gray-800 mb-4">
+              Add Vision
+            </Text>
+
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              Your Vision
+            </Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 mb-4"
+              placeholder="e.g., I see myself living a healthy, balanced life where I..."
+              value={newVisionText}
+              onChangeText={setNewVisionText}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              style={{ minHeight: 100 }}
+              autoFocus
+            />
+
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                className="flex-1 py-3 rounded-xl bg-gray-200"
+                onPress={() => {
+                  setVisionModalVisible(false);
+                  setNewVisionText('');
+                }}
+              >
+                <Text className="text-gray-700 text-center font-semibold">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-1 py-3 rounded-xl bg-blue-500 ml-3"
+                onPress={handleAddVision}
+                disabled={createVision.isPending}
+              >
+                <Text className="text-white text-center font-semibold">
+                  {createVision.isPending ? 'Adding...' : 'Add Vision'}
                 </Text>
               </TouchableOpacity>
             </View>

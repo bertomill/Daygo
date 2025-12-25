@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { BookOpen, Check } from 'lucide-react'
+import { BookOpen, Check, MoreHorizontal } from 'lucide-react'
 import type { JournalPromptWithEntry } from '@/lib/types/database'
 
 interface JournalCardProps {
   prompt: JournalPromptWithEntry
   onSave: (promptId: string, entry: string) => void
+  onEdit?: (prompt: JournalPromptWithEntry) => void
 }
 
-export function JournalCard({ prompt, onSave }: JournalCardProps) {
+export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [entry, setEntry] = useState(prompt.todayEntry || '')
 
@@ -18,11 +19,23 @@ export function JournalCard({ prompt, onSave }: JournalCardProps) {
     setIsEditing(false)
   }
 
+  const handleOptionsClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onEdit?.(prompt)
+  }
+
   return (
     <div className="bg-gradient-to-r from-journal/10 to-journal/5 dark:from-journal/20 dark:to-journal/10 border border-journal/30 rounded-xl p-4">
       <div className="flex items-start gap-3 mb-3">
         <BookOpen className="w-5 h-5 text-journal flex-shrink-0 mt-0.5" />
-        <p className="text-gray-900 dark:text-white font-medium">{prompt.prompt}</p>
+        <p className="text-gray-900 dark:text-white font-medium flex-1">{prompt.prompt}</p>
+        <button
+          onClick={handleOptionsClick}
+          className="p-1 -m-1 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors flex-shrink-0"
+          aria-label="Journal prompt options"
+        >
+          <MoreHorizontal className="w-5 h-5 text-gray-400 dark:text-slate-500" />
+        </button>
       </div>
 
       {isEditing ? (

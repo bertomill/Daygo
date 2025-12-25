@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, Plus, Trash2, X, Sparkles, RefreshCw } from 'lucide-react'
+import { useSwipeable } from 'react-swipeable'
+import { ChevronLeft, ChevronRight, Plus, Trash2, X, Sparkles, RefreshCw, Pencil } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -26,12 +27,14 @@ import { journalService } from '@/lib/services/journal'
 import { goalsService } from '@/lib/services/goals'
 import { pepTalksService, type PepTalk } from '@/lib/services/pepTalks'
 import { todosService } from '@/lib/services/todos'
+import { visionsService } from '@/lib/services/visions'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { MantraCard } from '@/components/MantraCard'
 import { JournalCard } from '@/components/JournalCard'
 import { TodoCard } from '@/components/TodoCard'
+import { VisionCard } from '@/components/VisionCard'
 import { ScoreRing } from '@/components/ScoreRing'
-import type { HabitWithLog, Mantra, Todo } from '@/lib/types/database'
+import type { HabitWithLog, Mantra, Todo, Vision, JournalPromptWithEntry } from '@/lib/types/database'
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]
@@ -60,13 +63,17 @@ export default function TodayPage() {
   const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk'>('habit')
+  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision'>('habit')
   const [newItemText, setNewItemText] = useState('')
   const [newItemDescription, setNewItemDescription] = useState('')
   const [selectedHabit, setSelectedHabit] = useState<HabitWithLog | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [selectedMantra, setSelectedMantra] = useState<Mantra | null>(null)
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null)
+  const [selectedVision, setSelectedVision] = useState<Vision | null>(null)
+  const [selectedJournal, setSelectedJournal] = useState<JournalPromptWithEntry | null>(null)
+  const [isEditingJournal, setIsEditingJournal] = useState(false)
+  const [editJournalText, setEditJournalText] = useState('')
   const [showAddHint, setShowAddHint] = useState(false)
   const pepTalkTextareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -119,11 +126,19 @@ export default function TodayPage() {
         if (selectedTodo) {
           setSelectedTodo(null)
         }
+        if (selectedVision) {
+          setSelectedVision(null)
+        }
+        if (selectedJournal) {
+          setSelectedJournal(null)
+          setIsEditingJournal(false)
+          setEditJournalText('')
+        }
       }
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [showAddModal, showDeleteConfirm, selectedHabit, selectedMantra, selectedTodo])
+  }, [showAddModal, showDeleteConfirm, selectedHabit, selectedMantra, selectedTodo, selectedVision, selectedJournal])
 
   const dateStr = formatDate(selectedDate)
 
@@ -154,6 +169,12 @@ export default function TodayPage() {
   const { data: todos = [], isLoading: todosLoading } = useQuery({
     queryKey: ['todos', user?.id, dateStr],
     queryFn: () => todosService.getTodos(user!.id, dateStr),
+    enabled: !!user,
+  })
+
+  const { data: visions = [], isLoading: visionsLoading } = useQuery({
+    queryKey: ['visions', user?.id],
+    queryFn: () => visionsService.getVisions(user!.id),
     enabled: !!user,
   })
 
@@ -248,6 +269,23 @@ export default function TodayPage() {
     },
   })
 
+  const createVisionMutation = useMutation({
+    mutationFn: (text: string) => visionsService.createVision(user!.id, text),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visions'] })
+      setShowAddModal(false)
+      setNewItemText('')
+    },
+  })
+
+  const deleteVisionMutation = useMutation({
+    mutationFn: (visionId: string) => visionsService.deleteVision(visionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visions'] })
+      setSelectedVision(null)
+    },
+  })
+
   const toggleTodoMutation = useMutation({
     mutationFn: ({ todoId, completed }: { todoId: string; completed: boolean }) =>
       todosService.toggleTodo(todoId, completed),
@@ -285,6 +323,25 @@ export default function TodayPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mantras'] })
       setSelectedMantra(null)
+    },
+  })
+
+  const updateJournalPromptMutation = useMutation({
+    mutationFn: ({ id, prompt }: { id: string; prompt: string }) =>
+      journalService.updatePrompt(id, prompt),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journal-prompts'] })
+      setSelectedJournal(null)
+      setIsEditingJournal(false)
+      setEditJournalText('')
+    },
+  })
+
+  const deleteJournalPromptMutation = useMutation({
+    mutationFn: (promptId: string) => journalService.deletePrompt(promptId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journal-prompts'] })
+      setSelectedJournal(null)
     },
   })
 
@@ -334,11 +391,26 @@ export default function TodayPage() {
     setSelectedDate(newDate)
   }
 
-  const handleNextDay = () => {
+  const handleNextDay = useCallback(() => {
     const newDate = new Date(selectedDate)
     newDate.setDate(newDate.getDate() + 1)
     setSelectedDate(newDate)
-  }
+  }, [selectedDate])
+
+  const handlePrevDayCallback = useCallback(() => {
+    const newDate = new Date(selectedDate)
+    newDate.setDate(newDate.getDate() - 1)
+    setSelectedDate(newDate)
+  }, [selectedDate])
+
+  // Swipe handlers for day navigation
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: handleNextDay,
+    onSwipedRight: handlePrevDayCallback,
+    trackMouse: true,
+    delta: 50,
+    preventScrollOnSwipe: false,
+  })
 
   const handleAddItem = () => {
     if (!newItemText.trim()) return
@@ -349,15 +421,17 @@ export default function TodayPage() {
       createMantraMutation.mutate(newItemText)
     } else if (addType === 'todo') {
       createTodoMutation.mutate(newItemText)
+    } else if (addType === 'vision') {
+      createVisionMutation.mutate(newItemText)
     } else {
       createPromptMutation.mutate(newItemText)
     }
   }
 
-  const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading
+  const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
+    <div {...swipeHandlers} className="max-w-lg mx-auto px-4 py-6 min-h-screen">
       {/* Header with date navigation */}
       <div className="flex items-center justify-between mb-6">
         <button
@@ -407,6 +481,24 @@ export default function TodayPage() {
                     <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">Tap to remove</p>
                   </div>
                 </div>
+              </div>
+            </section>
+          )}
+
+          {/* Visions */}
+          {visions.length > 0 && (
+            <section>
+              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
+                Visions
+              </h2>
+              <div className="space-y-3">
+                {visions.map((vision) => (
+                  <VisionCard
+                    key={vision.id}
+                    vision={vision}
+                    onEdit={(v) => setSelectedVision(v)}
+                  />
+                ))}
               </div>
             </section>
           )}
@@ -475,6 +567,10 @@ export default function TodayPage() {
                     onSave={(promptId, entry) =>
                       saveEntryMutation.mutate({ promptId, entry })
                     }
+                    onEdit={(p) => {
+                      setSelectedJournal(p)
+                      setEditJournalText(p.prompt)
+                    }}
                   />
                 ))}
               </div>
@@ -502,9 +598,9 @@ export default function TodayPage() {
             </section>
           )}
 
-          {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && todos.length === 0 && (
+          {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && todos.length === 0 && visions.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-slate-400 mb-4">No items yet. Add your first habit, mantra, journal prompt, or to-do!</p>
+              <p className="text-gray-500 dark:text-slate-400 mb-4">No items yet. Add your first habit, mantra, vision, journal prompt, or to-do!</p>
             </div>
           )}
         </div>
@@ -564,7 +660,7 @@ export default function TodayPage() {
 
             {/* Type selector */}
             <div className="flex gap-2 mb-4 flex-wrap">
-              {(['habit', 'mantra', 'journal', 'todo', 'pep-talk'] as const).map((type) => (
+              {(['habit', 'mantra', 'journal', 'todo', 'vision', 'pep-talk'] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => setAddType(type)}
@@ -578,6 +674,8 @@ export default function TodayPage() {
                         ? 'bg-journal text-white'
                         : type === 'todo'
                         ? 'bg-blue-500 text-white'
+                        : type === 'vision'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                       : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
                   }`}
@@ -640,12 +738,12 @@ export default function TodayPage() {
               </div>
             ) : (
               <>
-                {addType === 'mantra' ? (
+                {addType === 'mantra' || addType === 'vision' ? (
                   <textarea
                     value={newItemText}
                     onChange={(e) => setNewItemText(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent mb-3 resize-none"
-                    placeholder="Your mantra..."
+                    placeholder={addType === 'mantra' ? 'Your mantra...' : 'Your vision for the future...'}
                     rows={4}
                     autoFocus
                   />
@@ -833,6 +931,38 @@ export default function TodayPage() {
             >
               <Trash2 className="w-5 h-5" />
               {deleteTodoMutation.isPending ? 'Deleting...' : 'Delete To-Do'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Vision Detail Modal */}
+      {selectedVision && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedVision(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Vision</h2>
+              <button
+                onClick={() => setSelectedVision(null)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
+              </button>
+            </div>
+            <p className="text-gray-600 dark:text-slate-300 mb-6">{selectedVision.text}</p>
+            <button
+              onClick={() => deleteVisionMutation.mutate(selectedVision.id)}
+              disabled={deleteVisionMutation.isPending}
+              className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <Trash2 className="w-5 h-5" />
+              {deleteVisionMutation.isPending ? 'Deleting...' : 'Delete Vision'}
             </button>
           </div>
         </div>
