@@ -3,9 +3,10 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
-  const { session } = useAuthStore();
+  const { session, isGuest } = useAuthStore();
 
-  if (!session) {
+  // Allow access if user is authenticated OR in guest mode
+  if (!session && !isGuest) {
     return <Redirect href="/(auth)/login" />;
   }
 

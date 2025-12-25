@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: Request) {
-  const resend = new Resend(process.env.RESEND_API_KEY)
   try {
     const { feedback, userEmail } = await request.json()
 
@@ -13,31 +12,29 @@ export async function POST(request: Request) {
       )
     }
 
-    const { data, error } = await resend.emails.send({
-      from: 'DayGo Feedback <onboarding@resend.dev>',
-      to: 'bertmill19@gmail.com',
-      subject: `DayGo Feedback from ${userEmail || 'Anonymous User'}`,
-      html: `
-        <h2>New Feedback from DayGo</h2>
-        <p><strong>From:</strong> ${userEmail || 'Anonymous'}</p>
-        <p><strong>Message:</strong></p>
-        <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-top: 8px;">
-          ${feedback.replace(/\n/g, '<br>')}
-        </div>
-        <hr style="margin: 24px 0; border: none; border-top: 1px solid #eee;">
-        <p style="color: #888; font-size: 12px;">Sent from DayGo Web App</p>
-      `,
-    })
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const { data, error } = await supabase
+      .from('feedback')
+      .insert({
+        user_email: userEmail || null,
+        message: feedback.trim(),
+      })
+      .select()
+      .single()
 
     if (error) {
-      console.error('Resend error:', JSON.stringify(error, null, 2))
+      console.error('Supabase error:', error)
       return NextResponse.json(
-        { error: 'Failed to send feedback', details: error.message },
+        { error: 'Failed to save feedback', details: error.message },
         { status: 500 }
       )
     }
 
-    console.log('Feedback sent successfully:', data?.id)
+    console.log('Feedback saved successfully:', data?.id)
 
     return NextResponse.json({ success: true, id: data?.id })
   } catch (error) {

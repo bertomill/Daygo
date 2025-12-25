@@ -25,11 +25,13 @@ import { mantrasService } from '@/lib/services/mantras'
 import { journalService } from '@/lib/services/journal'
 import { goalsService } from '@/lib/services/goals'
 import { pepTalksService, type PepTalk } from '@/lib/services/pepTalks'
+import { todosService } from '@/lib/services/todos'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { MantraCard } from '@/components/MantraCard'
 import { JournalCard } from '@/components/JournalCard'
+import { TodoCard } from '@/components/TodoCard'
 import { ScoreRing } from '@/components/ScoreRing'
-import type { HabitWithLog, Mantra } from '@/lib/types/database'
+import type { HabitWithLog, Mantra, Todo } from '@/lib/types/database'
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]
@@ -58,12 +60,13 @@ export default function TodayPage() {
   const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'pep-talk'>('habit')
+  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk'>('habit')
   const [newItemText, setNewItemText] = useState('')
   const [newItemDescription, setNewItemDescription] = useState('')
   const [selectedHabit, setSelectedHabit] = useState<HabitWithLog | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [selectedMantra, setSelectedMantra] = useState<Mantra | null>(null)
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null)
   const [showAddHint, setShowAddHint] = useState(false)
   const pepTalkTextareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -95,6 +98,33 @@ export default function TodayPage() {
     }
   }, [newItemText])
 
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showAddModal) {
+          setShowAddModal(false)
+          setNewItemText('')
+          setNewItemDescription('')
+        }
+        if (showDeleteConfirm) {
+          setShowDeleteConfirm(false)
+          setSelectedHabit(null)
+        } else if (selectedHabit) {
+          setSelectedHabit(null)
+        }
+        if (selectedMantra) {
+          setSelectedMantra(null)
+        }
+        if (selectedTodo) {
+          setSelectedTodo(null)
+        }
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [showAddModal, showDeleteConfirm, selectedHabit, selectedMantra, selectedTodo])
+
   const dateStr = formatDate(selectedDate)
 
   const { data: habits = [], isLoading: habitsLoading } = useQuery({
@@ -118,6 +148,12 @@ export default function TodayPage() {
   const { data: goals = [] } = useQuery({
     queryKey: ['goals', user?.id],
     queryFn: () => goalsService.getGoals(user!.id),
+    enabled: !!user,
+  })
+
+  const { data: todos = [], isLoading: todosLoading } = useQuery({
+    queryKey: ['todos', user?.id, dateStr],
+    queryFn: () => todosService.getTodos(user!.id, dateStr),
     enabled: !!user,
   })
 
@@ -200,6 +236,31 @@ export default function TodayPage() {
       queryClient.invalidateQueries({ queryKey: ['journal-prompts'] })
       setShowAddModal(false)
       setNewItemText('')
+    },
+  })
+
+  const createTodoMutation = useMutation({
+    mutationFn: (text: string) => todosService.createTodo(user!.id, text, dateStr),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos', user?.id, dateStr] })
+      setShowAddModal(false)
+      setNewItemText('')
+    },
+  })
+
+  const toggleTodoMutation = useMutation({
+    mutationFn: ({ todoId, completed }: { todoId: string; completed: boolean }) =>
+      todosService.toggleTodo(todoId, completed),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos', user?.id, dateStr] })
+    },
+  })
+
+  const deleteTodoMutation = useMutation({
+    mutationFn: (todoId: string) => todosService.deleteTodo(todoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos', user?.id, dateStr] })
+      setSelectedTodo(null)
     },
   })
 
@@ -286,12 +347,14 @@ export default function TodayPage() {
       createHabitMutation.mutate({ name: newItemText, description: newItemDescription || undefined })
     } else if (addType === 'mantra') {
       createMantraMutation.mutate(newItemText)
+    } else if (addType === 'todo') {
+      createTodoMutation.mutate(newItemText)
     } else {
       createPromptMutation.mutate(newItemText)
     }
   }
 
-  const isLoading = habitsLoading || mantrasLoading || promptsLoading
+  const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
@@ -418,9 +481,30 @@ export default function TodayPage() {
             </section>
           )}
 
-          {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && (
+          {/* To-Dos */}
+          {todos.length > 0 && (
+            <section>
+              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
+                To-Do
+              </h2>
+              <div className="space-y-3">
+                {todos.map((todo) => (
+                  <TodoCard
+                    key={todo.id}
+                    todo={todo}
+                    onToggle={(todoId, completed) =>
+                      toggleTodoMutation.mutate({ todoId, completed })
+                    }
+                    onEdit={(t) => setSelectedTodo(t)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && todos.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-slate-400 mb-4">No items yet. Add your first habit, mantra, or journal prompt!</p>
+              <p className="text-gray-500 dark:text-slate-400 mb-4">No items yet. Add your first habit, mantra, journal prompt, or to-do!</p>
             </div>
           )}
         </div>
@@ -464,13 +548,23 @@ export default function TodayPage() {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setShowAddModal(false)
+            setNewItemText('')
+            setNewItemDescription('')
+          }}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Add New Item</h2>
 
             {/* Type selector */}
-            <div className="flex gap-2 mb-4">
-              {(['habit', 'mantra', 'journal', 'pep-talk'] as const).map((type) => (
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {(['habit', 'mantra', 'journal', 'todo', 'pep-talk'] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => setAddType(type)}
@@ -482,11 +576,13 @@ export default function TodayPage() {
                         ? 'bg-mantra text-white'
                         : type === 'journal'
                         ? 'bg-journal text-white'
+                        : type === 'todo'
+                        ? 'bg-blue-500 text-white'
                         : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                       : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
                   }`}
                 >
-                  {type === 'pep-talk' ? 'Pep Talk' : type}
+                  {type === 'pep-talk' ? 'Pep Talk' : type === 'todo' ? 'To-Do' : type}
                 </button>
               ))}
             </div>
@@ -559,7 +655,7 @@ export default function TodayPage() {
                     value={newItemText}
                     onChange={(e) => setNewItemText(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent mb-3"
-                    placeholder={addType === 'habit' ? 'Habit name...' : 'Journal prompt...'}
+                    placeholder={addType === 'habit' ? 'Habit name...' : addType === 'todo' ? 'What needs to be done?' : 'Journal prompt...'}
                     autoFocus
                   />
                 )}
@@ -601,8 +697,14 @@ export default function TodayPage() {
 
       {/* Habit Detail Modal */}
       {selectedHabit && !showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedHabit(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedHabit.name}</h2>
@@ -636,8 +738,17 @@ export default function TodayPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && selectedHabit && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setShowDeleteConfirm(false)
+            setSelectedHabit(null)
+          }}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Delete "{selectedHabit.name}"?</h2>
             <p className="text-gray-500 dark:text-slate-400 mb-6">
               This habit will be removed from today and all future days. Your past progress will be preserved.
@@ -665,8 +776,14 @@ export default function TodayPage() {
 
       {/* Mantra Detail Modal */}
       {selectedMantra && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedMantra(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mantra</h2>
               <button
@@ -684,6 +801,38 @@ export default function TodayPage() {
             >
               <Trash2 className="w-5 h-5" />
               {deleteMantraMutation.isPending ? 'Deleting...' : 'Delete Mantra'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Todo Detail Modal */}
+      {selectedTodo && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedTodo(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">To-Do</h2>
+              <button
+                onClick={() => setSelectedTodo(null)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
+              </button>
+            </div>
+            <p className="text-gray-600 dark:text-slate-300 mb-6">{selectedTodo.text}</p>
+            <button
+              onClick={() => deleteTodoMutation.mutate(selectedTodo.id)}
+              disabled={deleteTodoMutation.isPending}
+              className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <Trash2 className="w-5 h-5" />
+              {deleteTodoMutation.isPending ? 'Deleting...' : 'Delete To-Do'}
             </button>
           </div>
         </div>

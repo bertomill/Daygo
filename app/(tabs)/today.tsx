@@ -12,11 +12,12 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { HabitWithLog, Mantra, JournalPromptWithEntry, TodayItem } from '../../src/types/database';
+import { HabitWithLog, Mantra, JournalPromptWithEntry, TodayItem, Vision } from '../../src/types/database';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HabitCard } from '../../src/components/HabitCard';
 import { MantraCard } from '../../src/components/MantraCard';
 import { JournalPromptCard } from '../../src/components/JournalPromptCard';
+import { VisionCard } from '../../src/components/VisionCard';
 import { ScoreRing } from '../../src/components/ScoreRing';
 import {
   useHabitsWithLogs,
@@ -33,6 +34,7 @@ import {
   useDeleteJournalPrompt,
   useSaveJournalEntry,
 } from '../../src/hooks/useJournalPrompts';
+import { useVisions, useCreateVision, useDeleteVision } from '../../src/hooks/useVisions';
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -45,7 +47,7 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-type AddType = 'habit' | 'mantra' | 'journal';
+type AddType = 'habit' | 'mantra' | 'journal' | 'vision';
 
 export default function TodayScreen() {
   const today = getToday();
@@ -76,6 +78,7 @@ export default function TodayScreen() {
   const [habitModalVisible, setHabitModalVisible] = useState(false);
   const [mantraModalVisible, setMantraModalVisible] = useState(false);
   const [journalModalVisible, setJournalModalVisible] = useState(false);
+  const [visionModalVisible, setVisionModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [journalEntryModalVisible, setJournalEntryModalVisible] = useState(false);
 
@@ -83,12 +86,14 @@ export default function TodayScreen() {
   const [selectedHabit, setSelectedHabit] = useState<HabitWithLog | null>(null);
   const [selectedMantra, setSelectedMantra] = useState<Mantra | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<JournalPromptWithEntry | null>(null);
+  const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
 
   // Form inputs
   const [newHabitName, setNewHabitName] = useState('');
   const [newHabitDescription, setNewHabitDescription] = useState('');
   const [newMantraText, setNewMantraText] = useState('');
   const [newPromptText, setNewPromptText] = useState('');
+  const [newVisionText, setNewVisionText] = useState('');
   const [journalEntry, setJournalEntry] = useState('');
 
   // Edit habit state

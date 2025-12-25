@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { habitsService } from '../services/habits';
+import { localHabitsService } from '../services/localStorage';
 import { useAuthStore } from '../stores/authStore';
 
 // Get today's date in YYYY-MM-DD format
@@ -9,23 +10,27 @@ const getToday = () => {
 };
 
 export function useHabitsWithLogs(date?: string) {
-  const { user } = useAuthStore();
+  const { user, isGuest } = useAuthStore();
   const targetDate = date ?? getToday();
 
   return useQuery({
-    queryKey: ['habits', user?.id, targetDate],
-    queryFn: () => habitsService.getHabitsWithLogs(user!.id, targetDate),
-    enabled: !!user,
+    queryKey: ['habits', isGuest ? 'guest' : user?.id, targetDate],
+    queryFn: () => isGuest
+      ? localHabitsService.getHabitsWithLogs(targetDate)
+      : habitsService.getHabitsWithLogs(user!.id, targetDate),
+    enabled: isGuest || !!user,
   });
 }
 
 export function useCreateHabit() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const { user, isGuest } = useAuthStore();
 
   return useMutation({
     mutationFn: ({ name, description, weight }: { name: string; description?: string; weight?: number }) =>
-      habitsService.createHabit(user!.id, name, description, weight),
+      isGuest
+        ? localHabitsService.createHabit(name, description, weight)
+        : habitsService.createHabit(user!.id, name, description, weight),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['habits'] });
     },
@@ -34,6 +39,7 @@ export function useCreateHabit() {
 
 export function useUpdateHabit() {
   const queryClient = useQueryClient();
+  const { isGuest } = useAuthStore();
 
   return useMutation({
     mutationFn: ({
@@ -42,7 +48,9 @@ export function useUpdateHabit() {
     }: {
       id: string;
       updates: { name?: string; description?: string; weight?: number };
-    }) => habitsService.updateHabit(id, updates),
+    }) => isGuest
+      ? localHabitsService.updateHabit(id, updates)
+      : habitsService.updateHabit(id, updates),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['habits'] });
     },
@@ -51,9 +59,12 @@ export function useUpdateHabit() {
 
 export function useDeleteHabit() {
   const queryClient = useQueryClient();
+  const { isGuest } = useAuthStore();
 
   return useMutation({
-    mutationFn: (id: string) => habitsService.deleteHabit(id),
+    mutationFn: (id: string) => isGuest
+      ? localHabitsService.deleteHabit(id)
+      : habitsService.deleteHabit(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['habits'] });
     },
@@ -62,7 +73,7 @@ export function useDeleteHabit() {
 
 export function useToggleHabit() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const { user, isGuest } = useAuthStore();
 
   return useMutation({
     mutationFn: ({
@@ -73,7 +84,9 @@ export function useToggleHabit() {
       habitId: string;
       date: string;
       completed: boolean;
-    }) => habitsService.toggleHabitCompletion(user!.id, habitId, date, completed),
+    }) => isGuest
+      ? localHabitsService.toggleHabitCompletion(habitId, date, completed)
+      : habitsService.toggleHabitCompletion(user!.id, habitId, date, completed),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['habits'] });
       await queryClient.invalidateQueries({ queryKey: ['scores'] });
@@ -82,7 +95,7 @@ export function useToggleHabit() {
 }
 
 export function useScoreHistory(days: number = 7) {
-  const { user } = useAuthStore();
+  const { user, isGuest } = useAuthStore();
 
   const endDate = getToday();
   const startDate = new Date();
@@ -90,28 +103,35 @@ export function useScoreHistory(days: number = 7) {
   const startDateStr = startDate.toISOString().split('T')[0];
 
   return useQuery({
-    queryKey: ['scores', user?.id, startDateStr, endDate],
-    queryFn: () => habitsService.getScoreHistory(user!.id, startDateStr, endDate),
-    enabled: !!user,
+    queryKey: ['scores', isGuest ? 'guest' : user?.id, startDateStr, endDate],
+    queryFn: () => isGuest
+      ? localHabitsService.getScoreHistory(startDateStr, endDate)
+      : habitsService.getScoreHistory(user!.id, startDateStr, endDate),
+    enabled: isGuest || !!user,
   });
 }
 
 export function useDailyScore(date?: string) {
-  const { user } = useAuthStore();
+  const { user, isGuest } = useAuthStore();
   const targetDate = date ?? getToday();
 
   return useQuery({
-    queryKey: ['score', user?.id, targetDate],
-    queryFn: () => habitsService.getDailyScore(user!.id, targetDate),
-    enabled: !!user,
+    queryKey: ['score', isGuest ? 'guest' : user?.id, targetDate],
+    queryFn: () => isGuest
+      ? localHabitsService.getDailyScore(targetDate)
+      : habitsService.getDailyScore(user!.id, targetDate),
+    enabled: isGuest || !!user,
   });
 }
 
 export function useReorderHabits() {
   const queryClient = useQueryClient();
+  const { isGuest } = useAuthStore();
 
   return useMutation({
-    mutationFn: (orderedIds: string[]) => habitsService.reorderHabits(orderedIds),
+    mutationFn: (orderedIds: string[]) => isGuest
+      ? localHabitsService.reorderHabits(orderedIds)
+      : habitsService.reorderHabits(orderedIds),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['habits'] });
     },

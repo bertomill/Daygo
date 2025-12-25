@@ -1,28 +1,35 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goalsService } from '../services/goals';
+import { localGoalsService } from '../services/localStorage';
 import { useAuthStore } from '../stores/authStore';
 
 export function useGoals() {
-  const { user } = useAuthStore();
+  const { user, isGuest } = useAuthStore();
 
   return useQuery({
-    queryKey: ['goals', user?.id],
-    queryFn: () => goalsService.getGoalsWithHabits(user!.id),
-    enabled: !!user,
+    queryKey: ['goals', isGuest ? 'guest' : user?.id],
+    queryFn: () => isGuest
+      ? localGoalsService.getGoalsWithHabits()
+      : goalsService.getGoalsWithHabits(user!.id),
+    enabled: isGuest || !!user,
   });
 }
 
 export function useGoal(goalId: string) {
+  const { isGuest } = useAuthStore();
+
   return useQuery({
     queryKey: ['goal', goalId],
-    queryFn: () => goalsService.getGoalWithHabits(goalId),
+    queryFn: () => isGuest
+      ? localGoalsService.getGoalWithHabits(goalId)
+      : goalsService.getGoalWithHabits(goalId),
     enabled: !!goalId,
   });
 }
 
 export function useCreateGoal() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const { user, isGuest } = useAuthStore();
 
   return useMutation({
     mutationFn: ({
@@ -32,12 +39,15 @@ export function useCreateGoal() {
       goal: {
         title: string;
         description?: string;
+        icon?: string;
         metric_name: string;
         metric_target: number;
         deadline?: string;
       };
       habitIds?: string[];
-    }) => goalsService.createGoal(user!.id, goal, habitIds),
+    }) => isGuest
+      ? localGoalsService.createGoal(goal, habitIds)
+      : goalsService.createGoal(user!.id, goal, habitIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
     },
@@ -46,6 +56,7 @@ export function useCreateGoal() {
 
 export function useUpdateGoal() {
   const queryClient = useQueryClient();
+  const { isGuest } = useAuthStore();
 
   return useMutation({
     mutationFn: ({
@@ -61,7 +72,9 @@ export function useUpdateGoal() {
         metric_current?: number;
         deadline?: string;
       };
-    }) => goalsService.updateGoal(id, updates),
+    }) => isGuest
+      ? localGoalsService.updateGoal(id, updates)
+      : goalsService.updateGoal(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['goal'] });
@@ -71,10 +84,13 @@ export function useUpdateGoal() {
 
 export function useUpdateProgress() {
   const queryClient = useQueryClient();
+  const { isGuest } = useAuthStore();
 
   return useMutation({
     mutationFn: ({ id, progress }: { id: string; progress: number }) =>
-      goalsService.updateProgress(id, progress),
+      isGuest
+        ? localGoalsService.updateProgress(id, progress)
+        : goalsService.updateProgress(id, progress),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['goal'] });
@@ -84,9 +100,12 @@ export function useUpdateProgress() {
 
 export function useDeleteGoal() {
   const queryClient = useQueryClient();
+  const { isGuest } = useAuthStore();
 
   return useMutation({
-    mutationFn: (id: string) => goalsService.deleteGoal(id),
+    mutationFn: (id: string) => isGuest
+      ? localGoalsService.deleteGoal(id)
+      : goalsService.deleteGoal(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
     },
@@ -95,10 +114,13 @@ export function useDeleteGoal() {
 
 export function useLinkHabitsToGoal() {
   const queryClient = useQueryClient();
+  const { isGuest } = useAuthStore();
 
   return useMutation({
     mutationFn: ({ goalId, habitIds }: { goalId: string; habitIds: string[] }) =>
-      goalsService.linkHabitsToGoal(goalId, habitIds),
+      isGuest
+        ? localGoalsService.linkHabitsToGoal(goalId, habitIds)
+        : goalsService.linkHabitsToGoal(goalId, habitIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['goal'] });

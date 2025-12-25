@@ -10,13 +10,13 @@ import {
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useAuthStore } from '../../src/stores/authStore';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, isLoading } = useAuthStore();
+  const { signIn, isLoading, enterGuestMode } = useAuthStore();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -28,6 +28,11 @@ export default function LoginScreen() {
     if (error) {
       Alert.alert('Error', error.message);
     }
+  };
+
+  const handleGuestMode = async () => {
+    await enterGuestMode();
+    router.replace('/(tabs)/dashboard');
   };
 
   return (
@@ -105,6 +110,25 @@ export default function LoginScreen() {
               <Text className="text-brand-teal font-semibold">Sign Up</Text>
             </TouchableOpacity>
           </Link>
+        </View>
+
+        <View className="mt-6">
+          <View className="flex-row items-center mb-4">
+            <View className="flex-1 h-px bg-gray-300" />
+            <Text className="mx-4 text-gray-500">or</Text>
+            <View className="flex-1 h-px bg-gray-300" />
+          </View>
+          <TouchableOpacity
+            className="w-full py-4 rounded-xl border border-gray-300 bg-white"
+            onPress={handleGuestMode}
+          >
+            <Text className="text-gray-700 text-center font-semibold text-lg">
+              Continue as Guest
+            </Text>
+          </TouchableOpacity>
+          <Text className="text-gray-500 text-center text-sm mt-2">
+            Try the app without an account. Your data stays on this device.
+          </Text>
         </View>
       </View>
       </KeyboardAvoidingView>

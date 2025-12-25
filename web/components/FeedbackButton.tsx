@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageSquare, Send, X, Loader2 } from 'lucide-react'
+import { MessageSquare, Send, X, Loader2, Inbox } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
+import { supabase } from '@/lib/supabase'
 
 export function FeedbackButton() {
   const { user } = useAuthStore()
@@ -16,13 +17,14 @@ export function FeedbackButton() {
 
     setIsSending(true)
     try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feedback, userEmail: user?.email }),
-      })
+      const { error } = await supabase
+        .from('feedback')
+        .insert({
+          user_email: user?.email || null,
+          message: feedback.trim(),
+        })
 
-      if (response.ok) {
+      if (!error) {
         setStatus('success')
         setFeedback('')
         setTimeout(() => {
@@ -30,6 +32,7 @@ export function FeedbackButton() {
           setStatus('idle')
         }, 2000)
       } else {
+        console.error('Feedback error:', error)
         setStatus('error')
       }
     } catch (error) {
@@ -38,16 +41,29 @@ export function FeedbackButton() {
     setIsSending(false)
   }
 
+  const isAdmin = user?.email === 'bertmill19@gmail.com'
+
   return (
     <>
-      {/* Floating Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 z-40 flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105"
-      >
-        <MessageSquare className="w-4 h-4 text-accent" />
-        <span className="text-sm font-medium text-gray-700 dark:text-slate-200">Feedback</span>
-      </button>
+      {/* Floating Buttons */}
+      <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+        {isAdmin && (
+          <a
+            href="/admin/feedback"
+            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          >
+            <Inbox className="w-4 h-4 text-accent" />
+            <span className="text-sm font-medium text-gray-700 dark:text-slate-200">Admin</span>
+          </a>
+        )}
+        <button
+          onClick={() => setIsOpen(true)}
+          className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105"
+        >
+          <MessageSquare className="w-4 h-4 text-accent" />
+          <span className="text-sm font-medium text-gray-700 dark:text-slate-200">Feedback</span>
+        </button>
+      </div>
 
       {/* Modal */}
       {isOpen && (
@@ -78,7 +94,7 @@ export function FeedbackButton() {
               />
               <div>
                 <p className="text-sm text-gray-700 dark:text-slate-300">
-                  <span className="font-medium text-gray-900 dark:text-white">Hey!</span> I&apos;m Berto, the creator of DayGo. I&apos;ll get a notification when you send this and will try to address it within the next few days. Thanks for helping make DayGo better!
+                  <span className="font-medium text-gray-900 dark:text-white">Hey!</span> I&apos;m Berto, the creator of DayGo. I review all feedback and will try to address it within the next few days. Thanks for helping make DayGo better!
                 </p>
               </div>
             </div>
