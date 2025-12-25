@@ -345,6 +345,7 @@ export interface Database {
           date: string;
           start_time: string;
           end_time: string;
+          is_ai_generated: boolean;
           created_at: string;
         };
         Insert: {
@@ -355,6 +356,7 @@ export interface Database {
           date: string;
           start_time: string;
           end_time: string;
+          is_ai_generated?: boolean;
           created_at?: string;
         };
         Update: {
@@ -365,6 +367,7 @@ export interface Database {
           date?: string;
           start_time?: string;
           end_time?: string;
+          is_ai_generated?: boolean;
           created_at?: string;
         };
       };
@@ -391,6 +394,32 @@ export interface Database {
           habit_id?: string;
           date?: string;
           note?: string;
+          created_at?: string;
+        };
+      };
+      calendar_rules: {
+        Row: {
+          id: string;
+          user_id: string;
+          rule_text: string;
+          is_active: boolean;
+          priority: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          rule_text: string;
+          is_active?: boolean;
+          priority?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          rule_text?: string;
+          is_active?: boolean;
+          priority?: number;
           created_at?: string;
         };
       };
