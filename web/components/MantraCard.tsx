@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, MoreHorizontal } from 'lucide-react'
 import type { Mantra } from '@/lib/types/database'
 
 interface MantraCardProps {
@@ -12,12 +12,13 @@ interface MantraCardProps {
 export function MantraCard({ mantra, onEdit }: MantraCardProps) {
   const [isGlowing, setIsGlowing] = useState(false)
 
-  const handlePress = () => {
-    setIsGlowing(true)
+  const handleClick = () => {
+    setIsGlowing(!isGlowing)
   }
 
-  const handleRelease = () => {
-    setIsGlowing(false)
+  const handleOptionsClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onEdit?.(mantra)
   }
 
   return (
@@ -27,18 +28,20 @@ export function MantraCard({ mantra, onEdit }: MantraCardProps) {
           ? 'shadow-[0_0_30px_10px_rgba(168,85,247,0.4)] scale-[1.02] border-mantra/60'
           : ''
       }`}
-      onClick={() => onEdit?.(mantra)}
-      onMouseDown={handlePress}
-      onMouseUp={handleRelease}
-      onMouseLeave={handleRelease}
-      onTouchStart={handlePress}
-      onTouchEnd={handleRelease}
+      onClick={handleClick}
     >
       <div className="flex items-start gap-3">
         <Sparkles className={`w-5 h-5 flex-shrink-0 mt-0.5 transition-all duration-200 ${
           isGlowing ? 'text-mantra scale-125' : 'text-mantra'
         }`} />
-        <p className="text-gray-900 dark:text-white italic">{mantra.text}</p>
+        <p className="text-gray-900 dark:text-white italic flex-1">{mantra.text}</p>
+        <button
+          onClick={handleOptionsClick}
+          className="p-1 -m-1 hover:bg-mantra/20 rounded-lg transition-colors flex-shrink-0"
+          aria-label="Mantra options"
+        >
+          <MoreHorizontal className="w-5 h-5 text-gray-400 dark:text-slate-500" />
+        </button>
       </div>
     </div>
   )
