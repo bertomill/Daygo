@@ -13,6 +13,8 @@ import {
   Animated,
   Keyboard,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 import { PanGestureHandler, State, GestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -510,6 +512,11 @@ export default function TodayScreen() {
     >
       <View style={{ flex: 1 }}>
         <SafeAreaView className="flex-1 bg-gray-50" edges={['bottom']}>
+          <KeyboardAvoidingView
+            className="flex-1"
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          >
           <View className="flex-1 px-4">
         {/* Header */}
         <View className="items-center py-6">
@@ -580,6 +587,7 @@ export default function TodayScreen() {
           <Text className="text-white text-3xl">+</Text>
         </TouchableOpacity>
       </View>
+          </KeyboardAvoidingView>
 
       {/* Add Type Selection Modal */}
       <Modal
@@ -661,6 +669,10 @@ export default function TodayScreen() {
         transparent
         onRequestClose={() => setHabitModalVisible(false)}
       >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+        >
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-white rounded-t-3xl p-6">
             <Text className="text-xl font-bold text-gray-800 mb-4">
@@ -716,6 +728,7 @@ export default function TodayScreen() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Add Mantra Modal */}
@@ -725,6 +738,10 @@ export default function TodayScreen() {
         transparent
         onRequestClose={() => setMantraModalVisible(false)}
       >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+        >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View className="flex-1 justify-end bg-black/50">
             <TouchableWithoutFeedback onPress={() => {}}>
@@ -775,6 +792,7 @@ export default function TodayScreen() {
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Add Journal Prompt Modal */}
@@ -784,6 +802,10 @@ export default function TodayScreen() {
         transparent
         onRequestClose={() => setJournalModalVisible(false)}
       >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+        >
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-white rounded-t-3xl p-6">
             <Text className="text-xl font-bold text-gray-800 mb-4">
@@ -828,6 +850,7 @@ export default function TodayScreen() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Add Vision Modal */}
@@ -837,6 +860,10 @@ export default function TodayScreen() {
         transparent
         onRequestClose={() => setVisionModalVisible(false)}
       >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+        >
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-white rounded-t-3xl p-6">
             <Text className="text-xl font-bold text-gray-800 mb-4">
@@ -883,6 +910,7 @@ export default function TodayScreen() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Journal Entry Modal */}
@@ -892,6 +920,10 @@ export default function TodayScreen() {
         transparent
         onRequestClose={() => setJournalEntryModalVisible(false)}
       >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+        >
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-white rounded-t-3xl p-6" style={{ maxHeight: '80%' }}>
             <View className="flex-row items-center justify-between mb-4">
@@ -959,6 +991,7 @@ export default function TodayScreen() {
             )}
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Habit Detail Modal */}

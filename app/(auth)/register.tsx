@@ -11,7 +11,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/authStore';
 
 export default function RegisterScreen() {
@@ -61,6 +62,15 @@ export default function RegisterScreen() {
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32, paddingVertical: 40 }}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Back Button */}
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="absolute top-12 left-6 z-10 w-10 h-10 items-center justify-center rounded-full bg-white/80"
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#374151" />
+          </TouchableOpacity>
+
           <View className="mb-12 items-center">
             <Image
               source={require('../../assets/icon.png')}

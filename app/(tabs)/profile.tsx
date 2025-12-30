@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -93,7 +93,11 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={['bottom']}>
-      <View className="flex-1 px-4">
+      <ScrollView
+        className="flex-1 px-4"
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Profile Header */}
         <View className="items-center py-8">
           <View className={`w-24 h-24 ${isGuest ? 'bg-gray-200' : 'bg-blue-100'} rounded-full items-center justify-center mb-4`}>
@@ -146,7 +150,7 @@ export default function ProfileScreen() {
               </View>
               <Text className="text-gray-800">Version</Text>
             </View>
-            <Text className="text-gray-500">1.0.0 (5)</Text>
+            <Text className="text-gray-500">1.0.0 (10)</Text>
           </View>
 
           <TouchableOpacity
@@ -239,7 +243,7 @@ export default function ProfileScreen() {
             Made with care for your daily habits
           </Text>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

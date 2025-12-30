@@ -170,7 +170,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
               </h2>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors"
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500 dark:text-slate-400" />
               </button>
@@ -193,14 +193,14 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                className="flex-1 px-5 py-3 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={() => deleteCardMutation.mutate()}
                 disabled={deleteCardMutation.isPending}
-                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {deleteCardMutation.isPending ? 'Deleting...' : 'Delete'}
               </button>
@@ -214,7 +214,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
               </h2>
               <button
                 onClick={onClose}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors"
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500 dark:text-slate-400" />
               </button>
@@ -454,7 +454,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                 <div className="flex-1" />
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 bg-accent hover:bg-accent/90 text-white rounded-lg transition-colors"
+                  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl transition-colors font-medium shadow-sm"
                 >
                   Done
                 </button>

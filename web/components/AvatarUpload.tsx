@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Camera, Loader2, User, X } from 'lucide-react'
 import { profilesService } from '@/lib/services/profiles'
 import Image from 'next/image'
@@ -20,6 +20,11 @@ export default function AvatarUpload({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(currentAvatarUrl || null)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setAvatarUrl(currentAvatarUrl || null)
+  }, [currentAvatarUrl])
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -44,9 +49,11 @@ export default function AvatarUpload({
       const url = await profilesService.uploadAvatar(userId, file)
       setAvatarUrl(url)
       onUploadComplete?.(url)
-    } catch (err) {
-      setError('Failed to upload avatar. Please try again.')
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Failed to upload avatar. Please try again.'
+      setError(errorMessage)
       console.error('Avatar upload error:', err)
+      alert(`Upload failed: ${errorMessage}`)
     } finally {
       setIsUploading(false)
     }

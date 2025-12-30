@@ -14,9 +14,9 @@
       "backgroundColor": "#0f172a"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.daygo.habits",
-      "buildNumber": "5",
+      "buildNumber": "10",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
