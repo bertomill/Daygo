@@ -249,6 +249,8 @@ export const kanbanService = {
       description?: string
       column_id?: string
       status?: 'todo' | 'in_progress' | 'done'
+      tags?: string[]
+      high_priority?: boolean
     }
   ): Promise<KanbanCard> {
     const { data, error } = await (supabase.from('kanban_cards') as any)

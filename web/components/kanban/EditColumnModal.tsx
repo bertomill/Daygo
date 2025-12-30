@@ -159,6 +159,14 @@ export function EditColumnModal({ column, onClose }: EditColumnModalProps) {
                   placeholder="Why are you working on this?"
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      if (title.trim()) {
+                        handleSubmit(e as any)
+                      }
+                    }
+                  }}
                 />
               </div>
 

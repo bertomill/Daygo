@@ -20,6 +20,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
   const [description, setDescription] = useState(card.description)
   const [tags, setTags] = useState<string[]>(card.tags || [])
   const [newTag, setNewTag] = useState('')
+  const [highPriority, setHighPriority] = useState(card.high_priority || false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [newSubtaskText, setNewSubtaskText] = useState('')
 
@@ -43,6 +44,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
       column_id?: string
       status?: 'todo' | 'in_progress' | 'done'
       tags?: string[]
+      high_priority?: boolean
     }) => {
       return kanbanService.updateCard(card.id, updates)
     },
@@ -157,12 +159,8 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
       onClick={onClose}
     >
       <div
-        className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 dark:border-slate-700/50"
+        className="bg-white dark:bg-slate-800 rounded-3xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-        }}
       >
         {showDeleteConfirm ? (
           <>
@@ -222,10 +220,10 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
               </button>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                   Title
                 </label>
                 <input
@@ -233,13 +231,13 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   onBlur={handleUpdateTitle}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-slate-700 rounded-2xl bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                   Description
                 </label>
                 <textarea
@@ -248,27 +246,27 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                   onBlur={handleUpdateDescription}
                   placeholder="Add a description..."
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-slate-700 rounded-2xl bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
                 />
               </div>
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                   Tags
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-1 rounded"
+                          className="inline-flex items-center gap-1.5 text-sm bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-3 py-1.5 rounded-full font-medium"
                         >
                           {tag}
                           <button
                             onClick={() => handleRemoveTag(tag)}
-                            className="hover:bg-blue-200 dark:hover:bg-blue-800/50 rounded-full p-0.5 transition-colors"
+                            className="hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-full p-0.5 transition-colors"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -282,12 +280,12 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
                       placeholder="Add a tag..."
-                      className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="flex-1 px-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                     <button
                       type="submit"
                       disabled={!newTag.trim()}
-                      className="px-3 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Plus className="w-4 h-4 text-gray-700 dark:text-slate-300" />
                     </button>
@@ -295,16 +293,35 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                 </div>
               </div>
 
+              {/* High Priority Toggle */}
+              <div className="py-1">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={highPriority}
+                    onChange={(e) => {
+                      const newValue = e.target.checked
+                      setHighPriority(newValue)
+                      updateCardMutation.mutate({ high_priority: newValue })
+                    }}
+                    className="w-5 h-5 text-blue-600 border-gray-300 dark:border-slate-600 rounded-lg focus:ring-blue-500 dark:focus:ring-blue-600 focus:ring-2 transition-all"
+                  />
+                  <span className="text-sm font-semibold text-gray-700 dark:text-slate-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                    High Priority
+                  </span>
+                </label>
+              </div>
+
               {/* Subtasks */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                   Subtasks
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {card.subtasks.map((subtask) => (
                     <div
                       key={subtask.id}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 group"
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-900 group transition-colors"
                     >
                       <button
                         onClick={() =>
@@ -313,10 +330,10 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                             completed: !subtask.completed,
                           })
                         }
-                        className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                        className={`flex-shrink-0 w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
                           subtask.completed
-                            ? 'bg-accent border-accent'
-                            : 'border-gray-300 dark:border-slate-600 hover:border-accent'
+                            ? 'bg-blue-500 border-blue-500'
+                            : 'border-gray-300 dark:border-slate-600 hover:border-blue-500'
                         }`}
                       >
                         {subtask.completed && (
@@ -336,9 +353,9 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                         onClick={() =>
                           deleteSubtaskMutation.mutate(subtask.id)
                         }
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
                       </button>
                     </div>
                   ))}
@@ -349,7 +366,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                       value={newSubtaskText}
                       onChange={(e) => setNewSubtaskText(e.target.value)}
                       placeholder="Add a subtask..."
-                      className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="flex-1 px-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                     <button
                       type="submit"
@@ -357,7 +374,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                         !newSubtaskText.trim() ||
                         createSubtaskMutation.isPending
                       }
-                      className="px-3 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Plus className="w-4 h-4 text-gray-700 dark:text-slate-300" />
                     </button>
@@ -367,13 +384,13 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
 
               {/* Linked Goal */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                   Linked Goal
                 </label>
                 <select
                   value={card.goal?.id || ''}
                   onChange={(e) => linkGoalMutation.mutate(e.target.value || null)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-slate-700 rounded-2xl bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
                 >
                   <option value="">None</option>
                   {goals.map((goal) => (
@@ -385,9 +402,9 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
               </div>
 
               {/* Move Card */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                     Column
                   </label>
                   <select
@@ -395,7 +412,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                     onChange={(e) =>
                       handleMoveCard(e.target.value, card.status)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-slate-700 rounded-2xl bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
                   >
                     {columns.map((column) => (
                       <option key={column.id} value={column.id}>
@@ -405,7 +422,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                     Status
                   </label>
                   <select
@@ -416,7 +433,7 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
                         e.target.value as 'todo' | 'in_progress' | 'done'
                       )
                     }
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-slate-700 rounded-2xl bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
                   >
                     <option value="todo">To Do</option>
                     <option value="in_progress">In Progress</option>
@@ -426,10 +443,10 @@ export function KanbanCardModal({ card, onClose }: KanbanCardModalProps) {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
+              <div className="flex gap-3 pt-6 mt-2">
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors flex items-center gap-2 font-medium"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete Card

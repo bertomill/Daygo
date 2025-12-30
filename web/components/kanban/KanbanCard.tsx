@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckSquare, Target, MoreVertical, GripVertical } from 'lucide-react'
+import { CheckSquare, Target, MoreVertical, GripVertical, Flag } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { KanbanCardWithDetails } from '@/lib/types/database'
@@ -62,12 +62,17 @@ export function KanbanCard({ card, onClick }: KanbanCardProps) {
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h4
-              onClick={onClick}
-              className="font-medium text-sm text-gray-900 dark:text-white flex-1 cursor-pointer"
-            >
-              {card.title}
-            </h4>
+            <div className="flex items-center gap-1 flex-1 min-w-0">
+              {card.high_priority && (
+                <Flag className="w-3 h-3 text-red-500 flex-shrink-0" fill="currentColor" />
+              )}
+              <h4
+                onClick={onClick}
+                className="font-medium text-sm text-gray-900 dark:text-white cursor-pointer"
+              >
+                {card.title}
+              </h4>
+            </div>
             <button
               onClick={(e) => {
                 e.stopPropagation()
