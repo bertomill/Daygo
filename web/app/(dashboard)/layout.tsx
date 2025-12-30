@@ -90,24 +90,26 @@ export default function DashboardLayout({
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
-        <div className="max-w-lg mx-auto flex justify-around">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-            const Icon = item.icon
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center py-3 px-6 transition-colors ${
-                  isActive ? 'text-accent' : 'text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300'
-                }`}
-              >
-                <Icon className="w-6 h-6" />
-                <span className="text-xs mt-1">{item.label}</span>
-              </Link>
-            )
-          })}
+      <nav className="fixed bottom-0 left-0 right-0 pb-4 px-4">
+        <div className="max-w-lg mx-auto bg-bevel-card dark:bg-slate-800 rounded-3xl shadow-bevel-lg">
+          <div className="flex justify-around">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex flex-col items-center py-3 px-4 transition-all ${
+                    isActive ? 'text-accent' : 'text-bevel-text-secondary dark:text-slate-400 hover:text-bevel-text dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="w-6 h-6" />
+                  <span className="text-xs mt-1.5 font-medium">{item.label}</span>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       </nav>
     </div>

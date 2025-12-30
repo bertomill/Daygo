@@ -107,6 +107,7 @@ export const kanbanService = {
   async createColumn(
     userId: string,
     title: string,
+    description: string = '',
     color: string = '#3b82f6'
   ): Promise<KanbanColumn> {
     const { data, error } = await supabase
@@ -114,6 +115,7 @@ export const kanbanService = {
       .insert({
         user_id: userId,
         title,
+        description,
         color,
       } as any)
       .select()
@@ -126,10 +128,11 @@ export const kanbanService = {
   async updateColumn(
     columnId: string,
     title: string,
+    description: string,
     color: string
   ): Promise<KanbanColumn> {
     const { data, error } = await (supabase.from('kanban_columns') as any)
-      .update({ title, color })
+      .update({ title, description, color })
       .eq('id', columnId)
       .select()
       .single()

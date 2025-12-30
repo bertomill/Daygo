@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSwipeable } from 'react-swipeable'
-import { ChevronLeft, ChevronRight, Plus, Trash2, X, Sparkles, RefreshCw, Pencil } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Trash2, X, Sparkles, RefreshCw, Pencil } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -33,12 +33,14 @@ import { calendarRulesService } from '@/lib/services/calendarRules'
 import { habitMissNotesService } from '@/lib/services/habitMissNotes'
 import { userPreferencesService } from '@/lib/services/userPreferences'
 import { dailyNotesService } from '@/lib/services/dailyNotes'
+import { scheduleTemplatesService } from '@/lib/services/scheduleTemplates'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { ScheduleGrid } from '@/components/ScheduleGrid'
 import { CalendarRulesPanel } from '@/components/CalendarRulesPanel'
 import { GoogleCalendarPanel } from '@/components/GoogleCalendarPanel'
 import { SchedulePreferences } from '@/components/SchedulePreferences'
 import { DailyNotes } from '@/components/DailyNotes'
+import { ScheduleTemplates } from '@/components/ScheduleTemplates'
 import { TimePicker } from '@/components/TimePicker'
 import { MantraCard } from '@/components/MantraCard'
 import { JournalCard } from '@/components/JournalCard'
@@ -46,7 +48,7 @@ import { TodoCard } from '@/components/TodoCard'
 import { VisionCard } from '@/components/VisionCard'
 import { ScoreRing } from '@/components/ScoreRing'
 import { RichTextEditor } from '@/components/RichTextEditor'
-import type { HabitWithLog, Mantra, Todo, Vision, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal } from '@/lib/types/database'
+import type { HabitWithLog, Mantra, Todo, Vision, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate } from '@/lib/types/database'
 import { calculateMissionScore } from '@/lib/services/missionScore'
 
 function formatDate(date: Date): string {
@@ -89,6 +91,7 @@ export default function TodayPage() {
   const [selectedJournal, setSelectedJournal] = useState<JournalPromptWithEntry | null>(null)
   const [isEditingJournal, setIsEditingJournal] = useState(false)
   const [editJournalText, setEditJournalText] = useState('')
+  const [editJournalTemplate, setEditJournalTemplate] = useState('')
   const [showAddHint, setShowAddHint] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
@@ -104,6 +107,34 @@ export default function TodayPage() {
   const [slideInDirection, setSlideInDirection] = useState<'left' | 'right' | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const pepTalkTextareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Section collapse/expand state
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('daygo-expanded-sections')
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    }
+    // All sections expanded by default
+    return {
+      pepTalk: true,
+      visions: true,
+      mantras: true,
+      habits: true,
+      journal: true,
+      todos: true,
+      schedule: true,
+    }
+  })
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => {
+      const newState = { ...prev, [section]: !prev[section] }
+      localStorage.setItem('daygo-expanded-sections', JSON.stringify(newState))
+      return newState
+    })
+  }
 
   // Check for Google Calendar connection callback
   useEffect(() => {
@@ -184,6 +215,7 @@ export default function TodayPage() {
           setSelectedJournal(null)
           setIsEditingJournal(false)
           setEditJournalText('')
+          setEditJournalTemplate('')
         }
         if (selectedEvent) {
           setSelectedEvent(null)
@@ -320,6 +352,13 @@ export default function TodayPage() {
   const { data: dailyNote } = useQuery({
     queryKey: ['daily-note', user?.id, dateStr],
     queryFn: () => dailyNotesService.getNote(user!.id, dateStr),
+    enabled: !!user,
+  })
+
+  // Schedule templates
+  const { data: scheduleTemplates = [] } = useQuery({
+    queryKey: ['schedule-templates', user?.id],
+    queryFn: () => scheduleTemplatesService.getTemplates(user!.id),
     enabled: !!user,
   })
 
@@ -501,13 +540,14 @@ export default function TodayPage() {
   })
 
   const updateJournalPromptMutation = useMutation({
-    mutationFn: ({ id, prompt }: { id: string; prompt: string }) =>
-      journalService.updatePrompt(id, prompt),
+    mutationFn: ({ id, prompt, templateText }: { id: string; prompt: string; templateText?: string }) =>
+      journalService.updatePrompt(id, prompt, templateText),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journal-prompts'] })
       setSelectedJournal(null)
       setIsEditingJournal(false)
       setEditJournalText('')
+      setEditJournalTemplate('')
     },
   })
 
@@ -812,6 +852,44 @@ export default function TodayPage() {
     },
   })
 
+  // Schedule Template mutations
+  const saveTemplateMutation = useMutation({
+    mutationFn: ({ name, description }: { name: string; description?: string }) =>
+      scheduleTemplatesService.createTemplate(user!.id, name, scheduleEvents, description),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-templates', user?.id] })
+    },
+  })
+
+  const applyTemplateMutation = useMutation({
+    mutationFn: async (template: ScheduleTemplate) => {
+      const templateEvents = scheduleTemplatesService.getTemplateEvents(template)
+
+      // Create all events from the template
+      for (const event of templateEvents) {
+        await scheduleService.createEvent(
+          user!.id,
+          event.title,
+          dateStr,
+          event.start_time,
+          event.end_time,
+          event.description || undefined,
+          event.is_ai_generated || false
+        )
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
+    },
+  })
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: (templateId: string) => scheduleTemplatesService.deleteTemplate(templateId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-templates', user?.id] })
+    },
+  })
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -965,150 +1043,235 @@ export default function TodayPage() {
           {/* Today's Pep Talk */}
           {todaysPepTalk && (
             <section>
-              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
-                Today&apos;s Pep Talk
-              </h2>
-              <div
-                className="bg-bevel-card dark:bg-slate-800 shadow-bevel rounded-2xl p-5 cursor-pointer hover:shadow-bevel-md transition-all"
-                onClick={() => deletePepTalkMutation.mutate()}
+              <button
+                onClick={() => toggleSection('pepTalk')}
+                className="w-full flex items-center justify-between mb-4 group"
               >
-                <div className="flex items-start gap-4">
-                  <Sparkles className="w-6 h-6 text-purple-500 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-bevel-text dark:text-white font-medium leading-relaxed italic">{todaysPepTalk.text}</p>
-                    <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-3">Tap to remove</p>
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  Today&apos;s Pep Talk
+                </h2>
+                {expandedSections.pepTalk ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </button>
+              {expandedSections.pepTalk && (
+                <div
+                  className="bg-bevel-card dark:bg-slate-800 shadow-bevel rounded-2xl p-5 cursor-pointer hover:shadow-bevel-md transition-all"
+                  onClick={() => deletePepTalkMutation.mutate()}
+                >
+                  <div className="flex items-start gap-4">
+                    <Sparkles className="w-6 h-6 text-purple-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-bevel-text dark:text-white font-medium leading-relaxed italic">{todaysPepTalk.text}</p>
+                      <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-3">Tap to remove</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </section>
           )}
 
           {/* Visions */}
           {visions.length > 0 && (
             <section>
-              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
-                Visions
-              </h2>
-              <div className="space-y-3">
-                {visions.map((vision) => (
-                  <VisionCard
-                    key={vision.id}
-                    vision={vision}
-                    onEdit={(v) => setSelectedVision(v)}
-                  />
-                ))}
-              </div>
+              <button
+                onClick={() => toggleSection('visions')}
+                className="w-full flex items-center justify-between mb-4 group"
+              >
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  Visions
+                </h2>
+                {expandedSections.visions ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </button>
+              {expandedSections.visions && (
+                <div className="space-y-3">
+                  {visions.map((vision) => (
+                    <VisionCard
+                      key={vision.id}
+                      vision={vision}
+                      onEdit={(v) => setSelectedVision(v)}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
           {/* Mantras */}
           {mantras.length > 0 && (
             <section>
-              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
-                Mantras
-              </h2>
-              <div className="space-y-3">
-                {mantras.map((mantra) => (
-                  <MantraCard
-                    key={mantra.id}
-                    mantra={mantra}
-                    onEdit={(m) => setSelectedMantra(m)}
-                  />
-                ))}
-              </div>
+              <button
+                onClick={() => toggleSection('mantras')}
+                className="w-full flex items-center justify-between mb-4 group"
+              >
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  Mantras
+                </h2>
+                {expandedSections.mantras ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </button>
+              {expandedSections.mantras && (
+                <div className="space-y-3">
+                  {mantras.map((mantra) => (
+                    <MantraCard
+                      key={mantra.id}
+                      mantra={mantra}
+                      onEdit={(m) => setSelectedMantra(m)}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
           {/* Habits */}
           {habits.length > 0 && (
             <section>
-              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
-                Habits
-              </h2>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
+              <button
+                onClick={() => toggleSection('habits')}
+                className="w-full flex items-center justify-between mb-4 group"
               >
-                <SortableContext
-                  items={habits.map((h) => h.id)}
-                  strategy={verticalListSortingStrategy}
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  Habits
+                </h2>
+                {expandedSections.habits ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </button>
+              {expandedSections.habits && (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
                 >
-                  <div className="space-y-3">
-                    {habits.map((habit) => (
-                      <SortableHabitCard
-                        key={habit.id}
-                        habit={habit}
-                        onToggle={(habitId, completed) =>
-                          toggleHabitMutation.mutate({ habitId, completed })
-                        }
-                        onEdit={(h) => setSelectedHabit(h)}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
+                  <SortableContext
+                    items={habits.map((h) => h.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3">
+                      {habits.map((habit) => (
+                        <SortableHabitCard
+                          key={habit.id}
+                          habit={habit}
+                          onToggle={(habitId, completed) =>
+                            toggleHabitMutation.mutate({ habitId, completed })
+                          }
+                          onEdit={(h) => setSelectedHabit(h)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
             </section>
           )}
 
           {/* Journal Prompts */}
           {prompts.length > 0 && (
             <section>
-              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
-                Journal
-              </h2>
-              <div className="space-y-3">
-                {prompts.map((prompt) => (
-                  <JournalCard
-                    key={prompt.id}
-                    prompt={prompt}
-                    onSave={(promptId, entry) =>
-                      saveEntryMutation.mutate({ promptId, entry })
-                    }
-                    onEdit={(p) => {
-                      setSelectedJournal(p)
-                      setEditJournalText(p.prompt)
-                    }}
-                  />
-                ))}
-              </div>
+              <button
+                onClick={() => toggleSection('journal')}
+                className="w-full flex items-center justify-between mb-4 group"
+              >
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  Journal
+                </h2>
+                {expandedSections.journal ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </button>
+              {expandedSections.journal && (
+                <div className="space-y-3">
+                  {prompts.map((prompt) => (
+                    <JournalCard
+                      key={prompt.id}
+                      prompt={prompt}
+                      onSave={(promptId, entry) =>
+                        saveEntryMutation.mutate({ promptId, entry })
+                      }
+                      onEdit={(p) => {
+                        setSelectedJournal(p)
+                        setEditJournalText(p.prompt)
+                        setEditJournalTemplate(p.template_text || '')
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
           {/* To-Dos */}
           {todos.length > 0 && (
             <section>
-              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
-                To-Do
-              </h2>
-              <div className="space-y-3">
-                {todos.map((todo) => (
-                  <TodoCard
-                    key={todo.id}
-                    todo={todo}
-                    onToggle={(todoId, completed) =>
-                      toggleTodoMutation.mutate({ todoId, completed })
-                    }
-                    onEdit={(t) => setSelectedTodo(t)}
-                  />
-                ))}
-              </div>
+              <button
+                onClick={() => toggleSection('todos')}
+                className="w-full flex items-center justify-between mb-4 group"
+              >
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  To-Do
+                </h2>
+                {expandedSections.todos ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </button>
+              {expandedSections.todos && (
+                <div className="space-y-3">
+                  {todos.map((todo) => (
+                    <TodoCard
+                      key={todo.id}
+                      todo={todo}
+                      onToggle={(todoId, completed) =>
+                        toggleTodoMutation.mutate({ todoId, completed })
+                      }
+                      onEdit={(t) => setSelectedTodo(t)}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
           {/* Schedule */}
           <section>
-            <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => toggleSection('schedule')}
+              className="w-full flex items-center justify-between mb-3 group"
+            >
               <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                 Schedule
               </h2>
-              {scheduleEvents.length > 0 && (
-                <span className="text-xs text-gray-400 dark:text-slate-500">
-                  {scheduleEvents.filter(e => e.completed).length}/{scheduleEvents.length} completed
-                </span>
-              )}
-            </div>
-            <GoogleCalendarPanel
+              <div className="flex items-center gap-3">
+                {scheduleEvents.length > 0 && (
+                  <span className="text-xs text-gray-400 dark:text-slate-500">
+                    {scheduleEvents.filter(e => e.completed).length}/{scheduleEvents.length} completed
+                  </span>
+                )}
+                {expandedSections.schedule ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </div>
+            </button>
+            {expandedSections.schedule && (
+              <>
+                <GoogleCalendarPanel
               isConnected={isGcalConnected}
               onConnect={() => connectGcalMutation.mutate()}
               onDisconnect={() => disconnectGcalMutation.mutate()}
@@ -1139,6 +1302,16 @@ export default function TodayPage() {
               hasAiEvents={scheduleEvents.some(e => e.is_ai_generated)}
               planningStatus={planningStatus}
             />
+            <ScheduleTemplates
+              templates={scheduleTemplates}
+              currentEvents={scheduleEvents}
+              onSaveTemplate={(name, description) =>
+                saveTemplateMutation.mutate({ name, description })
+              }
+              onApplyTemplate={(template) => applyTemplateMutation.mutate(template)}
+              onDeleteTemplate={(templateId) => deleteTemplateMutation.mutate(templateId)}
+              isSaving={saveTemplateMutation.isPending}
+            />
             <ScheduleGrid
               events={scheduleEvents}
               selectedDate={selectedDate}
@@ -1155,11 +1328,29 @@ export default function TodayPage() {
                 resizeEventMutation.mutate({ eventId, endTime: newEndTime })
               }
             />
+              </>
+            )}
           </section>
 
           {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && todos.length === 0 && visions.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-slate-400 mb-4">No items yet. Add your first habit, mantra, vision, journal prompt, or to-do!</p>
+            <div className="text-center py-16 px-6">
+              <div className="mb-4">
+                <div className="w-16 h-16 mx-auto bg-accent/10 rounded-full flex items-center justify-center">
+                  <Plus className="w-8 h-8 text-accent" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold text-bevel-text dark:text-white mb-2">
+                Start your journey
+              </h3>
+              <p className="text-bevel-text-secondary dark:text-slate-400 mb-6 leading-relaxed">
+                Add your first habit, mantra, vision, journal prompt, or to-do to begin tracking your day!
+              </p>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-6 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-semibold transition-all shadow-bevel-sm hover:shadow-bevel"
+              >
+                Get Started
+              </button>
             </div>
           )}
         </div>
@@ -1213,13 +1404,13 @@ export default function TodayPage() {
           }}
         >
           <div
-            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+            className="bg-bevel-card dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-bevel-lg"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Step 1: Type Selection */}
             {addType === null ? (
               <>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Add New Item</h2>
+                <h2 className="text-xl font-bold text-bevel-text dark:text-white mb-5">Add New Item</h2>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { type: 'habit' as const, label: 'Habit', key: 'H', color: 'bg-teal hover:bg-teal/90' },
@@ -1321,6 +1512,12 @@ export default function TodayPage() {
                   type="text"
                   value={newEventTitle}
                   onChange={(e) => setNewEventTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newEventTitle.trim() && !createEventMutation.isPending) {
+                      e.preventDefault()
+                      createEventMutation.mutate()
+                    }
+                  }}
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
                   placeholder="Event title..."
                   autoFocus
@@ -1355,6 +1552,12 @@ export default function TodayPage() {
                   type="text"
                   value={newEventDescription}
                   onChange={(e) => setNewEventDescription(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newEventTitle.trim() && !createEventMutation.isPending) {
+                      e.preventDefault()
+                      createEventMutation.mutate()
+                    }
+                  }}
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
                   placeholder="Description (optional)..."
                 />
@@ -1790,6 +1993,7 @@ export default function TodayPage() {
             setSelectedJournal(null)
             setIsEditingJournal(false)
             setEditJournalText('')
+            setEditJournalTemplate('')
           }}
         >
           <div
@@ -1803,6 +2007,7 @@ export default function TodayPage() {
                   setSelectedJournal(null)
                   setIsEditingJournal(false)
                   setEditJournalText('')
+                  setEditJournalTemplate('')
                 }}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
@@ -1812,19 +2017,40 @@ export default function TodayPage() {
 
             {isEditingJournal ? (
               <div className="space-y-3 mb-4">
-                <input
-                  type="text"
-                  value={editJournalText}
-                  onChange={(e) => setEditJournalText(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-journal"
-                  placeholder="Journal prompt..."
-                  autoFocus
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    Prompt
+                  </label>
+                  <input
+                    type="text"
+                    value={editJournalText}
+                    onChange={(e) => setEditJournalText(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-journal"
+                    placeholder="Journal prompt..."
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    Template (optional)
+                  </label>
+                  <textarea
+                    value={editJournalTemplate}
+                    onChange={(e) => setEditJournalTemplate(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-journal resize-none"
+                    placeholder="Pre-fill structure for entries (e.g., bullet points, sections)..."
+                    rows={4}
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                    This text will pre-fill new journal entries to provide structure
+                  </p>
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
                       setIsEditingJournal(false)
                       setEditJournalText(selectedJournal.prompt)
+                      setEditJournalTemplate(selectedJournal.template_text || '')
                     }}
                     className="flex-1 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
                   >
@@ -1832,11 +2058,15 @@ export default function TodayPage() {
                   </button>
                   <button
                     onClick={() => {
-                      if (editJournalText.trim() && editJournalText !== selectedJournal.prompt) {
-                        updateJournalPromptMutation.mutate({ id: selectedJournal.id, prompt: editJournalText })
+                      if (editJournalText.trim() && (editJournalText !== selectedJournal.prompt || editJournalTemplate !== (selectedJournal.template_text || ''))) {
+                        updateJournalPromptMutation.mutate({
+                          id: selectedJournal.id,
+                          prompt: editJournalText,
+                          templateText: editJournalTemplate
+                        })
                       }
                     }}
-                    disabled={!editJournalText.trim() || editJournalText === selectedJournal.prompt || updateJournalPromptMutation.isPending}
+                    disabled={!editJournalText.trim() || (editJournalText === selectedJournal.prompt && editJournalTemplate === (selectedJournal.template_text || '')) || updateJournalPromptMutation.isPending}
                     className="flex-1 py-2 bg-journal hover:bg-journal/90 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
                   >
                     {updateJournalPromptMutation.isPending ? 'Saving...' : 'Save'}
@@ -1905,6 +2135,12 @@ export default function TodayPage() {
                 type="text"
                 value={newEventTitle}
                 onChange={(e) => setNewEventTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newEventTitle.trim() && !createEventMutation.isPending) {
+                    e.preventDefault()
+                    createEventMutation.mutate()
+                  }
+                }}
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
                 placeholder="Event title..."
                 autoFocus
@@ -1939,6 +2175,12 @@ export default function TodayPage() {
                 type="text"
                 value={newEventDescription}
                 onChange={(e) => setNewEventDescription(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newEventTitle.trim() && !createEventMutation.isPending) {
+                    e.preventDefault()
+                    createEventMutation.mutate()
+                  }
+                }}
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
                 placeholder="Description (optional)..."
               />

@@ -126,8 +126,8 @@ export default function ProfilePage() {
   const isCanceled = profile?.subscription_status === 'canceled' && profile?.subscription_current_period_end && new Date(profile.subscription_current_period_end) > new Date()
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Profile</h1>
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen bg-bevel-bg dark:bg-slate-900">
+      <h1 className="text-2xl font-bold text-bevel-text dark:text-white mb-6">Profile</h1>
 
       {/* Message Banner */}
       {message && (
@@ -141,7 +141,7 @@ export default function ProfilePage() {
       )}
 
       {/* User Info */}
-      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 mb-6 shadow-sm">
+      <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl p-6 mb-6 shadow-bevel">
         <div className="flex flex-col items-center gap-4">
           <AvatarUpload
             userId={user?.id || ''}
@@ -158,7 +158,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Subscription Section */}
-      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mb-6 shadow-sm">
+      <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 mb-6 shadow-bevel">
         <div className="flex items-center gap-3 mb-4">
           <Crown className={`w-5 h-5 ${isPro ? 'text-yellow-500' : 'text-gray-400 dark:text-slate-400'}`} />
           <span className="text-gray-900 dark:text-white font-medium">Subscription</span>
@@ -232,7 +232,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Menu Items */}
-      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden mb-6 shadow-sm">
+      <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl overflow-hidden mb-6 shadow-bevel">
         <a
           href="mailto:support@daygo.app"
           className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
@@ -252,7 +252,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Dark Mode Toggle */}
-      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mb-6 shadow-sm">
+      <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 mb-6 shadow-bevel">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {theme === 'dark' ? (
@@ -280,7 +280,7 @@ export default function ProfilePage() {
       {/* Sign Out */}
       <button
         onClick={handleSignOut}
-        className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+        className="w-full bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 flex items-center gap-4 hover:shadow-bevel-md transition-all shadow-bevel"
       >
         <LogOut className="w-5 h-5 text-red-500" />
         <span className="text-red-500">Sign Out</span>

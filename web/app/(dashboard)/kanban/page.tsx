@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { LayoutGrid } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { kanbanService } from '@/lib/services/kanban'
@@ -16,6 +16,7 @@ import type {
 
 export default function KanbanPage() {
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
 
   // Modal states
   const [showCreateColumn, setShowCreateColumn] = useState(false)
@@ -33,6 +34,20 @@ export default function KanbanPage() {
     enabled: !!user,
   })
 
+  // Mutation to update card status on drag
+  const updateCardMutation = useMutation({
+    mutationFn: async ({ cardId, status, columnId }: {
+      cardId: string;
+      status: 'todo' | 'in_progress' | 'done';
+      columnId: string;
+    }) => {
+      return kanbanService.updateCard(cardId, { status, column_id: columnId })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns'] })
+    },
+  })
+
   const handleCardClick = (card: KanbanCardWithDetails) => {
     setSelectedCard(card)
     setShowCardDetail(true)
@@ -43,21 +58,36 @@ export default function KanbanPage() {
     setShowEditColumn(true)
   }
 
+  const handleCardDrop = (
+    cardId: string,
+    newStatus: 'todo' | 'in_progress' | 'done',
+    newColumnId: string
+  ) => {
+    updateCardMutation.mutate({ cardId, status: newStatus, columnId: newColumnId })
+  }
+
   // Empty state when no columns
   if (!isLoading && columns.length === 0) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+      <div className="max-w-lg mx-auto px-4 py-6 min-h-screen bg-bevel-bg dark:bg-slate-900">
+        <h1 className="text-2xl font-bold text-bevel-text dark:text-white mb-6">
           Kanban Board
         </h1>
-        <div className="text-center py-12">
-          <LayoutGrid className="w-16 h-16 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-slate-400 mb-6">
-            Create your first column to start organizing your life!
+        <div className="text-center py-16 px-6">
+          <div className="mb-4">
+            <div className="w-16 h-16 mx-auto bg-accent/10 rounded-full flex items-center justify-center">
+              <LayoutGrid className="w-8 h-8 text-accent" />
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold text-bevel-text dark:text-white mb-2">
+            Get organized
+          </h3>
+          <p className="text-bevel-text-secondary dark:text-slate-400 mb-6 leading-relaxed">
+            Create your first column to start organizing your tasks and projects!
           </p>
           <button
             onClick={() => setShowCreateColumn(true)}
-            className="bg-accent hover:bg-accent/90 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            className="bg-accent hover:bg-accent/90 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-bevel-sm hover:shadow-bevel"
           >
             Create Column
           </button>
@@ -90,6 +120,7 @@ export default function KanbanPage() {
           onCardClick={handleCardClick}
           onAddColumn={() => setShowCreateColumn(true)}
           onEditColumn={handleEditColumn}
+          onCardDrop={handleCardDrop}
         />
       )}
 

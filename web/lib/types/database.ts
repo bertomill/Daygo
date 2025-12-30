@@ -188,6 +188,7 @@ export interface Database {
           id: string;
           user_id: string;
           prompt: string;
+          template_text: string | null;
           is_active: boolean;
           sort_order: number;
           created_at: string;
@@ -196,6 +197,7 @@ export interface Database {
           id?: string;
           user_id: string;
           prompt: string;
+          template_text?: string | null;
           is_active?: boolean;
           sort_order?: number;
           created_at?: string;
@@ -204,6 +206,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           prompt?: string;
+          template_text?: string | null;
           is_active?: boolean;
           sort_order?: number;
           created_at?: string;
@@ -527,6 +530,7 @@ export interface Database {
           id: string;
           user_id: string;
           title: string;
+          description: string;
           color: string;
           sort_order: number;
           created_at: string;
@@ -535,6 +539,7 @@ export interface Database {
           id?: string;
           user_id: string;
           title: string;
+          description?: string;
           color?: string;
           sort_order?: number;
           created_at?: string;
@@ -543,6 +548,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           title?: string;
+          description?: string;
           color?: string;
           sort_order?: number;
           created_at?: string;
@@ -556,6 +562,7 @@ export interface Database {
           title: string;
           description: string;
           status: 'todo' | 'in_progress' | 'done';
+          tags: string[];
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -567,6 +574,7 @@ export interface Database {
           title: string;
           description?: string;
           status?: 'todo' | 'in_progress' | 'done';
+          tags?: string[];
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
@@ -578,6 +586,7 @@ export interface Database {
           title?: string;
           description?: string;
           status?: 'todo' | 'in_progress' | 'done';
+          tags?: string[];
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
@@ -629,6 +638,35 @@ export interface Database {
           goal_id?: string;
         };
       };
+      schedule_templates: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          description: string | null;
+          template_data: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          description?: string | null;
+          template_data: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          description?: string | null;
+          template_data?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -669,6 +707,7 @@ export type KanbanColumn = Database['public']['Tables']['kanban_columns']['Row']
 export type KanbanCard = Database['public']['Tables']['kanban_cards']['Row'];
 export type KanbanSubtask = Database['public']['Tables']['kanban_subtasks']['Row'];
 export type KanbanGoalLink = Database['public']['Tables']['kanban_goal_links']['Row'];
+export type ScheduleTemplate = Database['public']['Tables']['schedule_templates']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {

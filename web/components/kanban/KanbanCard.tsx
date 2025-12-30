@@ -1,6 +1,8 @@
 'use client'
 
-import { CheckSquare, Target } from 'lucide-react'
+import { CheckSquare, Target, MoreVertical, GripVertical } from 'lucide-react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { KanbanCardWithDetails } from '@/lib/types/database'
 
 interface KanbanCardProps {
@@ -8,42 +10,113 @@ interface KanbanCardProps {
   onClick: () => void
 }
 
+const TAG_COLORS = [
+  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+  'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
+  'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+]
+
+function getTagColor(tag: string, index: number): string {
+  // Use a simple hash to get consistent colors for the same tag
+  const hash = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  return TAG_COLORS[hash % TAG_COLORS.length]
+}
+
 export function KanbanCard({ card, onClick }: KanbanCardProps) {
   const completedSubtasks = card.subtasks.filter((s) => s.completed).length
   const totalSubtasks = card.subtasks.length
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
   return (
     <div
-      onClick={onClick}
-      className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow border border-gray-200 dark:border-slate-600"
+      ref={setNodeRef}
+      style={style}
+      className={`bg-gray-50 dark:bg-slate-700 rounded-lg p-3 hover:shadow-md transition-shadow border border-gray-200 dark:border-slate-600 group relative ${
+        isDragging ? 'opacity-50 scale-105' : ''
+      }`}
     >
-      <h4 className="font-medium text-sm text-gray-900 dark:text-white">
-        {card.title}
-      </h4>
+      <div className="flex items-start gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing touch-none p-0.5 -ml-1 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400 flex-shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h4
+              onClick={onClick}
+              className="font-medium text-sm text-gray-900 dark:text-white flex-1 cursor-pointer"
+            >
+              {card.title}
+            </h4>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onClick()
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-slate-600 rounded transition-all flex-shrink-0"
+            >
+              <MoreVertical className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+            </button>
+          </div>
 
-      {card.description && (
-        <p className="text-xs text-gray-500 dark:text-slate-400 truncate mt-1">
-          {card.description}
-        </p>
-      )}
+          {card.description && (
+            <p className="text-xs text-gray-500 dark:text-slate-400 truncate mt-1">
+              {card.description}
+            </p>
+          )}
 
-      {totalSubtasks > 0 && (
-        <div className="flex items-center gap-1 mt-2 text-xs text-gray-600 dark:text-slate-300">
-          <CheckSquare className="w-3 h-3" />
-          <span>
-            {completedSubtasks}/{totalSubtasks}
-          </span>
+          {card.tags && card.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {card.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className={`text-xs px-2 py-0.5 rounded ${getTagColor(tag, index)}`}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 mt-2">
+            {totalSubtasks > 0 && (
+              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-slate-300">
+                <CheckSquare className="w-3 h-3" />
+                <span>
+                  {completedSubtasks}/{totalSubtasks}
+                </span>
+              </div>
+            )}
+
+            {card.goal && (
+              <span className="inline-flex items-center gap-1 text-xs bg-accent/10 text-accent dark:bg-accent/20 px-2 py-0.5 rounded">
+                <Target className="w-3 h-3" />
+                {card.goal.title}
+              </span>
+            )}
+          </div>
         </div>
-      )}
-
-      {card.goal && (
-        <div className="mt-2">
-          <span className="inline-flex items-center gap-1 text-xs bg-accent/10 text-accent dark:bg-accent/20 px-2 py-0.5 rounded">
-            <Target className="w-3 h-3" />
-            {card.goal.title}
-          </span>
-        </div>
-      )}
+      </div>
     </div>
   )
 }

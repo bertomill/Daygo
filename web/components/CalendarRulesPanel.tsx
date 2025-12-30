@@ -46,36 +46,52 @@ export function CalendarRulesPanel({
   const activeRulesCount = rules.filter(r => r.is_active).length
 
   return (
-    <div className="mb-4 space-y-2">
-      {/* Plan My Day Button - always visible */}
-      <div className="flex gap-2">
-        <button
-          onClick={onApplyRules}
-          disabled={isApplying}
-          className="flex-1 flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-schedule to-emerald-400 hover:from-schedule/90 hover:to-emerald-400/90 disabled:from-schedule/50 disabled:to-emerald-400/50 text-white text-sm font-medium rounded-xl transition-all shadow-sm"
-        >
-          {isApplying ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              {planningStatus || 'Planning...'}
-            </>
-          ) : (
-            <>
-              <Wand2 className="w-4 h-4" />
-              Plan My Day
-            </>
-          )}
-        </button>
-        {hasAiEvents && !isApplying && (
+    <>
+      {/* Floating Planning Status Indicator - Bottom Left */}
+      {isApplying && (
+        <div className="fixed bottom-24 left-4 z-40 animate-in slide-in-from-left-5 fade-in duration-300">
+          <div className="bg-gradient-to-r from-schedule to-emerald-400 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 backdrop-blur-sm">
+            <RefreshCw className="w-5 h-5 animate-spin flex-shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">Planning your day...</span>
+              {planningStatus && (
+                <span className="text-xs text-white/80">{planningStatus}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mb-4 space-y-2">
+        {/* Plan My Day Button - always visible */}
+        <div className="flex gap-2">
           <button
-            onClick={onClearAiEvents}
-            className="px-3 py-2.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 text-sm font-medium rounded-xl transition-colors flex items-center gap-1.5"
+            onClick={onApplyRules}
+            disabled={isApplying}
+            className="flex-1 flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-schedule to-emerald-400 hover:from-schedule/90 hover:to-emerald-400/90 disabled:from-schedule/50 disabled:to-emerald-400/50 text-white text-sm font-medium rounded-xl transition-all shadow-sm"
           >
-            <Trash2 className="w-4 h-4" />
-            Clear AI
+            {isApplying ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Planning...
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4" />
+                Plan My Day
+              </>
+            )}
           </button>
-        )}
-      </div>
+          {hasAiEvents && !isApplying && (
+            <button
+              onClick={onClearAiEvents}
+              className="px-3 py-2.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 text-sm font-medium rounded-xl transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear AI
+            </button>
+          )}
+        </div>
 
       {/* Rules Expansion Header */}
       <button
@@ -183,6 +199,7 @@ export function CalendarRulesPanel({
           </p>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

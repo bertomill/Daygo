@@ -73,13 +73,13 @@ export function GoalCard({ goal, onEdit }: GoalCardProps) {
 
   return (
     <Link href={`/goals/${goal.id}`}>
-      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-sm">
-        <div className="flex items-start gap-3 mb-3">
-          <span className="text-2xl">{iconMap[goal.icon || ''] || '🎯'}</span>
+      <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 hover:shadow-bevel-md transition-all cursor-pointer shadow-bevel">
+        <div className="flex items-start gap-4 mb-4">
+          <span className="text-3xl">{iconMap[goal.icon || ''] || '🎯'}</span>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 dark:text-white truncate">{goal.title}</h3>
+            <h3 className="font-bold text-bevel-text dark:text-white truncate text-lg">{goal.title}</h3>
             {goal.description && (
-              <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{goal.description}</p>
+              <p className="text-sm text-bevel-text-secondary dark:text-slate-400 truncate mt-1">{goal.description}</p>
             )}
           </div>
           {onEdit && (
@@ -89,36 +89,36 @@ export function GoalCard({ goal, onEdit }: GoalCardProps) {
                 e.stopPropagation()
                 onEdit(goal.id)
               }}
-              className="p-2 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
               aria-label="Edit goal"
             >
-              <Pencil className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+              <Pencil className="w-4 h-4 text-bevel-text-secondary dark:text-slate-400" />
             </button>
           )}
         </div>
 
         {/* Progress bar */}
-        <div className="mb-2">
-          <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-500 dark:text-slate-400">{goal.metric_name}</span>
-            <span className="text-gray-900 dark:text-white">
+        <div className="mb-3">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-bevel-text-secondary dark:text-slate-400 font-medium">{goal.metric_name}</span>
+            <span className="text-bevel-text dark:text-white font-semibold">
               {goal.metric_current} / {goal.metric_target}
             </span>
           </div>
-          <div className="h-2 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-3 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
             <div
-              className={`h-full ${getProgressColor(goal.progress)} transition-all`}
+              className={`h-full ${getProgressColor(goal.progress)} transition-all rounded-full`}
               style={{ width: `${goal.progress}%` }}
             />
           </div>
         </div>
 
         <div className="flex justify-between items-center text-sm">
-          <span className="text-gray-400 dark:text-slate-500">
+          <span className="text-bevel-text-secondary dark:text-slate-400">
             {goal.habits?.length ?? 0} linked habit{(goal.habits?.length ?? 0) !== 1 ? 's' : ''}
           </span>
           {daysRemaining !== null && (
-            <span className={daysRemaining < 7 ? 'text-red-500' : 'text-gray-500 dark:text-slate-400'}>
+            <span className={daysRemaining < 7 ? 'text-bevel-red font-semibold' : 'text-bevel-text-secondary dark:text-slate-400'}>
               {daysRemaining > 0 ? `${daysRemaining} days left` : 'Deadline passed'}
             </span>
           )}

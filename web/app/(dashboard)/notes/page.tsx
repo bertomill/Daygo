@@ -42,6 +42,13 @@ export default function NotesPage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Cmd+N or Ctrl+N to open new note modal
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n' && !isEditing && !selectedNote) {
+        e.preventDefault()
+        setShowNoteTypeModal(true)
+        return
+      }
+
       // Don't trigger shortcuts if typing in an input or editing
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || isEditing) {
         return
@@ -306,10 +313,10 @@ export default function NotesPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen">
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen bg-bevel-bg dark:bg-slate-900">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Notes</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-bevel-text dark:text-white">Notes</h1>
         <button
           onClick={() => setShowDateFilter(true)}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
@@ -380,27 +387,27 @@ export default function NotesPage() {
             <div
               key={note.id}
               onClick={() => openNote(note)}
-              className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 cursor-pointer hover:border-accent/50 transition-colors"
+              className="bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 cursor-pointer hover:shadow-bevel-md transition-all shadow-bevel"
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-4">
                 <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-bevel-sm ${
                     note.note_type === 'canvas'
                       ? 'bg-purple-100 dark:bg-purple-500/20'
                       : 'bg-blue-100 dark:bg-blue-500/20'
                   }`}
                 >
                   {note.note_type === 'canvas' ? (
-                    <PenTool className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    <PenTool className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   ) : (
-                    <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                  <h3 className="font-semibold text-lg text-bevel-text dark:text-white truncate">
                     {note.title || (note.note_type === 'canvas' ? 'Untitled Canvas' : 'Untitled Note')}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 line-clamp-2">
+                  <p className="text-sm text-bevel-text-secondary dark:text-slate-400 mt-1.5 line-clamp-2">
                     {note.note_type === 'canvas'
                       ? 'Freeform canvas'
                       : note.content

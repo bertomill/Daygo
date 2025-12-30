@@ -1,6 +1,20 @@
 'use client'
 
 import { Plus } from 'lucide-react'
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+} from '@dnd-kit/core'
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { KanbanColumn } from './KanbanColumn'
 import type {
   KanbanColumnWithCards,
@@ -13,6 +27,7 @@ interface KanbanBoardProps {
   onCardClick: (card: KanbanCardWithDetails) => void
   onAddColumn: () => void
   onEditColumn: (column: KanbanColumnWithCards) => void
+  onCardDrop: (cardId: string, newStatus: 'todo' | 'in_progress' | 'done', newColumnId: string) => void
 }
 
 export function KanbanBoard({
@@ -20,10 +35,48 @@ export function KanbanBoard({
   onCardClick,
   onAddColumn,
   onEditColumn,
+  onCardDrop,
 }: KanbanBoardProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over) return
+
+    const cardId = active.id as string
+    const overId = over.id as string
+
+    // Check if dropped on a droppable zone (format: "columnId-status")
+    if (overId.includes('-')) {
+      const [newColumnId, newStatus] = overId.split('-')
+      onCardDrop(cardId, newStatus as 'todo' | 'in_progress' | 'done', newColumnId)
+    } else {
+      // Dropped on another card - find which section that card is in
+      const overCard = columns
+        .flatMap(col => [...col.todoCards, ...col.inProgressCards, ...col.doneCards])
+        .find(card => card.id === overId)
+
+      if (overCard) {
+        onCardDrop(cardId, overCard.status, overCard.column_id)
+      }
+    }
+  }
+
   return (
-    <div className="h-full overflow-x-auto overflow-y-hidden">
-      <div className="flex gap-4 px-4 pb-4 pt-4 min-w-min h-full">
+    <DndContext
+      sensors={sensors}
+      collisionDetection={rectIntersection}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="h-full overflow-x-auto overflow-y-hidden">
+        <div className="flex gap-4 px-4 pb-4 pt-4 min-w-min h-full">
         {columns.map((column) => (
           <KanbanColumn
             key={column.id}
@@ -44,5 +97,6 @@ export function KanbanBoard({
         </button>
       </div>
     </div>
+    </DndContext>
   )
 }

@@ -24,12 +24,12 @@ const STEPS = ['welcome', 'habits', 'mantra', 'tour'] as const
 type Step = typeof STEPS[number]
 
 const SUGGESTED_HABITS = [
-  { name: 'Morning meditation', description: '10 minutes of mindfulness' },
-  { name: 'Exercise', description: '30 minutes of physical activity' },
-  { name: 'Read', description: 'Read for 20 minutes' },
-  { name: 'Drink water', description: '8 glasses throughout the day' },
-  { name: 'Journal', description: 'Write down your thoughts' },
-  { name: 'No social media', description: 'Avoid scrolling first thing' },
+  { name: 'Morning meditation', description: '10 minutes of mindfulness', icon: Sparkles, color: 'bg-teal' },
+  { name: 'Exercise', description: '30 minutes of physical activity', icon: Target, color: 'bg-bevel-red' },
+  { name: 'Read', description: 'Read for 20 minutes', icon: CheckCircle2, color: 'bg-bevel-blue' },
+  { name: 'Drink water', description: '8 glasses throughout the day', icon: User, color: 'bg-cyan-500' },
+  { name: 'Journal', description: 'Write down your thoughts', icon: Calendar, color: 'bg-bevel-yellow' },
+  { name: 'No social media', description: 'Avoid scrolling first thing', icon: BarChart3, color: 'bg-purple-500' },
 ]
 
 const SUGGESTED_MANTRAS = [
@@ -133,7 +133,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-navy flex flex-col">
+    <div className="min-h-screen bg-bevel-bg dark:bg-slate-900 flex flex-col">
       {/* Progress bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gray-100 dark:bg-slate-800">
         <div
@@ -166,26 +166,32 @@ export default function OnboardingPage() {
             <p className="text-gray-600 dark:text-slate-400 text-lg mb-8">
               Build better habits, track your goals, and become the best version of yourself.
             </p>
-            <div className="space-y-4 text-left mb-8">
-              <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl">
-                <CheckCircle2 className="w-6 h-6 text-teal flex-shrink-0 mt-0.5" />
+            <div className="space-y-3 text-left mb-8">
+              <div className="flex items-center gap-4 p-5 bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel">
+                <div className="w-14 h-14 bg-teal rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-7 h-7 text-white" />
+                </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Track daily habits</p>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Build consistency with a simple tap</p>
+                  <p className="font-semibold text-bevel-text dark:text-white">Track daily habits</p>
+                  <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Build consistency with a simple tap</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl">
-                <Target className="w-6 h-6 text-accent flex-shrink-0 mt-0.5" />
+              <div className="flex items-center gap-4 p-5 bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel">
+                <div className="w-14 h-14 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
+                  <Target className="w-7 h-7 text-white" />
+                </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Set meaningful goals</p>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Link habits to bigger objectives</p>
+                  <p className="font-semibold text-bevel-text dark:text-white">Set meaningful goals</p>
+                  <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Link habits to bigger objectives</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl">
-                <Sparkles className="w-6 h-6 text-mantra flex-shrink-0 mt-0.5" />
+              <div className="flex items-center gap-4 p-5 bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel">
+                <div className="w-14 h-14 bg-mantra rounded-full flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-7 h-7 text-white" />
+                </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Stay motivated</p>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Mantras and AI pep talks to keep you going</p>
+                  <p className="font-semibold text-bevel-text dark:text-white">Stay motivated</p>
+                  <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Mantras and AI pep talks to keep you going</p>
                 </div>
               </div>
             </div>
@@ -209,21 +215,23 @@ export default function OnboardingPage() {
 
             {/* Selected habits */}
             {selectedHabits.length > 0 && (
-              <div className="mb-4 space-y-2">
+              <div className="mb-6 space-y-3">
                 {selectedHabits.map((habit) => (
                   <div
                     key={habit.name}
-                    className="flex items-center justify-between p-3 bg-teal/10 border border-teal/30 rounded-xl"
+                    className="flex items-center justify-between p-4 bg-teal/10 dark:bg-teal/20 rounded-2xl shadow-bevel-sm ring-2 ring-teal/30"
                   >
                     <div className="flex items-center gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-teal" />
-                      <span className="font-medium text-gray-900 dark:text-white">{habit.name}</span>
+                      <div className="w-10 h-10 bg-teal rounded-full flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-semibold text-bevel-text dark:text-white">{habit.name}</span>
                     </div>
                     <button
                       onClick={() => removeHabit(habit.name)}
-                      className="p-1 hover:bg-teal/20 rounded-lg transition-colors"
+                      className="p-2 hover:bg-teal/20 rounded-full transition-colors"
                     >
-                      <X className="w-4 h-4 text-teal" />
+                      <X className="w-5 h-5 text-teal dark:text-teal" />
                     </button>
                   </div>
                 ))}
@@ -231,37 +239,46 @@ export default function OnboardingPage() {
             )}
 
             {/* Custom habit input */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-3 mb-6">
               <input
                 type="text"
                 value={customHabit}
                 onChange={(e) => setCustomHabit(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addCustomHabit()}
                 placeholder="Add your own habit..."
-                className="flex-1 px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal"
+                className="flex-1 px-5 py-4 bg-bevel-card dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-2xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal focus:border-teal shadow-bevel-sm"
               />
               <button
                 onClick={addCustomHabit}
                 disabled={!customHabit.trim()}
-                className="px-4 py-3 bg-teal hover:bg-teal/90 disabled:opacity-50 text-white rounded-xl transition-colors"
+                className="px-5 py-4 bg-teal hover:bg-teal/90 disabled:opacity-50 text-white rounded-2xl transition-all shadow-bevel hover:shadow-bevel-md"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-6 h-6" />
               </button>
             </div>
 
             {/* Suggested habits */}
             <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Or choose from suggestions:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {SUGGESTED_HABITS.filter(h => !selectedHabits.find(sh => sh.name === h.name)).map((habit) => (
-                <button
-                  key={habit.name}
-                  onClick={() => addHabit(habit)}
-                  className="p-3 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-xl text-left transition-colors"
-                >
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">{habit.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{habit.description}</p>
-                </button>
-              ))}
+            <div className="space-y-3">
+              {SUGGESTED_HABITS.filter(h => !selectedHabits.find(sh => sh.name === h.name)).map((habit) => {
+                const Icon = habit.icon
+                return (
+                  <button
+                    key={habit.name}
+                    onClick={() => addHabit(habit)}
+                    className="w-full flex items-center gap-4 p-4 bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel hover:shadow-bevel-md transition-all text-left group"
+                  >
+                    <div className={`w-16 h-16 ${habit.color} rounded-full flex items-center justify-center flex-shrink-0`}>
+                      <Icon className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-bevel-text dark:text-white">{habit.name}</p>
+                      <p className="text-sm text-bevel-text-secondary dark:text-slate-400">{habit.description}</p>
+                    </div>
+                    <div className="w-5 h-5 border-2 border-gray-300 dark:border-slate-600 rounded-full group-hover:border-teal transition-colors" />
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}
@@ -289,13 +306,13 @@ export default function OnboardingPage() {
                 setSelectedMantra('')
               }}
               placeholder="Write your own mantra..."
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-mantra mb-4 resize-none"
+              className="w-full px-5 py-4 bg-bevel-card dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-2xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-mantra focus:border-mantra mb-6 resize-none shadow-bevel-sm"
               rows={3}
             />
 
             {/* Suggested mantras */}
             <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Or choose a suggestion:</p>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {SUGGESTED_MANTRAS.map((mantra) => (
                 <button
                   key={mantra}
@@ -303,19 +320,37 @@ export default function OnboardingPage() {
                     setSelectedMantra(mantra)
                     setCustomMantra('')
                   }}
-                  className={`w-full p-4 rounded-xl text-left transition-colors ${
+                  className={`w-full p-5 rounded-2xl text-left transition-all group ${
                     selectedMantra === mantra
-                      ? 'bg-mantra/10 border-2 border-mantra'
-                      : 'bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700'
+                      ? 'bg-mantra/10 dark:bg-mantra/20 shadow-bevel-md ring-2 ring-mantra/30'
+                      : 'bg-bevel-card dark:bg-slate-800 shadow-bevel hover:shadow-bevel-md'
                   }`}
                 >
-                  <p className={`italic ${
-                    selectedMantra === mantra
-                      ? 'text-mantra'
-                      : 'text-gray-700 dark:text-slate-300'
-                  }`}>
-                    &ldquo;{mantra}&rdquo;
-                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      selectedMantra === mantra ? 'bg-mantra' : 'bg-mantra/10'
+                    }`}>
+                      <Sparkles className={`w-6 h-6 ${
+                        selectedMantra === mantra ? 'text-white' : 'text-mantra'
+                      }`} />
+                    </div>
+                    <p className={`italic flex-1 ${
+                      selectedMantra === mantra
+                        ? 'text-mantra dark:text-mantra font-medium'
+                        : 'text-bevel-text dark:text-slate-300'
+                    }`}>
+                      &ldquo;{mantra}&rdquo;
+                    </p>
+                    <div className={`w-5 h-5 rounded-full border-2 transition-all ${
+                      selectedMantra === mantra
+                        ? 'bg-mantra border-mantra'
+                        : 'border-gray-300 dark:border-slate-600 group-hover:border-mantra'
+                    }`}>
+                      {selectedMantra === mantra && (
+                        <CheckCircle2 className="w-full h-full text-white" />
+                      )}
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
@@ -338,48 +373,48 @@ export default function OnboardingPage() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl">
-                <div className="w-12 h-12 bg-teal/10 rounded-xl flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-teal" />
+              <div className="flex items-center gap-4 p-5 bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel">
+                <div className="w-14 h-14 bg-teal rounded-full flex items-center justify-center">
+                  <Calendar className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900 dark:text-white">Today</p>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Track your daily habits, mantras, and journal</p>
+                  <p className="font-semibold text-bevel-text dark:text-white">Today</p>
+                  <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Track your daily habits, mantras, and journal</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
+                <ChevronRight className="w-5 h-5 text-gray-400 dark:text-slate-500" />
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl">
-                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-accent" />
+              <div className="flex items-center gap-4 p-5 bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel">
+                <div className="w-14 h-14 bg-accent rounded-full flex items-center justify-center">
+                  <BarChart3 className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900 dark:text-white">Dashboard</p>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">View your progress and streaks over time</p>
+                  <p className="font-semibold text-bevel-text dark:text-white">Dashboard</p>
+                  <p className="text-sm text-bevel-text-secondary dark:text-slate-400">View your progress and streaks over time</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
+                <ChevronRight className="w-5 h-5 text-gray-400 dark:text-slate-500" />
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl">
-                <div className="w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center">
-                  <Target className="w-6 h-6 text-success" />
+              <div className="flex items-center gap-4 p-5 bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel">
+                <div className="w-14 h-14 bg-success rounded-full flex items-center justify-center">
+                  <Target className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900 dark:text-white">Goals</p>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Set big goals and link habits to them</p>
+                  <p className="font-semibold text-bevel-text dark:text-white">Goals</p>
+                  <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Set big goals and link habits to them</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
+                <ChevronRight className="w-5 h-5 text-gray-400 dark:text-slate-500" />
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl">
-                <div className="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-xl flex items-center justify-center">
-                  <User className="w-6 h-6 text-gray-600 dark:text-slate-400" />
+              <div className="flex items-center gap-4 p-5 bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel">
+                <div className="w-14 h-14 bg-bevel-blue rounded-full flex items-center justify-center">
+                  <User className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900 dark:text-white">Profile</p>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Manage settings and subscription</p>
+                  <p className="font-semibold text-bevel-text dark:text-white">Profile</p>
+                  <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Manage settings and subscription</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
+                <ChevronRight className="w-5 h-5 text-gray-400 dark:text-slate-500" />
               </div>
             </div>
           </div>
@@ -387,11 +422,11 @@ export default function OnboardingPage() {
       </div>
 
       {/* Bottom button */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white dark:from-navy to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-bevel-bg dark:from-slate-900 to-transparent">
         <button
           onClick={handleNext}
           disabled={isSubmitting}
-          className="w-full max-w-md mx-auto flex items-center justify-center gap-2 py-4 bg-accent hover:bg-accent/90 disabled:opacity-50 text-white rounded-xl font-semibold transition-colors"
+          className="w-full max-w-md mx-auto flex items-center justify-center gap-2 py-4 bg-accent hover:bg-accent/90 disabled:opacity-50 text-white rounded-2xl font-semibold transition-all shadow-bevel-md hover:shadow-bevel-lg"
         >
           {isSubmitting ? (
             'Setting up...'

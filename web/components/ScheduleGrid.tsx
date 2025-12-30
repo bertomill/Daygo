@@ -180,10 +180,11 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
     return () => clearInterval(interval)
   }, [selectedDate])
 
-  const getMinutesFromEvent = useCallback((e: React.MouseEvent | MouseEvent): number => {
+  const getMinutesFromEvent = useCallback((e: React.MouseEvent | MouseEvent | React.TouchEvent | TouchEvent): number => {
     if (!gridRef.current) return 0
     const rect = gridRef.current.getBoundingClientRect()
-    const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height))
+    const clientY = 'touches' in e ? e.touches[0]?.clientY ?? ('changedTouches' in e ? e.changedTouches[0]?.clientY ?? 0 : 0) : e.clientY
+    const y = Math.max(0, Math.min(clientY - rect.top, rect.height))
     return yToMinutes(y, rect.height)
   }, [])
 
@@ -251,17 +252,87 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
     setDragEnd(null)
   }, [isDragging, dragStart, getMinutesFromEvent, onAddEvent])
 
-  // Add global mouse listeners for drag
+  // Touch event handlers (for mobile)
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    // Don't start drag if touching an event
+    if ((e.target as HTMLElement).closest('[data-event]')) return
+
+    const minutes = getMinutesFromEvent(e)
+    setIsDragging(true)
+    setDragStart(minutes)
+    setDragEnd(minutes)
+    dragStartTime.current = Date.now()
+  }, [getMinutesFromEvent])
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging) return
+    e.preventDefault() // Prevent scrolling while dragging
+    const minutes = getMinutesFromEvent(e)
+    setDragEnd(minutes)
+  }, [isDragging, getMinutesFromEvent])
+
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
+    if (!isDragging || dragStart === null) {
+      setIsDragging(false)
+      setDragStart(null)
+      setDragEnd(null)
+      return
+    }
+
+    const endMinutes = getMinutesFromEvent(e)
+    const dragDuration = Date.now() - dragStartTime.current
+    const isTap = dragDuration < 200 && Math.abs(endMinutes - dragStart) < 30
+
+    let startMinutes: number
+    let finalEndMinutes: number
+
+    if (isTap) {
+      // Single tap - create 30-minute event
+      startMinutes = dragStart
+      finalEndMinutes = dragStart + 30
+    } else {
+      // Drag - create event spanning the drag
+      startMinutes = Math.min(dragStart, endMinutes)
+      finalEndMinutes = Math.max(dragStart, endMinutes)
+      // Ensure minimum 30 minutes
+      if (finalEndMinutes - startMinutes < 30) {
+        finalEndMinutes = startMinutes + 30
+      }
+    }
+
+    // Convert to absolute minutes (add START_HOUR offset)
+    const absoluteStartMinutes = START_HOUR * 60 + startMinutes
+    const absoluteEndMinutes = START_HOUR * 60 + finalEndMinutes
+
+    // Clamp to valid range
+    const clampedStart = Math.max(START_HOUR * 60, Math.min(absoluteStartMinutes, END_HOUR * 60 - 30))
+    const clampedEnd = Math.min(END_HOUR * 60, Math.max(absoluteEndMinutes, clampedStart + 30))
+
+    const startTime = minutesToTimeString(clampedStart)
+    const endTime = minutesToTimeString(clampedEnd)
+
+    onAddEvent(startTime, endTime)
+
+    setIsDragging(false)
+    setDragStart(null)
+    setDragEnd(null)
+  }, [isDragging, dragStart, getMinutesFromEvent, onAddEvent])
+
+  // Add global mouse and touch listeners for drag
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('touchmove', handleTouchMove, { passive: false })
+      document.addEventListener('touchend', handleTouchEnd)
       return () => {
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
+        document.removeEventListener('touchmove', handleTouchMove)
+        document.removeEventListener('touchend', handleTouchEnd)
       }
     }
-  }, [isDragging, handleMouseMove, handleMouseUp])
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd])
 
   // Resize handlers
   const handleResizeStart = useCallback((e: React.MouseEvent, event: ScheduleEvent) => {
@@ -351,7 +422,7 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
   const dragPreviewStyle = getDragPreviewStyle()
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden isolate">
+    <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl overflow-hidden isolate shadow-bevel">
       <div className="flex max-h-[600px] overflow-y-auto">
         {/* Hour labels */}
         <div className="w-14 flex-shrink-0 border-r border-gray-200 dark:border-slate-700">
@@ -374,6 +445,7 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
           className={`flex-1 relative select-none ${isDragging ? 'cursor-ns-resize' : 'cursor-pointer'}`}
           style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
         >
           {/* Hour grid lines */}
           {HOURS.map((hour, index) => (

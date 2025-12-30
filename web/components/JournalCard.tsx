@@ -12,7 +12,7 @@ interface JournalCardProps {
 
 export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [entry, setEntry] = useState(prompt.todayEntry || '')
+  const [entry, setEntry] = useState(prompt.todayEntry || prompt.template_text || '')
 
   const handleSave = () => {
     onSave(prompt.id, entry)
@@ -43,6 +43,12 @@ export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
           <textarea
             value={entry}
             onChange={(e) => setEntry(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                e.preventDefault()
+                handleSave()
+              }
+            }}
             className="w-full p-4 bg-gray-50 dark:bg-slate-700/50 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-journal focus:border-transparent resize-none"
             rows={3}
             placeholder="Write your reflection..."
@@ -57,7 +63,7 @@ export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
             </button>
             <button
               onClick={() => {
-                setEntry(prompt.todayEntry || '')
+                setEntry(prompt.todayEntry || prompt.template_text || '')
                 setIsEditing(false)
               }}
               className="px-5 py-2.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-bevel-text dark:text-white rounded-xl text-sm font-semibold transition-colors shadow-bevel-sm"
@@ -69,7 +75,10 @@ export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
       ) : (
         <div
           className="ml-10 cursor-pointer"
-          onClick={() => setIsEditing(true)}
+          onClick={() => {
+            setEntry(prompt.todayEntry || prompt.template_text || '')
+            setIsEditing(true)
+          }}
         >
           {prompt.todayEntry ? (
             <div className="flex items-start gap-2">

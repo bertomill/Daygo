@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Plus, X, Check } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useDroppable } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { KanbanCard } from './KanbanCard'
 import { useAuthStore } from '@/lib/auth-store'
 import { kanbanService } from '@/lib/services/kanban'
@@ -38,6 +40,11 @@ export function KanbanStatusSection({
   const [collapsed, setCollapsed] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const [newCardTitle, setNewCardTitle] = useState('')
+
+  const dropId = `${columnId}-${status}`
+  const { setNodeRef } = useDroppable({
+    id: dropId,
+  })
 
   const createCardMutation = useMutation({
     mutationFn: async (title: string) => {
@@ -85,26 +92,37 @@ export function KanbanStatusSection({
       </button>
 
       {!collapsed && (
-        <div className="space-y-2 ml-6">
-          {cards.map((card) => (
-            <KanbanCard
-              key={card.id}
-              card={card}
-              onClick={() => onCardClick(card)}
-            />
-          ))}
+        <div ref={setNodeRef} className="space-y-2 ml-6 min-h-[60px]">
+          <SortableContext
+            items={cards.map((c) => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {cards.map((card) => (
+              <KanbanCard
+                key={card.id}
+                card={card}
+                onClick={() => onCardClick(card)}
+              />
+            ))}
+          </SortableContext>
 
           {isAdding ? (
             <form onSubmit={handleSubmit} className="space-y-2">
-              <input
-                type="text"
+              <textarea
                 value={newCardTitle}
                 onChange={(e) => setNewCardTitle(e.target.value)}
                 placeholder="Card title..."
                 autoFocus
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent"
+                rows={2}
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent resize-none"
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') handleCancel()
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    if (newCardTitle.trim()) {
+                      createCardMutation.mutate(newCardTitle.trim())
+                    }
+                  }
                 }}
               />
               <div className="flex gap-2">

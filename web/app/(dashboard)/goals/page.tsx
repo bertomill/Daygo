@@ -164,8 +164,8 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Goals</h1>
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen bg-bevel-bg dark:bg-slate-900">
+      <h1 className="text-2xl font-bold text-bevel-text dark:text-white mb-6">Goals</h1>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -188,7 +188,7 @@ export default function GoalsPage() {
       {/* Floating Add Button */}
       <button
         onClick={() => setShowCreateModal(true)}
-        className="fixed bottom-24 right-4 w-14 h-14 bg-accent hover:bg-accent/90 rounded-full flex items-center justify-center shadow-lg transition-colors"
+        className="fixed bottom-24 right-4 w-16 h-16 bg-accent hover:bg-accent/90 rounded-full flex items-center justify-center shadow-bevel-lg hover:shadow-bevel-md transition-all"
       >
         <Plus className="w-7 h-7 text-white" />
       </button>
@@ -196,21 +196,21 @@ export default function GoalsPage() {
       {/* Create/Edit Goal Modal */}
       {(showCreateModal || editingGoalId) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-2xl">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="bg-bevel-card dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-bevel-lg">
+            <h2 className="text-xl font-bold text-bevel-text dark:text-white mb-5">
               {editingGoalId ? 'Edit Goal' : 'Create Goal'}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label className="block text-sm font-semibold text-bevel-text-secondary dark:text-slate-300 mb-2">
                   Title
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                   placeholder="e.g., Run a marathon"
                 />
               </div>
@@ -221,21 +221,21 @@ export default function GoalsPage() {
                 }`}
               >
                 <div className="overflow-hidden">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-semibold text-bevel-text-secondary dark:text-slate-300 mb-2">
                     Description (optional)
                   </label>
                   <input
                     type="text"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                     placeholder="What's this goal about?"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-bevel-text-secondary dark:text-slate-300 mb-3">
                   Icon
                 </label>
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1">
@@ -243,10 +243,10 @@ export default function GoalsPage() {
                     <button
                       key={i.id}
                       onClick={() => setIcon(i.id)}
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-colors flex-shrink-0 ${
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl transition-all flex-shrink-0 shadow-bevel-sm ${
                         icon === i.id
-                          ? 'bg-accent'
-                          : 'bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600'
+                          ? 'bg-accent shadow-bevel-md scale-110'
+                          : 'bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 hover:shadow-bevel'
                       }`}
                     >
                       {i.emoji}
@@ -257,61 +257,61 @@ export default function GoalsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-semibold text-bevel-text-secondary dark:text-slate-300 mb-2">
                     Metric Name
                   </label>
                   <input
                     type="text"
                     value={metricName}
                     onChange={(e) => setMetricName(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                     placeholder="e.g., Miles"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-semibold text-bevel-text-secondary dark:text-slate-300 mb-2">
                     Target
                   </label>
                   <input
                     type="number"
                     value={metricTarget}
                     onChange={(e) => setMetricTarget(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                     placeholder="e.g., 26"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label className="block text-sm font-semibold text-bevel-text-secondary dark:text-slate-300 mb-2">
                   Deadline (optional)
                 </label>
                 <input
                   type="date"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                 />
               </div>
 
               {habits.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-semibold text-bevel-text-secondary dark:text-slate-300 mb-3">
                     Link Habits (optional)
                   </label>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
                     {habits.map((habit) => (
                       <label
                         key={habit.id}
-                        className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-slate-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600"
+                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-700 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 shadow-bevel-sm transition-all"
                       >
                         <input
                           type="checkbox"
                           checked={linkedHabitIds.includes(habit.id)}
                           onChange={() => toggleHabitLink(habit.id)}
-                          className="w-4 h-4 rounded border-gray-300 dark:border-slate-500"
+                          className="w-5 h-5 rounded-lg border-2 border-gray-300 dark:border-slate-500 text-accent focus:ring-2 focus:ring-accent"
                         />
-                        <span className="text-gray-900 dark:text-white">{habit.name}</span>
+                        <span className="text-bevel-text dark:text-white font-medium">{habit.name}</span>
                       </label>
                     ))}
                   </div>
@@ -322,14 +322,14 @@ export default function GoalsPage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={resetForm}
-                className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
+                className="flex-1 py-3.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-bevel-text dark:text-white rounded-xl font-semibold transition-all shadow-bevel-sm hover:shadow-bevel"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!title.trim() || !metricName.trim() || !metricTarget}
-                className="flex-1 py-3 bg-accent hover:bg-accent/90 disabled:bg-accent/50 text-white rounded-lg font-medium transition-colors"
+                className="flex-1 py-3.5 bg-accent hover:bg-accent/90 disabled:bg-accent/50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all shadow-bevel-sm hover:shadow-bevel"
               >
                 {editingGoalId ? 'Update' : 'Create'}
               </button>

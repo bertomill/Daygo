@@ -128,16 +128,16 @@ export default function GoalDetailPage() {
     : null
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen bg-bevel-bg dark:bg-slate-900">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => router.back()}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
         >
-          <ArrowLeft className="w-6 h-6 text-gray-400 dark:text-slate-500" />
+          <ArrowLeft className="w-6 h-6 text-bevel-text-secondary dark:text-slate-400" />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex-1">Goal Details</h1>
+        <h1 className="text-2xl font-bold text-bevel-text dark:text-white flex-1">Goal Details</h1>
         <button
           onClick={() => setShowDeleteConfirm(true)}
           className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
@@ -147,7 +147,7 @@ export default function GoalDetailPage() {
       </div>
 
       {/* Goal Info */}
-      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 mb-6 shadow-sm">
+      <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl p-6 mb-6 shadow-bevel">
         <div className="flex items-start gap-4 mb-4">
           <span className="text-4xl">{iconMap[goal.icon || ''] || '🎯'}</span>
           <div>
@@ -192,8 +192,8 @@ export default function GoalDetailPage() {
       </div>
 
       {/* Update Progress */}
-      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mb-6 shadow-sm">
-        <h3 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
+      <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 mb-6 shadow-bevel">
+        <h3 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
           Update Progress
         </h3>
         <div className="flex gap-3">
