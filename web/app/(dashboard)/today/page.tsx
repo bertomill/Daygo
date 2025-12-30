@@ -1405,7 +1405,21 @@ export default function TodayPage() {
         >
           <div
             className="bg-bevel-card dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-bevel-lg"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              // Dismiss keyboard when clicking non-interactive elements (for iPad support)
+              const target = e.target as HTMLElement
+              const isInteractive = target.tagName === 'INPUT' ||
+                                   target.tagName === 'TEXTAREA' ||
+                                   target.tagName === 'BUTTON' ||
+                                   target.closest('button')
+              if (!isInteractive) {
+                const activeElement = document.activeElement as HTMLElement
+                if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                  activeElement.blur()
+                }
+              }
+            }}
           >
             {/* Step 1: Type Selection */}
             {addType === null ? (
@@ -1598,6 +1612,11 @@ export default function TodayPage() {
                   <textarea
                     value={newItemText}
                     onChange={(e) => setNewItemText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.currentTarget.blur()
+                      }
+                    }}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent mb-3 resize-none"
                     placeholder="Your mantra..."
                     rows={4}

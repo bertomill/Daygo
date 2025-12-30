@@ -153,7 +153,7 @@ export default function OnboardingPage() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20">
+      <div className="flex-1 flex flex-col items-center px-6 pb-32 overflow-y-auto pt-8">
         {/* Welcome Step */}
         {currentStep === 'welcome' && (
           <div className="max-w-md text-center animate-fade-in">
@@ -422,7 +422,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Bottom button */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-bevel-bg dark:from-slate-900 to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 p-6 pt-12 bg-gradient-to-t from-bevel-bg dark:from-slate-900 via-bevel-bg/80 dark:via-slate-900/80 to-transparent">
         <button
           onClick={handleNext}
           disabled={isSubmitting}
