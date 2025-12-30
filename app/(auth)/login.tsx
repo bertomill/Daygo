@@ -8,6 +8,7 @@ import {
   Platform,
   Alert,
   Image,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
@@ -45,7 +46,10 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <View className="flex-1 justify-center px-8">
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32, paddingVertical: 40 }}
+          keyboardShouldPersistTaps="handled"
+        >
         <View className="mb-12 items-center">
           <Image
             source={require('../../assets/icon.png')}
@@ -130,7 +134,7 @@ export default function LoginScreen() {
             Try the app without an account. Your data stays on this device.
           </Text>
         </View>
-      </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
   );

@@ -11,6 +11,8 @@ import {
   Platform,
   FlatList,
   Animated,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { PanGestureHandler, State, GestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -723,8 +725,10 @@ export default function TodayScreen() {
         transparent
         onRequestClose={() => setMantraModalVisible(false)}
       >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl p-6">
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View className="flex-1 justify-end bg-black/50">
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View className="bg-white rounded-t-3xl p-6">
             <Text className="text-xl font-bold text-gray-800 mb-4">
               Add Daily Mantra
             </Text>
@@ -740,6 +744,8 @@ export default function TodayScreen() {
               multiline
               numberOfLines={3}
               autoFocus
+              blurOnSubmit={true}
+              returnKeyType="done"
             />
 
             <View className="flex-row space-x-3">
@@ -765,8 +771,10 @@ export default function TodayScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* Add Journal Prompt Modal */}

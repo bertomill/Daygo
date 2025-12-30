@@ -74,24 +74,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   deleteAccount: async () => {
-    const { user } = get();
-    if (!user) return { error: new Error('No user logged in') };
+    const { session, user } = get();
+    if (!user || !session) return { error: new Error('No user logged in') };
 
     try {
-      // Delete user's profile (cascades to habits, goals, etc.)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
+      // Call Supabase Edge Function to delete account
+      // This properly deletes the auth user and all associated data
+      const { data, error: functionError } = await supabase.functions.invoke(
+        'delete-account',
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
-      if (profileError) throw profileError;
+      if (functionError) {
+        console.error('Function error:', functionError);
+        throw new Error('Failed to delete account');
+      }
 
-      // Sign out
-      await supabase.auth.signOut();
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      // Sign out locally
       set({ session: null, user: null });
 
       return { error: null };
     } catch (error) {
+      console.error('Delete account error:', error);
       return { error: error as Error };
     }
   },
