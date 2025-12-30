@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { User, HelpCircle, Shield, LogOut, Moon, Sun, Crown, Loader2 } from 'lucide-react'
+import { HelpCircle, Shield, LogOut, Moon, Sun, Crown, Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { useThemeStore } from '@/lib/theme-store'
 import { supabase } from '@/lib/supabase'
+import AvatarUpload from '@/components/AvatarUpload'
 
 type SubscriptionTier = 'free' | 'pro'
 type SubscriptionStatus = 'inactive' | 'active' | 'canceled' | 'past_due'
@@ -15,6 +16,7 @@ interface ProfileData {
   subscription_status: SubscriptionStatus
   subscription_current_period_end: string | null
   stripe_customer_id: string | null
+  avatar_url: string | null
 }
 
 export default function ProfilePage() {
@@ -47,7 +49,7 @@ export default function ProfilePage() {
     setIsLoadingProfile(true)
     const { data, error } = await supabase
       .from('profiles')
-      .select('subscription_tier, subscription_status, subscription_current_period_end, stripe_customer_id')
+      .select('subscription_tier, subscription_status, subscription_current_period_end, stripe_customer_id, avatar_url')
       .eq('id', user.id)
       .single()
 
@@ -139,12 +141,14 @@ export default function ProfilePage() {
       )}
 
       {/* User Info */}
-      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mb-6 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-accent/20 rounded-full flex items-center justify-center">
-            <User className="w-7 h-7 text-accent" />
-          </div>
-          <div>
+      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 mb-6 shadow-sm">
+        <div className="flex flex-col items-center gap-4">
+          <AvatarUpload
+            userId={user?.id || ''}
+            currentAvatarUrl={profile?.avatar_url}
+            onUploadComplete={() => fetchProfile()}
+          />
+          <div className="text-center">
             <p className="text-gray-900 dark:text-white font-medium">{user?.email}</p>
             <p className="text-sm text-gray-500 dark:text-slate-400">
               {isPro || isCanceled ? 'DayGo Pro Member' : 'DayGo Member'}

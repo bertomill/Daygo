@@ -31,12 +31,12 @@ export const userPreferencesService = {
         user_id: userId,
         wake_time: DEFAULT_PREFERENCES.wake_time,
         bed_time: DEFAULT_PREFERENCES.bed_time,
-      })
+      } as any)
       .select()
       .single()
 
     if (error) throw error
-    return data
+    return data as UserPreferences
   },
 
   async updatePreferences(
@@ -46,8 +46,7 @@ export const userPreferencesService = {
     // Ensure preferences exist first
     await this.getOrCreatePreferences(userId)
 
-    const { data, error } = await supabase
-      .from('user_preferences')
+    const { data, error } = await (supabase.from('user_preferences') as any)
       .update({
         ...updates,
         updated_at: new Date().toISOString(),
@@ -57,7 +56,7 @@ export const userPreferencesService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as UserPreferences
   },
 
   // Helper to format time for display (HH:MM:SS -> HH:MM)

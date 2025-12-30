@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { Pencil } from 'lucide-react'
 import type { GoalWithHabits } from '@/lib/types/database'
 
 interface GoalCardProps {
   goal: GoalWithHabits
+  onEdit?: (goalId: string) => void
 }
 
 const iconMap: Record<string, string> = {
@@ -57,7 +59,7 @@ const iconMap: Record<string, string> = {
   'fire': '🔥',
 }
 
-export function GoalCard({ goal }: GoalCardProps) {
+export function GoalCard({ goal, onEdit }: GoalCardProps) {
   const getProgressColor = (progress: number) => {
     if (progress >= 80) return 'bg-success'
     if (progress >= 60) return 'bg-yellow-500'
@@ -80,6 +82,19 @@ export function GoalCard({ goal }: GoalCardProps) {
               <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{goal.description}</p>
             )}
           </div>
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onEdit(goal.id)
+              }}
+              className="p-2 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+              aria-label="Edit goal"
+            >
+              <Pencil className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+            </button>
+          )}
         </div>
 
         {/* Progress bar */}

@@ -107,7 +107,7 @@ interface ScheduleGridProps {
 }
 
 const HOUR_HEIGHT = 60
-const START_HOUR = 6
+const START_HOUR = 4
 const END_HOUR = 22
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i)
 

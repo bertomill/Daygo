@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageSquare, Send, X, Loader2, Inbox } from 'lucide-react'
+import { MessageSquare, Send, X, Loader2, Inbox, Camera, Trash2 } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { supabase } from '@/lib/supabase'
+import html2canvas from 'html2canvas'
 
 export function FeedbackButton() {
   const { user } = useAuthStore()
@@ -11,6 +12,37 @@ export function FeedbackButton() {
   const [feedback, setFeedback] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [screenshot, setScreenshot] = useState<string | null>(null)
+  const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false)
+
+  const captureScreenshot = async () => {
+    setIsCapturingScreenshot(true)
+    try {
+      // Temporarily hide the modal
+      const modal = document.querySelector('[data-feedback-modal]') as HTMLElement
+      if (modal) modal.style.display = 'none'
+
+      // Small delay to ensure modal is hidden
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Capture the page
+      const canvas = await html2canvas(document.body, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 0.5, // Reduce size for better performance
+      })
+
+      // Show modal again
+      if (modal) modal.style.display = 'flex'
+
+      // Convert to base64
+      const screenshotData = canvas.toDataURL('image/jpeg', 0.7)
+      setScreenshot(screenshotData)
+    } catch (error) {
+      console.error('Screenshot capture failed:', error)
+    }
+    setIsCapturingScreenshot(false)
+  }
 
   const handleSend = async () => {
     if (!feedback.trim()) return
@@ -23,11 +55,13 @@ export function FeedbackButton() {
         .insert({
           user_email: user?.email || null,
           message: feedback.trim(),
+          screenshot_url: screenshot,
         })
 
       if (!error) {
         setStatus('success')
         setFeedback('')
+        setScreenshot(null)
         setTimeout(() => {
           setIsOpen(false)
           setStatus('idle')
@@ -68,8 +102,19 @@ export function FeedbackButton() {
 
       {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-start justify-center pt-20 p-4 z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-in">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-start justify-center pt-20 p-4 z-50"
+          data-feedback-modal
+          onClick={() => {
+            setIsOpen(false)
+            setStatus('idle')
+            setScreenshot(null)
+          }}
+        >
+          <div
+            className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-2xl p-6 w-full max-w-md shadow-xl border border-white/20 dark:border-slate-700/50 animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <MessageSquare className="w-5 h-5 text-accent" />
@@ -79,6 +124,7 @@ export function FeedbackButton() {
                 onClick={() => {
                   setIsOpen(false)
                   setStatus('idle')
+                  setScreenshot(null)
                 }}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
@@ -118,6 +164,47 @@ export function FeedbackButton() {
                   rows={4}
                   autoFocus
                 />
+
+                {/* Screenshot Section */}
+                <div className="mb-4">
+                  {screenshot ? (
+                    <div className="relative">
+                      <img
+                        src={screenshot}
+                        alt="Screenshot"
+                        className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-slate-600"
+                      />
+                      <button
+                        onClick={() => setScreenshot(null)}
+                        className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <div className="mt-2 text-xs text-gray-500 dark:text-slate-400">
+                        Screenshot attached
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={captureScreenshot}
+                      disabled={isCapturingScreenshot}
+                      className="w-full py-2.5 bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {isCapturingScreenshot ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Capturing...
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="w-4 h-4" />
+                          Attach Screenshot
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
                 {status === 'error' && (
                   <p className="text-red-500 text-sm mb-4">Failed to send. Please try again.</p>
                 )}
@@ -126,6 +213,7 @@ export function FeedbackButton() {
                     onClick={() => {
                       setIsOpen(false)
                       setStatus('idle')
+                      setScreenshot(null)
                     }}
                     className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-xl font-medium transition-colors"
                   >

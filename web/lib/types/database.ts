@@ -13,6 +13,7 @@ export interface Database {
         Row: {
           id: string;
           display_name: string | null;
+          avatar_url: string | null;
           created_at: string;
           subscription_tier: 'free' | 'pro';
           stripe_customer_id: string | null;
@@ -24,6 +25,7 @@ export interface Database {
         Insert: {
           id: string;
           display_name?: string | null;
+          avatar_url?: string | null;
           created_at?: string;
           subscription_tier?: 'free' | 'pro';
           stripe_customer_id?: string | null;
@@ -35,6 +37,7 @@ export interface Database {
         Update: {
           id?: string;
           display_name?: string | null;
+          avatar_url?: string | null;
           created_at?: string;
           subscription_tier?: 'free' | 'pro';
           stripe_customer_id?: string | null;
@@ -292,6 +295,7 @@ export interface Database {
           id: string;
           user_email: string | null;
           message: string;
+          screenshot_url: string | null;
           resolved: boolean;
           created_at: string;
         };
@@ -299,6 +303,7 @@ export interface Database {
           id?: string;
           user_email?: string | null;
           message: string;
+          screenshot_url?: string | null;
           resolved?: boolean;
           created_at?: string;
         };
@@ -306,6 +311,7 @@ export interface Database {
           id?: string;
           user_email?: string | null;
           message?: string;
+          screenshot_url?: string | null;
           resolved?: boolean;
           created_at?: string;
         };
@@ -316,6 +322,8 @@ export interface Database {
           user_id: string;
           title: string;
           content: string;
+          note_type: 'text' | 'canvas';
+          canvas_data: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };
@@ -324,6 +332,8 @@ export interface Database {
           user_id: string;
           title: string;
           content?: string;
+          note_type?: 'text' | 'canvas';
+          canvas_data?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -332,6 +342,8 @@ export interface Database {
           user_id?: string;
           title?: string;
           content?: string;
+          note_type?: 'text' | 'canvas';
+          canvas_data?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -510,6 +522,113 @@ export interface Database {
           updated_at?: string;
         };
       };
+      kanban_columns: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          color: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          color?: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          color?: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
+      kanban_cards: {
+        Row: {
+          id: string;
+          user_id: string;
+          column_id: string;
+          title: string;
+          description: string;
+          status: 'todo' | 'in_progress' | 'done';
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          column_id: string;
+          title: string;
+          description?: string;
+          status?: 'todo' | 'in_progress' | 'done';
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          column_id?: string;
+          title?: string;
+          description?: string;
+          status?: 'todo' | 'in_progress' | 'done';
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      kanban_subtasks: {
+        Row: {
+          id: string;
+          user_id: string;
+          card_id: string;
+          text: string;
+          completed: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          card_id: string;
+          text: string;
+          completed?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          card_id?: string;
+          text?: string;
+          completed?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
+      kanban_goal_links: {
+        Row: {
+          id: string;
+          card_id: string;
+          goal_id: string;
+        };
+        Insert: {
+          id?: string;
+          card_id: string;
+          goal_id: string;
+        };
+        Update: {
+          id?: string;
+          card_id?: string;
+          goal_id?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -546,6 +665,10 @@ export type GoogleCalendarToken = Database['public']['Tables']['google_calendar_
 export type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
 export type DailyNote = Database['public']['Tables']['daily_notes']['Row'];
 export type DailyScore = Database['public']['Views']['daily_scores']['Row'];
+export type KanbanColumn = Database['public']['Tables']['kanban_columns']['Row'];
+export type KanbanCard = Database['public']['Tables']['kanban_cards']['Row'];
+export type KanbanSubtask = Database['public']['Tables']['kanban_subtasks']['Row'];
+export type KanbanGoalLink = Database['public']['Tables']['kanban_goal_links']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {
@@ -569,3 +692,16 @@ export type TodayItem =
   | { type: 'journal'; data: JournalPromptWithEntry }
   | { type: 'todo'; data: Todo }
   | { type: 'vision'; data: Vision };
+
+// Extended types for Kanban UI
+export type KanbanCardWithDetails = KanbanCard & {
+  subtasks: KanbanSubtask[];
+  goal: Goal | null;
+  column: KanbanColumn;
+};
+
+export type KanbanColumnWithCards = KanbanColumn & {
+  todoCards: KanbanCardWithDetails[];
+  inProgressCards: KanbanCardWithDetails[];
+  doneCards: KanbanCardWithDetails[];
+};

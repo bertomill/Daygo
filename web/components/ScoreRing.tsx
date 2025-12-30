@@ -12,10 +12,10 @@ export function ScoreRing({ score, size = 120, strokeWidth = 8 }: ScoreRingProps
   const offset = circumference - (score / 100) * circumference
 
   const getColor = (score: number) => {
-    if (score >= 80) return '#22c55e' // green
-    if (score >= 60) return '#eab308' // yellow
+    if (score >= 80) return '#4CAF50' // bevel-green
+    if (score >= 60) return '#F5C518' // bevel-yellow
     if (score >= 40) return '#f97316' // orange
-    return '#ef4444' // red
+    return '#EF5350' // bevel-red
   }
 
   return (
@@ -45,7 +45,7 @@ export function ScoreRing({ score, size = 120, strokeWidth = 8 }: ScoreRingProps
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(score)}%</span>
+        <span className="text-2xl font-bold text-bevel-text dark:text-white">{Math.round(score)}%</span>
       </div>
     </div>
   )

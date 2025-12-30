@@ -235,8 +235,8 @@ export default function GoalDetailPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Delete Goal?</h2>
             <p className="text-gray-500 dark:text-slate-400 mb-6">
               This will permanently delete "{goal.title}" and cannot be undone.

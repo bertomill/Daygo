@@ -25,33 +25,33 @@ export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
   }
 
   return (
-    <div className="bg-gradient-to-r from-journal/10 to-journal/5 dark:from-journal/20 dark:to-journal/10 border border-journal/30 rounded-xl p-4">
-      <div className="flex items-start gap-3 mb-3">
-        <BookOpen className="w-5 h-5 text-journal flex-shrink-0 mt-0.5" />
-        <p className="text-gray-900 dark:text-white font-medium flex-1">{prompt.prompt}</p>
+    <div className="bg-bevel-card dark:bg-slate-800 shadow-bevel rounded-2xl p-5">
+      <div className="flex items-start gap-4 mb-4">
+        <BookOpen className="w-6 h-6 text-journal flex-shrink-0" />
+        <p className="text-bevel-text dark:text-white font-semibold flex-1 leading-relaxed">{prompt.prompt}</p>
         <button
           onClick={handleOptionsClick}
-          className="p-1 -m-1 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors flex-shrink-0"
+          className="p-2 -m-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors flex-shrink-0"
           aria-label="Journal prompt options"
         >
-          <MoreHorizontal className="w-5 h-5 text-gray-400 dark:text-slate-500" />
+          <MoreHorizontal className="w-5 h-5 text-bevel-text-secondary dark:text-slate-400" />
         </button>
       </div>
 
       {isEditing ? (
-        <div className="ml-8">
+        <div className="ml-10">
           <textarea
             value={entry}
             onChange={(e) => setEntry(e.target.value)}
-            className="w-full p-3 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-journal resize-none"
+            className="w-full p-4 bg-gray-50 dark:bg-slate-700/50 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-journal focus:border-transparent resize-none"
             rows={3}
             placeholder="Write your reflection..."
             autoFocus
           />
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-3">
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-journal hover:bg-journal/90 text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-5 py-2.5 bg-journal hover:bg-journal/90 text-white rounded-xl text-sm font-semibold transition-colors shadow-bevel-sm"
             >
               Save
             </button>
@@ -60,7 +60,7 @@ export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
                 setEntry(prompt.todayEntry || '')
                 setIsEditing(false)
               }}
-              className="px-4 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-5 py-2.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-bevel-text dark:text-white rounded-xl text-sm font-semibold transition-colors shadow-bevel-sm"
             >
               Cancel
             </button>
@@ -68,16 +68,16 @@ export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
         </div>
       ) : (
         <div
-          className="ml-8 cursor-pointer"
+          className="ml-10 cursor-pointer"
           onClick={() => setIsEditing(true)}
         >
           {prompt.todayEntry ? (
             <div className="flex items-start gap-2">
-              <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />
-              <p className="text-gray-700 dark:text-slate-300">{prompt.todayEntry}</p>
+              <Check className="w-5 h-5 text-bevel-green flex-shrink-0 mt-0.5" />
+              <p className="text-bevel-text dark:text-slate-200 leading-relaxed">{prompt.todayEntry}</p>
             </div>
           ) : (
-            <p className="text-gray-400 dark:text-slate-500 italic">Tap to write...</p>
+            <p className="text-bevel-text-secondary dark:text-slate-400 italic">Tap to write...</p>
           )}
         </div>
       )}

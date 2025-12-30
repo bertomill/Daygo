@@ -1,16 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/auth-store'
 import { supabase } from '@/lib/supabase'
-import { Check, Loader2, ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
+import { Check, Loader2 } from 'lucide-react'
 
 interface FeedbackItem {
   id: string
   user_email: string | null
   message: string
+  screenshot_url: string | null
   resolved: boolean
   created_at: string
 }
@@ -18,18 +17,10 @@ interface FeedbackItem {
 const ADMIN_EMAIL = 'bertmill19@gmail.com'
 
 export default function AdminFeedbackPage() {
-  const router = useRouter()
   const { user, initialized } = useAuthStore()
   const [feedback, setFeedback] = useState<FeedbackItem[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
-
-  // Check if user is admin
-  useEffect(() => {
-    if (initialized && user?.email !== ADMIN_EMAIL) {
-      router.replace('/today')
-    }
-  }, [user, initialized, router])
 
   // Fetch feedback
   useEffect(() => {
@@ -71,24 +62,9 @@ export default function AdminFeedbackPage() {
     setUpdating(null)
   }
 
-  if (!initialized || user?.email !== ADMIN_EMAIL) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    )
-  }
-
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          href="/today"
-          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-slate-400" />
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Feedback</h1>
+    <div>
+      <div className="flex items-center justify-between mb-4">
         <span className="text-sm text-gray-500 dark:text-slate-400">
           {feedback.length} total
         </span>
@@ -152,6 +128,16 @@ export default function AdminFeedbackPage() {
                   >
                     {item.message}
                   </p>
+                  {item.screenshot_url && (
+                    <div className="mt-3">
+                      <img
+                        src={item.screenshot_url}
+                        alt="Feedback screenshot"
+                        className="rounded-lg border border-gray-200 dark:border-slate-600 max-w-full cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(item.screenshot_url!, '_blank')}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

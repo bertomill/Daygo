@@ -63,6 +63,7 @@ export default function GoalsPage() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [icon, setIcon] = useState('trophy')
@@ -101,8 +102,27 @@ export default function GoalsPage() {
     },
   })
 
+  const updateGoalMutation = useMutation({
+    mutationFn: () =>
+      goalsService.updateGoal(
+        editingGoalId!,
+        title,
+        description || null,
+        icon,
+        metricName,
+        parseInt(metricTarget),
+        deadline || null,
+        linkedHabitIds
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      resetForm()
+    },
+  })
+
   const resetForm = () => {
     setShowCreateModal(false)
+    setEditingGoalId(null)
     setTitle('')
     setDescription('')
     setIcon('trophy')
@@ -112,9 +132,27 @@ export default function GoalsPage() {
     setLinkedHabitIds([])
   }
 
-  const handleCreate = () => {
+  const handleEdit = (goalId: string) => {
+    const goal = goals.find((g) => g.id === goalId)
+    if (!goal) return
+
+    setEditingGoalId(goalId)
+    setTitle(goal.title)
+    setDescription(goal.description || '')
+    setIcon(goal.icon || 'trophy')
+    setMetricName(goal.metric_name)
+    setMetricTarget(goal.metric_target.toString())
+    setDeadline(goal.deadline || '')
+    setLinkedHabitIds(goal.habits?.map((h) => h.id) || [])
+  }
+
+  const handleSubmit = () => {
     if (!title.trim() || !metricName.trim() || !metricTarget) return
-    createGoalMutation.mutate()
+    if (editingGoalId) {
+      updateGoalMutation.mutate()
+    } else {
+      createGoalMutation.mutate()
+    }
   }
 
   const toggleHabitLink = (habitId: string) => {
@@ -142,7 +180,7 @@ export default function GoalsPage() {
       ) : (
         <div className="flex flex-col gap-6">
           {goals.map((goal) => (
-            <GoalCard key={goal.id} goal={goal} />
+            <GoalCard key={goal.id} goal={goal} onEdit={handleEdit} />
           ))}
         </div>
       )}
@@ -155,11 +193,13 @@ export default function GoalsPage() {
         <Plus className="w-7 h-7 text-white" />
       </button>
 
-      {/* Create Goal Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-xl">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Create Goal</h2>
+      {/* Create/Edit Goal Modal */}
+      {(showCreateModal || editingGoalId) && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-2xl">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              {editingGoalId ? 'Edit Goal' : 'Create Goal'}
+            </h2>
 
             <div className="space-y-4">
               <div>
@@ -287,11 +327,11 @@ export default function GoalsPage() {
                 Cancel
               </button>
               <button
-                onClick={handleCreate}
+                onClick={handleSubmit}
                 disabled={!title.trim() || !metricName.trim() || !metricTarget}
                 className="flex-1 py-3 bg-accent hover:bg-accent/90 disabled:bg-accent/50 text-white rounded-lg font-medium transition-colors"
               >
-                Create
+                {editingGoalId ? 'Update' : 'Create'}
               </button>
             </div>
           </div>

@@ -100,6 +100,9 @@ export default function TodayPage() {
   const [showMissNoteModal, setShowMissNoteModal] = useState(false)
   const [missNoteText, setMissNoteText] = useState('')
   const [gcalNotification, setGcalNotification] = useState<string | null>(null)
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null)
+  const [slideInDirection, setSlideInDirection] = useState<'left' | 'right' | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
   const pepTalkTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Check for Google Calendar connection callback
@@ -834,20 +837,42 @@ export default function TodayPage() {
   }
 
   const handlePrevDay = useCallback(() => {
-    setSelectedDate(prev => {
-      const newDate = new Date(prev)
-      newDate.setDate(newDate.getDate() - 1)
-      return newDate
-    })
-  }, [])
+    if (isAnimating) return
+    setIsAnimating(true)
+    setSwipeDirection('right') // Slide out to the right
+    setTimeout(() => {
+      setSelectedDate(prev => {
+        const newDate = new Date(prev)
+        newDate.setDate(newDate.getDate() - 1)
+        return newDate
+      })
+      setSwipeDirection(null)
+      setSlideInDirection('left') // New content slides in from left
+      setTimeout(() => {
+        setSlideInDirection(null)
+        setIsAnimating(false)
+      }, 350)
+    }, 300)
+  }, [isAnimating])
 
   const handleNextDay = useCallback(() => {
-    setSelectedDate(prev => {
-      const newDate = new Date(prev)
-      newDate.setDate(newDate.getDate() + 1)
-      return newDate
-    })
-  }, [])
+    if (isAnimating) return
+    setIsAnimating(true)
+    setSwipeDirection('left') // Slide out to the left
+    setTimeout(() => {
+      setSelectedDate(prev => {
+        const newDate = new Date(prev)
+        newDate.setDate(newDate.getDate() + 1)
+        return newDate
+      })
+      setSwipeDirection(null)
+      setSlideInDirection('right') // New content slides in from right
+      setTimeout(() => {
+        setSlideInDirection(null)
+        setIsAnimating(false)
+      }, 350)
+    }, 300)
+  }, [isAnimating])
 
   // Swipe/drag handlers for day navigation
   const swipeHandlers = useSwipeable({
@@ -879,7 +904,7 @@ export default function TodayPage() {
   const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || scheduleLoading
 
   return (
-    <div {...swipeHandlers} className="max-w-lg mx-auto px-4 py-6 pb-32 min-h-screen">
+    <div {...swipeHandlers} className="max-w-lg mx-auto px-4 py-6 pb-32 min-h-screen bg-bevel-bg dark:bg-slate-900">
       {/* Google Calendar notification toast */}
       {gcalNotification && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 bg-green-500 text-white rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
@@ -928,22 +953,30 @@ export default function TodayPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div
+          className={`space-y-5 ${
+            swipeDirection === 'left' ? 'animate-slide-out-left' :
+            swipeDirection === 'right' ? 'animate-slide-out-right' :
+            slideInDirection === 'left' ? 'animate-slide-in-left' :
+            slideInDirection === 'right' ? 'animate-slide-in-right' :
+            ''
+          }`}
+        >
           {/* Today's Pep Talk */}
           {todaysPepTalk && (
             <section>
-              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
+              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
                 Today&apos;s Pep Talk
               </h2>
               <div
-                className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 border border-purple-500/30 rounded-xl p-4 cursor-pointer hover:from-purple-500/20 hover:to-pink-500/20 dark:hover:from-purple-500/30 dark:hover:to-pink-500/30 transition-all"
+                className="bg-bevel-card dark:bg-slate-800 shadow-bevel rounded-2xl p-5 cursor-pointer hover:shadow-bevel-md transition-all"
                 onClick={() => deletePepTalkMutation.mutate()}
               >
-                <div className="flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                <div className="flex items-start gap-4">
+                  <Sparkles className="w-6 h-6 text-purple-500 flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="text-gray-900 dark:text-white italic">{todaysPepTalk.text}</p>
-                    <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">Tap to remove</p>
+                    <p className="text-bevel-text dark:text-white font-medium leading-relaxed italic">{todaysPepTalk.text}</p>
+                    <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-3">Tap to remove</p>
                   </div>
                 </div>
               </div>
@@ -953,7 +986,7 @@ export default function TodayPage() {
           {/* Visions */}
           {visions.length > 0 && (
             <section>
-              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
+              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
                 Visions
               </h2>
               <div className="space-y-3">
@@ -971,7 +1004,7 @@ export default function TodayPage() {
           {/* Mantras */}
           {mantras.length > 0 && (
             <section>
-              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
+              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
                 Mantras
               </h2>
               <div className="space-y-3">
@@ -980,6 +1013,83 @@ export default function TodayPage() {
                     key={mantra.id}
                     mantra={mantra}
                     onEdit={(m) => setSelectedMantra(m)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Habits */}
+          {habits.length > 0 && (
+            <section>
+              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
+                Habits
+              </h2>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={habits.map((h) => h.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3">
+                    {habits.map((habit) => (
+                      <SortableHabitCard
+                        key={habit.id}
+                        habit={habit}
+                        onToggle={(habitId, completed) =>
+                          toggleHabitMutation.mutate({ habitId, completed })
+                        }
+                        onEdit={(h) => setSelectedHabit(h)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </section>
+          )}
+
+          {/* Journal Prompts */}
+          {prompts.length > 0 && (
+            <section>
+              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
+                Journal
+              </h2>
+              <div className="space-y-3">
+                {prompts.map((prompt) => (
+                  <JournalCard
+                    key={prompt.id}
+                    prompt={prompt}
+                    onSave={(promptId, entry) =>
+                      saveEntryMutation.mutate({ promptId, entry })
+                    }
+                    onEdit={(p) => {
+                      setSelectedJournal(p)
+                      setEditJournalText(p.prompt)
+                    }}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* To-Dos */}
+          {todos.length > 0 && (
+            <section>
+              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 mb-4 uppercase tracking-wider">
+                To-Do
+              </h2>
+              <div className="space-y-3">
+                {todos.map((todo) => (
+                  <TodoCard
+                    key={todo.id}
+                    todo={todo}
+                    onToggle={(todoId, completed) =>
+                      toggleTodoMutation.mutate({ todoId, completed })
+                    }
+                    onEdit={(t) => setSelectedTodo(t)}
                   />
                 ))}
               </div>
@@ -1047,83 +1157,6 @@ export default function TodayPage() {
             />
           </section>
 
-          {/* Habits */}
-          {habits.length > 0 && (
-            <section>
-              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
-                Habits
-              </h2>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={habits.map((h) => h.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-3">
-                    {habits.map((habit) => (
-                      <SortableHabitCard
-                        key={habit.id}
-                        habit={habit}
-                        onToggle={(habitId, completed) =>
-                          toggleHabitMutation.mutate({ habitId, completed })
-                        }
-                        onEdit={(h) => setSelectedHabit(h)}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            </section>
-          )}
-
-          {/* Journal Prompts */}
-          {prompts.length > 0 && (
-            <section>
-              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
-                Journal
-              </h2>
-              <div className="space-y-3">
-                {prompts.map((prompt) => (
-                  <JournalCard
-                    key={prompt.id}
-                    prompt={prompt}
-                    onSave={(promptId, entry) =>
-                      saveEntryMutation.mutate({ promptId, entry })
-                    }
-                    onEdit={(p) => {
-                      setSelectedJournal(p)
-                      setEditJournalText(p.prompt)
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* To-Dos */}
-          {todos.length > 0 && (
-            <section>
-              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
-                To-Do
-              </h2>
-              <div className="space-y-3">
-                {todos.map((todo) => (
-                  <TodoCard
-                    key={todo.id}
-                    todo={todo}
-                    onToggle={(todoId, completed) =>
-                      toggleTodoMutation.mutate({ todoId, completed })
-                    }
-                    onEdit={(t) => setSelectedTodo(t)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
           {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && todos.length === 0 && visions.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-slate-400 mb-4">No items yet. Add your first habit, mantra, vision, journal prompt, or to-do!</p>
@@ -1137,22 +1170,22 @@ export default function TodayPage() {
         {/* Onboarding hint tooltip */}
         {showAddHint && (
           <div className="absolute bottom-16 right-0 mb-2 animate-fade-in">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 p-4 w-64">
-              <p className="text-gray-900 dark:text-white font-medium mb-1">
+            <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel-lg p-5 w-64">
+              <p className="text-bevel-text dark:text-white font-semibold mb-2">
                 Add habits here
               </p>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
+              <p className="text-sm text-bevel-text-secondary dark:text-slate-400 mb-4 leading-relaxed">
                 Tap the + button to add habits, mantras, and journal prompts.
               </p>
               <button
                 onClick={dismissAddHint}
-                className="text-sm text-accent hover:text-accent/80 font-medium transition-colors"
+                className="text-sm text-accent hover:text-accent/80 font-semibold transition-colors"
               >
                 Got it
               </button>
             </div>
             {/* Arrow pointing to button */}
-            <div className="absolute -bottom-2 right-5 w-4 h-4 bg-white dark:bg-slate-800 border-r border-b border-gray-200 dark:border-slate-700 transform rotate-45" />
+            <div className="absolute -bottom-2 right-5 w-4 h-4 bg-bevel-card dark:bg-slate-800 shadow-bevel transform rotate-45" />
           </div>
         )}
         <button
@@ -1160,7 +1193,7 @@ export default function TodayPage() {
             setShowAddModal(true)
             if (showAddHint) dismissAddHint()
           }}
-          className={`w-14 h-14 bg-accent hover:bg-accent/90 rounded-full flex items-center justify-center shadow-lg transition-all ${
+          className={`w-16 h-16 bg-accent hover:bg-accent/90 rounded-full flex items-center justify-center shadow-bevel-lg hover:shadow-bevel-md transition-all ${
             showAddHint ? 'ring-4 ring-accent/30 animate-pulse' : ''
           }`}
         >
@@ -1171,7 +1204,7 @@ export default function TodayPage() {
       {/* Add Modal */}
       {showAddModal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => {
             setShowAddModal(false)
             setAddType(null)
@@ -1180,7 +1213,7 @@ export default function TodayPage() {
           }}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Step 1: Type Selection */}
@@ -1418,11 +1451,11 @@ export default function TodayPage() {
       {/* Habit Detail Modal */}
       {selectedHabit && !showDeleteConfirm && !showMissNoteModal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => setSelectedHabit(null)}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -1486,14 +1519,14 @@ export default function TodayPage() {
       {/* Miss Note Modal */}
       {showMissNoteModal && selectedHabit && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => {
             setShowMissNoteModal(false)
             setMissNoteText('')
           }}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -1557,14 +1590,14 @@ export default function TodayPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && selectedHabit && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => {
             setShowDeleteConfirm(false)
             setSelectedHabit(null)
           }}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Delete "{selectedHabit.name}"?</h2>
@@ -1595,11 +1628,11 @@ export default function TodayPage() {
       {/* Mantra Detail Modal */}
       {selectedMantra && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => setSelectedMantra(null)}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -1627,11 +1660,11 @@ export default function TodayPage() {
       {/* Todo Detail Modal */}
       {selectedTodo && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => setSelectedTodo(null)}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -1659,7 +1692,7 @@ export default function TodayPage() {
       {/* Vision Detail Modal */}
       {selectedVision && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => {
             setSelectedVision(null)
             setIsEditingVision(false)
@@ -1667,7 +1700,7 @@ export default function TodayPage() {
           }}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-xl shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -1752,7 +1785,7 @@ export default function TodayPage() {
       {/* Journal Prompt Detail Modal */}
       {selectedJournal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => {
             setSelectedJournal(null)
             setIsEditingJournal(false)
@@ -1760,7 +1793,7 @@ export default function TodayPage() {
           }}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -1838,7 +1871,7 @@ export default function TodayPage() {
       {/* Schedule Add Modal (when clicking on grid) */}
       {showScheduleModal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => {
             setShowScheduleModal(false)
             setNewEventTitle('')
@@ -1848,7 +1881,7 @@ export default function TodayPage() {
           }}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -1939,11 +1972,11 @@ export default function TodayPage() {
       {/* Schedule Event Detail Modal */}
       {selectedEvent && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => setSelectedEvent(null)}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">

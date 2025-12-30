@@ -17,18 +17,21 @@ export const dailyNotesService = {
   async saveNote(userId: string, date: string, note: string): Promise<DailyNote> {
     const { data, error } = await supabase
       .from('daily_notes')
-      .upsert({
-        user_id: userId,
-        date: date,
-        note: note,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,date',
-      })
+      .upsert(
+        {
+          user_id: userId,
+          date: date,
+          note: note,
+          updated_at: new Date().toISOString(),
+        } as any,
+        {
+          onConflict: 'user_id,date',
+        }
+      )
       .select()
       .single()
 
     if (error) throw error
-    return data
+    return data as DailyNote
   },
 }

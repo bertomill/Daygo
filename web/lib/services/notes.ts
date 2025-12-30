@@ -1,6 +1,8 @@
 import { supabase } from '../supabase'
 import type { Note } from '../types/database'
 
+export type NoteType = 'text' | 'canvas'
+
 export const notesService = {
   async getNotes(userId: string): Promise<Note[]> {
     const { data, error } = await supabase
@@ -27,13 +29,21 @@ export const notesService = {
     return data as Note
   },
 
-  async createNote(userId: string, title: string, content: string = ''): Promise<Note> {
+  async createNote(
+    userId: string,
+    title: string,
+    content: string = '',
+    noteType: NoteType = 'text',
+    canvasData?: Record<string, unknown>
+  ): Promise<Note> {
     const { data, error } = await supabase
       .from('notes')
       .insert({
         user_id: userId,
         title,
         content,
+        note_type: noteType,
+        canvas_data: canvasData || null,
       } as any)
       .select()
       .single()
@@ -42,9 +52,15 @@ export const notesService = {
     return data as Note
   },
 
-  async updateNote(noteId: string, updates: { title?: string; content?: string }): Promise<Note> {
-    const { data, error } = await (supabase
-      .from('notes') as any)
+  async updateNote(
+    noteId: string,
+    updates: {
+      title?: string
+      content?: string
+      canvas_data?: Record<string, unknown>
+    }
+  ): Promise<Note> {
+    const { data, error } = await (supabase.from('notes') as any)
       .update({
         ...updates,
         updated_at: new Date().toISOString(),
@@ -58,10 +74,7 @@ export const notesService = {
   },
 
   async deleteNote(noteId: string): Promise<void> {
-    const { error } = await (supabase
-      .from('notes') as any)
-      .delete()
-      .eq('id', noteId)
+    const { error } = await (supabase.from('notes') as any).delete().eq('id', noteId)
 
     if (error) throw error
   },

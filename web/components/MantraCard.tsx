@@ -23,24 +23,26 @@ export function MantraCard({ mantra, onEdit }: MantraCardProps) {
 
   return (
     <div
-      className={`bg-gradient-to-r from-mantra/10 to-mantra/5 dark:from-mantra/20 dark:to-mantra/10 border border-mantra/30 rounded-xl p-4 cursor-pointer hover:from-mantra/20 hover:to-mantra/10 dark:hover:from-mantra/30 dark:hover:to-mantra/20 transition-all duration-200 ${
+      className={`bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 cursor-pointer transition-all duration-200 ${
         isGlowing
-          ? 'shadow-[0_0_30px_10px_rgba(168,85,247,0.4)] scale-[1.02] border-mantra/60'
-          : ''
+          ? 'shadow-bevel-lg scale-[1.02] ring-2 ring-mantra/30'
+          : 'shadow-bevel hover:shadow-bevel-md'
       }`}
       onClick={handleClick}
     >
-      <div className="flex items-start gap-3">
-        <Sparkles className={`w-5 h-5 flex-shrink-0 mt-0.5 transition-all duration-200 ${
-          isGlowing ? 'text-mantra scale-125' : 'text-mantra'
-        }`} />
-        <p className="text-gray-900 dark:text-white italic flex-1">{mantra.text}</p>
+      <div className="flex items-start gap-4">
+        <div className={`flex-shrink-0 transition-all duration-200 ${
+          isGlowing ? 'scale-125' : ''
+        }`}>
+          <Sparkles className="w-6 h-6 text-mantra" />
+        </div>
+        <p className="text-bevel-text dark:text-white font-medium flex-1 leading-relaxed">{mantra.text}</p>
         <button
           onClick={handleOptionsClick}
-          className="p-1 -m-1 hover:bg-mantra/20 rounded-lg transition-colors flex-shrink-0"
+          className="p-2 -m-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors flex-shrink-0"
           aria-label="Mantra options"
         >
-          <MoreHorizontal className="w-5 h-5 text-gray-400 dark:text-slate-500" />
+          <MoreHorizontal className="w-5 h-5 text-bevel-text-secondary dark:text-slate-400" />
         </button>
       </div>
     </div>
