@@ -43,6 +43,88 @@ export default function KanbanPage() {
     }) => {
       return kanbanService.updateCard(cardId, { status, column_id: columnId })
     },
+    onMutate: async ({ cardId, status, columnId }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['kanban-columns', user?.id] })
+
+      // Snapshot the previous value
+      const previousColumns = queryClient.getQueryData(['kanban-columns', user?.id])
+
+      // Optimistically update the cache
+      queryClient.setQueryData(['kanban-columns', user?.id], (old: any) => {
+        if (!old) return old
+
+        return old.map((col: any) => {
+          const allCards = [...col.todoCards, ...col.inProgressCards, ...col.doneCards]
+          const updatedCards = allCards.map((card: any) => {
+            if (card.id === cardId) {
+              return { ...card, status, column_id: columnId }
+            }
+            return card
+          })
+
+          return {
+            ...col,
+            todoCards: updatedCards.filter((c: any) => c.column_id === col.id && c.status === 'todo'),
+            inProgressCards: updatedCards.filter((c: any) => c.column_id === col.id && c.status === 'in_progress'),
+            doneCards: updatedCards.filter((c: any) => c.column_id === col.id && c.status === 'done'),
+          }
+        })
+      })
+
+      return { previousColumns }
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      queryClient.setQueryData(['kanban-columns', user?.id], context?.previousColumns)
+    },
+    onSettled: () => {
+      // Refetch after mutation to ensure sync
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns', user?.id] })
+    },
+  })
+
+  // Mutation to reorder cards within a section
+  const reorderCardsMutation = useMutation({
+    mutationFn: async (cardIds: string[]) => {
+      return kanbanService.reorderCards(cardIds)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns', user?.id] })
+    },
+  })
+
+  // Mutation to reorder columns
+  const reorderColumnsMutation = useMutation({
+    mutationFn: async (columnIds: string[]) => {
+      return kanbanService.reorderColumns(columnIds)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns'] })
+    },
+  })
+
+  // Mutation to update card priority
+  const updatePriorityMutation = useMutation({
+    mutationFn: async ({ cardId, priority }: { cardId: string; priority: number | null }) => {
+      return kanbanService.updateCard(cardId, { priority })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns'] })
+    },
+  })
+
+  // Mutation for timer start/stop
+  const timerMutation = useMutation({
+    mutationFn: async ({ cardId, isActive, timerId }: { cardId: string; isActive: boolean; timerId?: string }) => {
+      if (isActive && timerId) {
+        // Stop the timer
+        return kanbanService.stopTimer(timerId)
+      } else {
+        // Start the timer
+        return kanbanService.startTimer(user!.id, cardId)
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kanban-columns'] })
     },
@@ -64,6 +146,31 @@ export default function KanbanPage() {
     newColumnId: string
   ) => {
     updateCardMutation.mutate({ cardId, status: newStatus, columnId: newColumnId })
+  }
+
+  const handleCardReorder = (cardIds: string[]) => {
+    reorderCardsMutation.mutate(cardIds)
+  }
+
+  const handleColumnReorder = (columnIds: string[]) => {
+    reorderColumnsMutation.mutate(columnIds)
+  }
+
+  const handlePriorityChange = (cardId: string, priority: number | null) => {
+    updatePriorityMutation.mutate({ cardId, priority })
+  }
+
+  const handleTimerToggle = (cardId: string, isActive: boolean) => {
+    // Find the card to get the active timer ID
+    const card = columns
+      .flatMap(col => [...col.todoCards, ...col.inProgressCards, ...col.doneCards])
+      .find(c => c.id === cardId)
+
+    timerMutation.mutate({
+      cardId,
+      isActive,
+      timerId: card?.activeTimer?.id,
+    })
   }
 
   // Empty state when no columns
@@ -103,7 +210,7 @@ export default function KanbanPage() {
   return (
     <div className="h-[calc(100vh-5rem)] flex flex-col">
       <div className="px-4 py-4 border-b border-gray-200 dark:border-slate-800">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white pl-12">
           Kanban Board
         </h1>
       </div>
@@ -121,6 +228,10 @@ export default function KanbanPage() {
           onAddColumn={() => setShowCreateColumn(true)}
           onEditColumn={handleEditColumn}
           onCardDrop={handleCardDrop}
+          onCardReorder={handleCardReorder}
+          onColumnReorder={handleColumnReorder}
+          onPriorityChange={handlePriorityChange}
+          onTimerToggle={handleTimerToggle}
         />
       )}
 

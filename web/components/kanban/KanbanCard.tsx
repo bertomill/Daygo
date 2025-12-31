@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckSquare, Target, MoreVertical, GripVertical, Flag } from 'lucide-react'
+import { CheckSquare, Target, MoreVertical, GripVertical, Flag, Play, Square, Clock } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { KanbanCardWithDetails } from '@/lib/types/database'
@@ -8,6 +8,8 @@ import type { KanbanCardWithDetails } from '@/lib/types/database'
 interface KanbanCardProps {
   card: KanbanCardWithDetails
   onClick: () => void
+  onPriorityChange?: (cardId: string, priority: number | null) => void
+  onTimerToggle?: (cardId: string, isActive: boolean) => void
 }
 
 const TAG_COLORS = [
@@ -25,7 +27,25 @@ function getTagColor(tag: string, index: number): string {
   return TAG_COLORS[hash % TAG_COLORS.length]
 }
 
-export function KanbanCard({ card, onClick }: KanbanCardProps) {
+const PRIORITY_COLORS = {
+  1: 'bg-red-500 text-white',
+  2: 'bg-orange-500 text-white',
+  3: 'bg-yellow-500 text-white',
+  4: 'bg-blue-500 text-white',
+  5: 'bg-gray-500 text-white',
+}
+
+function formatTime(milliseconds: number): string {
+  const hours = Math.floor(milliseconds / (1000 * 60 * 60))
+  const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60))
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  }
+  return `${minutes}m`
+}
+
+export function KanbanCard({ card, onClick, onPriorityChange, onTimerToggle }: KanbanCardProps) {
   const completedSubtasks = card.subtasks.filter((s) => s.completed).length
   const totalSubtasks = card.subtasks.length
 
@@ -42,6 +62,26 @@ export function KanbanCard({ card, onClick }: KanbanCardProps) {
     transform: CSS.Transform.toString(transform),
     transition,
   }
+
+  const handlePriorityClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!onPriorityChange) return
+
+    // Cycle through priorities: null -> 1 -> 2 -> 3 -> 4 -> 5 -> null
+    const nextPriority = card.priority === null ? 1 : card.priority === 5 ? null : card.priority + 1
+    onPriorityChange(card.id, nextPriority)
+  }
+
+  const handleTimerClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!onTimerToggle) return
+
+    const isActive = !!card.activeTimer
+    onTimerToggle(card.id, isActive)
+  }
+
+  const isTimerActive = !!card.activeTimer
+  const totalTime = card.totalTimeSpent || 0
 
   return (
     <div
@@ -62,7 +102,27 @@ export function KanbanCard({ card, onClick }: KanbanCardProps) {
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-1 flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              {card.priority && (
+                <button
+                  onClick={handlePriorityClick}
+                  className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all hover:scale-110 ${
+                    PRIORITY_COLORS[card.priority as keyof typeof PRIORITY_COLORS]
+                  }`}
+                  title={`Priority ${card.priority} (click to change)`}
+                >
+                  {card.priority}
+                </button>
+              )}
+              {!card.priority && onPriorityChange && (
+                <button
+                  onClick={handlePriorityClick}
+                  className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 hover:border-gray-400 dark:hover:border-slate-400 hover:text-gray-600 dark:hover:text-slate-300 transition-all"
+                  title="Set priority (1-5)"
+                >
+                  +
+                </button>
+              )}
               {card.high_priority && (
                 <Flag className="w-3 h-3 text-red-500 flex-shrink-0" fill="currentColor" />
               )}
@@ -118,6 +178,32 @@ export function KanbanCard({ card, onClick }: KanbanCardProps) {
                 <Target className="w-3 h-3" />
                 {card.goal.title}
               </span>
+            )}
+
+            {onTimerToggle && (
+              <div className="flex items-center gap-1 ml-auto">
+                {totalTime > 0 && (
+                  <span className="text-xs text-gray-500 dark:text-slate-400 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {formatTime(totalTime)}
+                  </span>
+                )}
+                <button
+                  onClick={handleTimerClick}
+                  className={`flex-shrink-0 w-6 h-6 rounded flex items-center justify-center transition-all ${
+                    isTimerActive
+                      ? 'bg-red-500 hover:bg-red-600 text-white'
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                  title={isTimerActive ? 'Stop timer' : 'Start timer'}
+                >
+                  {isTimerActive ? (
+                    <Square className="w-3 h-3" fill="currentColor" />
+                  ) : (
+                    <Play className="w-3 h-3" fill="currentColor" />
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </div>

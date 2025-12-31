@@ -15,6 +15,8 @@ interface KanbanStatusSectionProps {
   columnId: string
   cards: KanbanCardWithDetails[]
   onCardClick: (card: KanbanCardWithDetails) => void
+  onPriorityChange?: (cardId: string, priority: number | null) => void
+  onTimerToggle?: (cardId: string, isActive: boolean) => void
 }
 
 const statusLabels = {
@@ -34,6 +36,8 @@ export function KanbanStatusSection({
   columnId,
   cards,
   onCardClick,
+  onPriorityChange,
+  onTimerToggle,
 }: KanbanStatusSectionProps) {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
@@ -42,7 +46,7 @@ export function KanbanStatusSection({
   const [newCardTitle, setNewCardTitle] = useState('')
 
   const dropId = `${columnId}-${status}`
-  const { setNodeRef } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id: dropId,
   })
 
@@ -92,16 +96,30 @@ export function KanbanStatusSection({
       </button>
 
       {!collapsed && (
-        <div ref={setNodeRef} className="space-y-2 ml-6 min-h-[60px]">
+        <div
+          ref={setNodeRef}
+          className={`space-y-2 ml-6 min-h-[100px] rounded-lg border-2 border-dashed transition-all p-2 ${
+            isOver
+              ? 'border-accent bg-accent/5 dark:bg-accent/10'
+              : 'border-transparent'
+          } ${cards.length === 0 ? 'bg-gray-50/50 dark:bg-slate-800/50' : ''}`}
+        >
           <SortableContext
             items={cards.map((c) => c.id)}
             strategy={verticalListSortingStrategy}
           >
+            {cards.length === 0 && !isAdding && (
+              <div className="text-center py-4 text-xs text-gray-400 dark:text-slate-500">
+                Drop cards here or add new ones
+              </div>
+            )}
             {cards.map((card) => (
               <KanbanCard
                 key={card.id}
                 card={card}
                 onClick={() => onCardClick(card)}
+                onPriorityChange={onPriorityChange}
+                onTimerToggle={onTimerToggle}
               />
             ))}
           </SortableContext>

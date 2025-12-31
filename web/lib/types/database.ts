@@ -327,6 +327,7 @@ export interface Database {
           content: string;
           note_type: 'text' | 'canvas';
           canvas_data: Record<string, unknown> | null;
+          tags: string[];
           created_at: string;
           updated_at: string;
         };
@@ -337,6 +338,7 @@ export interface Database {
           content?: string;
           note_type?: 'text' | 'canvas';
           canvas_data?: Record<string, unknown> | null;
+          tags?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -347,6 +349,7 @@ export interface Database {
           content?: string;
           note_type?: 'text' | 'canvas';
           canvas_data?: Record<string, unknown> | null;
+          tags?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -564,6 +567,7 @@ export interface Database {
           status: 'todo' | 'in_progress' | 'done';
           tags: string[];
           high_priority: boolean;
+          priority: number | null;
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -577,6 +581,7 @@ export interface Database {
           status?: 'todo' | 'in_progress' | 'done';
           tags?: string[];
           high_priority?: boolean;
+          priority?: number | null;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
@@ -590,6 +595,7 @@ export interface Database {
           status?: 'todo' | 'in_progress' | 'done';
           tags?: string[];
           high_priority?: boolean;
+          priority?: number | null;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
@@ -639,6 +645,32 @@ export interface Database {
           id?: string;
           card_id?: string;
           goal_id?: string;
+        };
+      };
+      kanban_time_entries: {
+        Row: {
+          id: string;
+          user_id: string;
+          card_id: string;
+          start_time: string;
+          end_time: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          card_id: string;
+          start_time: string;
+          end_time?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          card_id?: string;
+          start_time?: string;
+          end_time?: string | null;
+          created_at?: string;
         };
       };
       schedule_templates: {
@@ -710,6 +742,7 @@ export type KanbanColumn = Database['public']['Tables']['kanban_columns']['Row']
 export type KanbanCard = Database['public']['Tables']['kanban_cards']['Row'];
 export type KanbanSubtask = Database['public']['Tables']['kanban_subtasks']['Row'];
 export type KanbanGoalLink = Database['public']['Tables']['kanban_goal_links']['Row'];
+export type KanbanTimeEntry = Database['public']['Tables']['kanban_time_entries']['Row'];
 export type ScheduleTemplate = Database['public']['Tables']['schedule_templates']['Row'];
 
 // Extended types for UI
@@ -740,6 +773,9 @@ export type KanbanCardWithDetails = KanbanCard & {
   subtasks: KanbanSubtask[];
   goal: Goal | null;
   column: KanbanColumn;
+  timeEntries?: KanbanTimeEntry[];
+  activeTimer?: KanbanTimeEntry | null;
+  totalTimeSpent?: number; // in milliseconds
 };
 
 export type KanbanColumnWithCards = KanbanColumn & {

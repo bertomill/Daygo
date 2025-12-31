@@ -5,6 +5,7 @@ import type {
   KanbanSubtask,
   KanbanColumnWithCards,
   KanbanCardWithDetails,
+  KanbanTimeEntry,
   Goal,
 } from '../types/database'
 
@@ -62,12 +63,20 @@ export const kanbanService = {
 
     if (goalsError) throw goalsError
 
+    const { data: timeEntries, error: timeEntriesError } = await supabase
+      .from('kanban_time_entries')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (timeEntriesError) throw timeEntriesError
+
     const typedColumns = (columns as KanbanColumn[]) ?? []
     const typedCards = (cards as KanbanCard[]) ?? []
     const typedSubtasks = (subtasks as KanbanSubtask[]) ?? []
     const typedLinks =
       (links as { card_id: string; goal_id: string }[]) ?? []
     const typedGoals = (goals as Goal[]) ?? []
+    const typedTimeEntries = (timeEntries as KanbanTimeEntry[]) ?? []
 
     return typedColumns.map((column) => {
       const columnCards = typedCards.filter((c) => c.column_id === column.id)
@@ -81,11 +90,26 @@ export const kanbanService = {
           ? typedGoals.find((g) => g.id === goalLink.goal_id) ?? null
           : null
 
+        const cardTimeEntries = typedTimeEntries.filter(
+          (t) => t.card_id === card.id
+        )
+        const activeTimer = cardTimeEntries.find((t) => !t.end_time) ?? null
+
+        const totalTimeSpent = cardTimeEntries.reduce((total, entry) => {
+          if (!entry.end_time) return total
+          const start = new Date(entry.start_time).getTime()
+          const end = new Date(entry.end_time).getTime()
+          return total + (end - start)
+        }, 0)
+
         return {
           ...card,
           subtasks: cardSubtasks,
           goal,
           column,
+          timeEntries: cardTimeEntries,
+          activeTimer,
+          totalTimeSpent,
         }
       }
 
@@ -151,12 +175,14 @@ export const kanbanService = {
   },
 
   async reorderColumns(orderedIds: string[]): Promise<void> {
-    for (let i = 0; i < orderedIds.length; i++) {
-      const { error } = await (supabase.from('kanban_columns') as any)
-        .update({ sort_order: i })
-        .eq('id', orderedIds[i])
-      if (error) throw error
-    }
+    // Update all columns in parallel for better performance
+    await Promise.all(
+      orderedIds.map((id, index) =>
+        (supabase.from('kanban_columns') as any)
+          .update({ sort_order: index })
+          .eq('id', id)
+      )
+    )
   },
 
   // ============ CARDS ============
@@ -251,6 +277,7 @@ export const kanbanService = {
       status?: 'todo' | 'in_progress' | 'done'
       tags?: string[]
       high_priority?: boolean
+      priority?: number | null
     }
   ): Promise<KanbanCard> {
     const { data, error } = await (supabase.from('kanban_cards') as any)
@@ -291,12 +318,14 @@ export const kanbanService = {
   },
 
   async reorderCards(orderedIds: string[]): Promise<void> {
-    for (let i = 0; i < orderedIds.length; i++) {
-      const { error } = await (supabase.from('kanban_cards') as any)
-        .update({ sort_order: i })
-        .eq('id', orderedIds[i])
-      if (error) throw error
-    }
+    // Update all cards in parallel for better performance
+    await Promise.all(
+      orderedIds.map((id, index) =>
+        (supabase.from('kanban_cards') as any)
+          .update({ sort_order: index })
+          .eq('id', id)
+      )
+    )
   },
 
   // ============ SUBTASKS ============
@@ -361,5 +390,86 @@ export const kanbanService = {
       .eq('card_id', cardId)
 
     if (error) throw error
+  },
+
+  // ============ TIME TRACKING ============
+
+  async startTimer(userId: string, cardId: string): Promise<KanbanTimeEntry> {
+    // First, stop any active timers for this user
+    const { data: activeTimers } = await supabase
+      .from('kanban_time_entries')
+      .select('*')
+      .eq('user_id', userId)
+      .is('end_time', null)
+
+    if (activeTimers && activeTimers.length > 0) {
+      for (const timer of activeTimers) {
+        await (supabase.from('kanban_time_entries') as any)
+          .update({ end_time: new Date().toISOString() })
+          .eq('id', timer.id)
+      }
+    }
+
+    // Start new timer
+    const { data, error } = await supabase
+      .from('kanban_time_entries')
+      .insert({
+        user_id: userId,
+        card_id: cardId,
+        start_time: new Date().toISOString(),
+      } as any)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as KanbanTimeEntry
+  },
+
+  async stopTimer(entryId: string): Promise<KanbanTimeEntry> {
+    const { data, error } = await (supabase.from('kanban_time_entries') as any)
+      .update({ end_time: new Date().toISOString() })
+      .eq('id', entryId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as KanbanTimeEntry
+  },
+
+  async getActiveTimer(userId: string): Promise<KanbanTimeEntry | null> {
+    const { data, error } = await supabase
+      .from('kanban_time_entries')
+      .select('*')
+      .eq('user_id', userId)
+      .is('end_time', null)
+      .order('start_time', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error) return null
+    return data as KanbanTimeEntry
+  },
+
+  async getCardTimeEntries(cardId: string): Promise<KanbanTimeEntry[]> {
+    const { data, error } = await supabase
+      .from('kanban_time_entries')
+      .select('*')
+      .eq('card_id', cardId)
+      .order('start_time', { ascending: false })
+
+    if (error) throw error
+    return (data as KanbanTimeEntry[]) ?? []
+  },
+
+  async getTotalTimeSpent(cardId: string): Promise<number> {
+    const entries = await this.getCardTimeEntries(cardId)
+
+    return entries.reduce((total, entry) => {
+      if (!entry.end_time) return total // Skip active timers
+
+      const start = new Date(entry.start_time).getTime()
+      const end = new Date(entry.end_time).getTime()
+      return total + (end - start)
+    }, 0)
   },
 }
