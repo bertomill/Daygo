@@ -8,8 +8,6 @@ import { useAuthStore } from '@/lib/auth-store'
 import { supabase } from '@/lib/supabase'
 import { Calendar, BarChart3, Target, User, FileText, LayoutGrid } from 'lucide-react'
 import { FeedbackButton } from '@/components/FeedbackButton'
-import { AnimatePresence, motion } from 'framer-motion'
-import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/today', label: 'Today', icon: Calendar },
@@ -28,7 +26,6 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const { user, initialized } = useAuthStore()
   const [onboardingChecked, setOnboardingChecked] = useState(false)
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   useEffect(() => {
     if (initialized && !user) {
@@ -93,59 +90,22 @@ export default function DashboardLayout({
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 pb-6 px-4">
-        <div className="max-w-lg mx-auto bg-bevel-card dark:bg-slate-800 rounded-3xl shadow-bevel-nav dark:shadow-bevel-nav-dark border border-white/20 dark:border-slate-700/50 backdrop-blur-sm">
-          <div className="flex justify-around relative p-1">
-            {navItems.map((item, idx) => {
+      <nav className="fixed bottom-0 left-0 right-0 pb-4 px-4">
+        <div className="max-w-lg mx-auto bg-bevel-card dark:bg-slate-800 rounded-3xl shadow-bevel-lg">
+          <div className="flex justify-around">
+            {navItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
               const Icon = item.icon
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="relative flex flex-col items-center py-3 px-4 flex-1 group"
-                  onMouseEnter={() => setHoveredIndex(idx)}
-                  onMouseLeave={() => setHoveredIndex(null)}
+                  className={`flex flex-col items-center py-3 px-4 transition-all ${
+                    isActive ? 'text-accent' : 'text-bevel-text-secondary dark:text-slate-400 hover:text-bevel-text dark:hover:text-slate-200'
+                  }`}
                 >
-                  {/* Active state background - animates between tabs */}
-                  {isActive && (
-                    <motion.span
-                      className="absolute inset-0 bg-accent/15 dark:bg-accent/25 rounded-2xl shadow-[inset_0_2px_4px_rgba(59,130,246,0.1),inset_0_-1px_2px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_4px_rgba(59,130,246,0.2),inset_0_-1px_2px_rgba(0,0,0,0.3)]"
-                      layoutId="navActiveBackground"
-                      transition={{
-                        type: "spring",
-                        stiffness: 380,
-                        damping: 30
-                      }}
-                    />
-                  )}
-
-                  {/* Hover effect - only show when not active */}
-                  <AnimatePresence>
-                    {!isActive && hoveredIndex === idx && (
-                      <motion.span
-                        className="absolute inset-0 bg-neutral-100 dark:bg-slate-700/40 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
-                        initial={{ opacity: 0 }}
-                        animate={{
-                          opacity: 1,
-                          transition: { duration: 0.15 },
-                        }}
-                        exit={{
-                          opacity: 0,
-                          transition: { duration: 0.15, delay: 0.1 },
-                        }}
-                      />
-                    )}
-                  </AnimatePresence>
-
-                  <Icon className={cn(
-                    "w-6 h-6 transition-colors relative z-10",
-                    isActive ? 'text-accent' : 'text-bevel-text-secondary dark:text-slate-400 group-hover:text-bevel-text dark:group-hover:text-slate-200'
-                  )} />
-                  <span className={cn(
-                    "text-xs mt-1.5 font-medium transition-colors relative z-10",
-                    isActive ? 'text-accent' : 'text-bevel-text-secondary dark:text-slate-400 group-hover:text-bevel-text dark:group-hover:text-slate-200'
-                  )}>{item.label}</span>
+                  <Icon className="w-6 h-6" />
+                  <span className="text-xs mt-1.5 font-medium">{item.label}</span>
                 </Link>
               )
             })}
