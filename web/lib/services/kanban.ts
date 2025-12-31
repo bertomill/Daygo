@@ -402,8 +402,10 @@ export const kanbanService = {
       .eq('user_id', userId)
       .is('end_time', null)
 
-    if (activeTimers && activeTimers.length > 0) {
-      for (const timer of activeTimers) {
+    const typedActiveTimers = (activeTimers as KanbanTimeEntry[]) ?? []
+
+    if (typedActiveTimers.length > 0) {
+      for (const timer of typedActiveTimers) {
         await (supabase.from('kanban_time_entries') as any)
           .update({ end_time: new Date().toISOString() })
           .eq('id', timer.id)
