@@ -1,17 +1,19 @@
 'use client'
 
+import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Check, MoreHorizontal, X } from 'lucide-react'
+import { GripVertical, Target, MoreHorizontal } from 'lucide-react'
 import type { HabitWithLog } from '@/lib/types/database'
 
 interface SortableHabitCardProps {
   habit: HabitWithLog
-  onToggle: (habitId: string, completed: boolean) => void
   onEdit?: (habit: HabitWithLog) => void
 }
 
-export function SortableHabitCard({ habit, onToggle, onEdit }: SortableHabitCardProps) {
+export function SortableHabitCard({ habit, onEdit }: SortableHabitCardProps) {
+  const [isGlowing, setIsGlowing] = useState(false)
+
   const {
     attributes,
     listeners,
@@ -26,10 +28,8 @@ export function SortableHabitCard({ habit, onToggle, onEdit }: SortableHabitCard
     transition,
   }
 
-  const isMissed = !!habit.missNote && !habit.completed
-
   const handleCardClick = () => {
-    onToggle(habit.id, !habit.completed)
+    setIsGlowing(!isGlowing)
   }
 
   const handleOptionsClick = (e: React.MouseEvent) => {
@@ -45,11 +45,9 @@ export function SortableHabitCard({ habit, onToggle, onEdit }: SortableHabitCard
       className={`bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 flex items-center gap-4 cursor-pointer transition-all duration-200 ${
         isDragging
           ? 'opacity-50 shadow-bevel-lg scale-[1.02]'
-          : habit.completed
-            ? 'shadow-bevel-md ring-2 ring-bevel-green/30'
-            : isMissed
-              ? 'shadow-bevel-md ring-2 ring-bevel-red/30'
-              : 'shadow-bevel hover:shadow-bevel-md'
+          : isGlowing
+            ? 'shadow-bevel-lg scale-[1.02] ring-2 ring-teal/30'
+            : 'shadow-bevel hover:shadow-bevel-md'
       }`}
     >
       {/* Drag Handle */}
@@ -62,38 +60,20 @@ export function SortableHabitCard({ habit, onToggle, onEdit }: SortableHabitCard
         <GripVertical className="w-5 h-5" />
       </button>
 
-      {/* Checkbox */}
-      <div
-        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
-          habit.completed
-            ? 'bg-bevel-green border-bevel-green'
-            : isMissed
-              ? 'bg-bevel-red border-bevel-red'
-              : 'border-gray-300 dark:border-slate-500 hover:border-gray-400 dark:hover:border-slate-400'
-        }`}
-      >
-        {habit.completed && <Check className="w-5 h-5 text-white" />}
-        {isMissed && <X className="w-5 h-5 text-white" />}
+      {/* Icon */}
+      <div className={`flex-shrink-0 transition-all duration-200 ${
+        isGlowing ? 'scale-125' : ''
+      }`}>
+        <Target className="w-6 h-6 text-teal" />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <h3 className={`font-semibold text-base transition-colors duration-200 ${
-          habit.completed
-            ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
-            : isMissed
-              ? 'text-bevel-red dark:text-red-400'
-              : 'text-bevel-text dark:text-white'
-        }`}>
+        <h3 className="text-bevel-text dark:text-white font-medium leading-relaxed">
           {habit.name}
         </h3>
-        {habit.description && !isMissed && (
-          <p className="text-sm text-bevel-text-secondary dark:text-slate-400 truncate mt-1">{habit.description}</p>
-        )}
-        {isMissed && (
-          <p className="text-sm text-bevel-red/80 dark:text-red-400/80 truncate italic mt-1">
-            {habit.missNote}
-          </p>
+        {habit.description && (
+          <p className="text-sm text-bevel-text-secondary dark:text-slate-400 mt-1">{habit.description}</p>
         )}
       </div>
 

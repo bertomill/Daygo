@@ -423,7 +423,7 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
 
   return (
     <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl overflow-hidden isolate shadow-bevel">
-      <div className="flex max-h-[600px] overflow-y-auto">
+      <div className="flex">
         {/* Hour labels */}
         <div className="w-14 flex-shrink-0 border-r border-gray-200 dark:border-slate-700">
           {HOURS.map((hour) => (

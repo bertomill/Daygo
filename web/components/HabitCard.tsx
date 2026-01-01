@@ -1,17 +1,19 @@
 'use client'
 
-import { Check, MoreHorizontal } from 'lucide-react'
+import { useState } from 'react'
+import { Target, MoreHorizontal } from 'lucide-react'
 import type { HabitWithLog } from '@/lib/types/database'
 
 interface HabitCardProps {
   habit: HabitWithLog
-  onToggle: (habitId: string, completed: boolean) => void
   onEdit?: (habit: HabitWithLog) => void
 }
 
-export function HabitCard({ habit, onToggle, onEdit }: HabitCardProps) {
-  const handleCardClick = () => {
-    onToggle(habit.id, !habit.completed)
+export function HabitCard({ habit, onEdit }: HabitCardProps) {
+  const [isGlowing, setIsGlowing] = useState(false)
+
+  const handleClick = () => {
+    setIsGlowing(!isGlowing)
   }
 
   const handleOptionsClick = (e: React.MouseEvent) => {
@@ -21,46 +23,33 @@ export function HabitCard({ habit, onToggle, onEdit }: HabitCardProps) {
 
   return (
     <div
-      onClick={handleCardClick}
-      className={`bg-white dark:bg-slate-800 border rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all duration-200 ${
-        habit.completed
-          ? 'shadow-[0_0_25px_8px_rgba(20,184,166,0.35)] scale-[1.01] border-teal/60'
-          : 'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm'
+      className={`bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 cursor-pointer transition-all duration-200 ${
+        isGlowing
+          ? 'shadow-bevel-lg scale-[1.02] ring-2 ring-teal/30'
+          : 'shadow-bevel hover:shadow-bevel-md'
       }`}
+      onClick={handleClick}
     >
-      {/* Checkbox */}
-      <div
-        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
-          habit.completed
-            ? 'bg-teal border-teal scale-110'
-            : 'border-gray-300 dark:border-slate-500'
-        }`}
-      >
-        {habit.completed && <Check className="w-5 h-5 text-white" />}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <h3 className={`font-medium transition-colors duration-200 ${
-          habit.completed
-            ? 'text-gray-400 dark:text-slate-500 line-through'
-            : 'text-gray-900 dark:text-white'
+      <div className="flex items-start gap-4">
+        <div className={`flex-shrink-0 transition-all duration-200 ${
+          isGlowing ? 'scale-125' : ''
         }`}>
-          {habit.name}
-        </h3>
-        {habit.description && (
-          <p className="text-sm text-gray-400 dark:text-slate-500 truncate">{habit.description}</p>
-        )}
+          <Target className="w-6 h-6 text-teal" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-bevel-text dark:text-white font-medium leading-relaxed">{habit.name}</h3>
+          {habit.description && (
+            <p className="text-sm text-bevel-text-secondary dark:text-slate-400 mt-1">{habit.description}</p>
+          )}
+        </div>
+        <button
+          onClick={handleOptionsClick}
+          className="p-2 -m-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors flex-shrink-0"
+          aria-label="Habit options"
+        >
+          <MoreHorizontal className="w-5 h-5 text-bevel-text-secondary dark:text-slate-400" />
+        </button>
       </div>
-
-      {/* Options Button */}
-      <button
-        onClick={handleOptionsClick}
-        className="p-1 -m-1 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors flex-shrink-0"
-        aria-label="Habit options"
-      >
-        <MoreHorizontal className="w-5 h-5 text-gray-400 dark:text-slate-500" />
-      </button>
     </div>
   )
 }

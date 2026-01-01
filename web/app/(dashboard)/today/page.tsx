@@ -48,6 +48,7 @@ import { TodoCard } from '@/components/TodoCard'
 import { VisionCard } from '@/components/VisionCard'
 import { ScoreRing } from '@/components/ScoreRing'
 import { RichTextEditor } from '@/components/RichTextEditor'
+import { PepTalkAudioPlayer } from '@/components/PepTalkAudioPlayer'
 import type { HabitWithLog, Mantra, Todo, Vision, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate } from '@/lib/types/database'
 import { calculateMissionScore } from '@/lib/services/missionScore'
 
@@ -103,6 +104,7 @@ export default function TodayPage() {
   const [showMissNoteModal, setShowMissNoteModal] = useState(false)
   const [missNoteText, setMissNoteText] = useState('')
   const [gcalNotification, setGcalNotification] = useState<string | null>(null)
+  const [showPromptModal, setShowPromptModal] = useState(false)
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null)
   const [slideInDirection, setSlideInDirection] = useState<'left' | 'right' | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -416,15 +418,6 @@ export default function TodayPage() {
   const score = scheduleEvents.length > 0
     ? Math.round((scheduleEvents.filter(e => e.completed).length / scheduleEvents.length) * 100)
     : 0
-
-  const toggleHabitMutation = useMutation({
-    mutationFn: ({ habitId, completed }: { habitId: string; completed: boolean }) =>
-      habitsService.toggleHabitCompletion(user!.id, habitId, dateStr, completed),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['habits', user?.id, dateStr] })
-    },
-  })
-
   const saveEntryMutation = useMutation({
     mutationFn: ({ promptId, entry }: { promptId: string; entry: string }) =>
       journalService.saveEntry(user!.id, promptId, entry, dateStr),
@@ -570,6 +563,16 @@ export default function TodayPage() {
 
   const deletePepTalkMutation = useMutation({
     mutationFn: () => pepTalksService.deletePepTalk(user!.id, dateStr),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pep-talk', user?.id, dateStr] })
+    },
+  })
+
+  const generateAudioMutation = useMutation({
+    mutationFn: async (text: string) => {
+      if (!user) throw new Error('User not found')
+      return pepTalksService.generateAudio(user.id, text, dateStr)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pep-talk', user?.id, dateStr] })
     },
@@ -1057,15 +1060,29 @@ export default function TodayPage() {
                 )}
               </button>
               {expandedSections.pepTalk && (
-                <div
-                  className="bg-bevel-card dark:bg-slate-800 shadow-bevel rounded-2xl p-5 cursor-pointer hover:shadow-bevel-md transition-all"
-                  onClick={() => deletePepTalkMutation.mutate()}
-                >
-                  <div className="flex items-start gap-4">
-                    <Sparkles className="w-6 h-6 text-purple-500 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-bevel-text dark:text-white font-medium leading-relaxed italic">{todaysPepTalk.text}</p>
-                      <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-3">Tap to remove</p>
+                <div className="space-y-4">
+                  <div className="bg-bevel-card dark:bg-slate-800 shadow-bevel rounded-2xl p-5">
+                    <div className="flex items-start gap-4">
+                      <Sparkles className="w-6 h-6 text-purple-500 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-bevel-text dark:text-white font-medium leading-relaxed italic">{todaysPepTalk.text}</p>
+                      </div>
+                      <button
+                        onClick={() => deletePepTalkMutation.mutate()}
+                        className="p-2 -m-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors flex-shrink-0"
+                        aria-label="Delete pep talk"
+                      >
+                        <X className="w-5 h-5 text-bevel-text-secondary dark:text-slate-400" />
+                      </button>
+                    </div>
+                    <div className="mt-4">
+                      <PepTalkAudioPlayer
+                        audioUrl={todaysPepTalk.audio_url}
+                        onGenerateAudio={async () => {
+                          await generateAudioMutation.mutateAsync(todaysPepTalk.text)
+                        }}
+                        isGenerating={generateAudioMutation.isPending}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1164,9 +1181,6 @@ export default function TodayPage() {
                         <SortableHabitCard
                           key={habit.id}
                           habit={habit}
-                          onToggle={(habitId, completed) =>
-                            toggleHabitMutation.mutate({ habitId, completed })
-                          }
                           onEdit={(h) => setSelectedHabit(h)}
                         />
                       ))}
@@ -1298,6 +1312,7 @@ export default function TodayPage() {
               onDeleteRule={(ruleId) => deleteRuleMutation.mutate(ruleId)}
               onApplyRules={() => applyRulesMutation.mutate()}
               onClearAiEvents={() => clearAiEventsMutation.mutate()}
+              onSeePrompt={() => setShowPromptModal(true)}
               isApplying={applyRulesMutation.isPending}
               hasAiEvents={scheduleEvents.some(e => e.is_ai_generated)}
               planningStatus={planningStatus}
@@ -2278,6 +2293,121 @@ export default function TodayPage() {
               <Trash2 className="w-5 h-5" />
               {deleteEventMutation.isPending ? 'Deleting...' : 'Delete Event'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Prompt Preview Modal */}
+      {showPromptModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={() => setShowPromptModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4 sticky top-0 bg-white dark:bg-slate-800 pb-4 border-b border-gray-200 dark:border-slate-700">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">AI Scheduling Prompt</h2>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                  This is what we send to the AI to plan your day
+                </p>
+              </div>
+              <button
+                onClick={() => setShowPromptModal(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* System Prompt */}
+              <div>
+                <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">System Prompt</h3>
+                <pre className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono overflow-x-auto">
+{`You are a daily planner AI. Create a schedule based on the user's context and their scheduling preferences/rules.
+
+IMPORTANT: ALWAYS create a schedule that fills the ENTIRE day from wake time to bed time. Ignore the current time - schedule ALL time slots even if they appear to be "in the past." The user wants a complete day plan.
+
+CONSTRAINTS:
+1. Only schedule between ${userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'} and ${userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'} (user's wake and bed times)
+2. Fill the entire day from wake time to bed time
+3. NEVER overlap with existing events
+4. Use 30-minute increments ONLY (e.g., 09:00, 09:30, 10:00)
+5. MINIMUM event duration is 30 minutes
+6. DO NOT create "Break" events - gaps between events ARE the breaks
+7. Follow the user's SCHEDULING PREFERENCES/RULES closely - they define how the day should be structured
+
+RESPONSE FORMAT:
+Respond with ONLY a valid JSON array. No explanation, no markdown, no code blocks.
+Each event:
+- "title": string (clear, action-oriented name)
+- "start_time": "HH:MM:00" (24-hour format, 30-min increments only)
+- "end_time": "HH:MM:00" (24-hour format, 30-min increments only)
+- "description": string (optional, brief context)
+
+Example: [{"title": "Deep Work", "start_time": "09:00:00", "end_time": "10:30:00"}]
+
+NEVER return an empty array unless ALL time slots are filled.`}
+                </pre>
+              </div>
+
+              {/* User Prompt */}
+              <div>
+                <h3 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">User Prompt (Context)</h3>
+                <pre className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono overflow-x-auto">
+{`Today's date: ${dateStr}
+Wake time: ${userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'} | Bed time: ${userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'}
+
+=== SCHEDULING PREFERENCES/RULES (FOLLOW THESE CLOSELY) ===
+${calendarRules.filter(r => r.is_active).length > 0
+  ? calendarRules
+      .filter(r => r.is_active)
+      .sort((a, b) => a.priority - b.priority)
+      .map((r, i) => `${i + 1}. ${r.rule_text}`)
+      .join('\n')
+  : 'No specific rules - plan the day intelligently based on context'}
+
+=== EXISTING EVENTS (DO NOT OVERLAP) ===
+${scheduleEvents.length > 0
+  ? scheduleEvents.map(e => `- ${e.title}: ${e.start_time} - ${e.end_time}`).join('\n')
+  : 'No existing events - the day is open'}
+
+=== TODAY'S NOTES (IMPORTANT CONTEXT - schedule around these) ===
+${dailyNote?.note || 'No specific notes for today'}
+
+=== TODAY'S TODOS ===
+${todos.length > 0
+  ? todos.filter(t => !t.completed).map(t => `- ${t.text}`).join('\n')
+  : 'No pending todos'}
+${todos.filter(t => t.completed).length > 0 ? `(${todos.filter(t => t.completed).length} already completed today)` : ''}
+
+=== HABITS ===
+${habits.length > 0
+  ? habits.map(h => `- ${h.name}${h.description ? `: ${h.description}` : ''}`).join('\n')
+  : 'No habits defined'}
+
+=== GOALS ===
+${goals.length > 0
+  ? goals.map(g => `- ${g.title}${g.description ? `: ${g.description}` : ''}`).join('\n')
+  : 'No goals defined'}
+
+=== VISION ===
+${visions.length > 0
+  ? visions.map(v => `- ${v.text}`).join('\n')
+  : 'No visions defined'}
+
+=== MANTRAS ===
+${mantras.length > 0
+  ? mantras.map(m => `- "${m.text}"`).join('\n')
+  : 'No mantras defined'}
+
+Create a schedule from ${userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'} to ${userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'} following the user's rules. Respond with only a JSON array.`}
+                </pre>
+              </div>
+            </div>
           </div>
         </div>
       )}

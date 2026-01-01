@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Plus, Trash2, Sparkles, RefreshCw, Wand2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Plus, Trash2, Sparkles, RefreshCw, Wand2, Eye } from 'lucide-react'
 import type { CalendarRule } from '@/lib/types/database'
 
 interface CalendarRulesPanelProps {
@@ -11,6 +11,7 @@ interface CalendarRulesPanelProps {
   onDeleteRule: (ruleId: string) => void
   onApplyRules: () => void
   onClearAiEvents: () => void
+  onSeePrompt: () => void
   isApplying: boolean
   hasAiEvents: boolean
   planningStatus?: string
@@ -23,6 +24,7 @@ export function CalendarRulesPanel({
   onDeleteRule,
   onApplyRules,
   onClearAiEvents,
+  onSeePrompt,
   isApplying,
   hasAiEvents,
   planningStatus,
@@ -81,6 +83,14 @@ export function CalendarRulesPanel({
                 Plan My Day
               </>
             )}
+          </button>
+          <button
+            onClick={onSeePrompt}
+            disabled={isApplying}
+            className="px-3 py-2.5 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 disabled:opacity-50 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-xl transition-colors flex items-center gap-1.5"
+          >
+            <Eye className="w-4 h-4" />
+            See Prompt
           </button>
           {hasAiEvents && !isApplying && (
             <button
