@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { BookOpen, Check, MoreHorizontal } from 'lucide-react'
 import type { JournalPromptWithEntry } from '@/lib/types/database'
+import { RichTextEditor } from './RichTextEditor'
 
 interface JournalCardProps {
   prompt: JournalPromptWithEntry
@@ -40,19 +41,11 @@ export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
 
       {isEditing ? (
         <div className="ml-10">
-          <textarea
-            value={entry}
-            onChange={(e) => setEntry(e.target.value)}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-                e.preventDefault()
-                handleSave()
-              }
-            }}
-            className="w-full p-4 bg-gray-50 dark:bg-slate-700/50 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-journal focus:border-transparent resize-none"
-            rows={3}
+          <RichTextEditor
+            content={entry}
+            onChange={setEntry}
             placeholder="Write your reflection..."
-            autoFocus
+            className="w-full"
           />
           <div className="flex gap-2 mt-3">
             <button
@@ -83,7 +76,10 @@ export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
           {prompt.todayEntry ? (
             <div className="flex items-start gap-2">
               <Check className="w-5 h-5 text-bevel-green flex-shrink-0 mt-0.5" />
-              <p className="text-bevel-text dark:text-slate-200 leading-relaxed">{prompt.todayEntry}</p>
+              <div
+                className="text-bevel-text dark:text-slate-200 leading-relaxed prose prose-sm dark:prose-invert max-w-none [&_p]:m-0 [&_ul]:my-1"
+                dangerouslySetInnerHTML={{ __html: prompt.todayEntry }}
+              />
             </div>
           ) : (
             <p className="text-bevel-text-secondary dark:text-slate-400 italic">Tap to write...</p>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MessageSquare, Send, X, Loader2, Inbox, Camera, Trash2 } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { supabase } from '@/lib/supabase'
@@ -43,6 +43,41 @@ export function FeedbackButton() {
     }
     setIsCapturingScreenshot(false)
   }
+
+  // Handle paste events for screenshots
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+
+        // Check if the item is an image
+        if (item.type.indexOf('image') !== -1) {
+          e.preventDefault()
+          const blob = item.getAsFile()
+          if (!blob) continue
+
+          // Convert blob to base64
+          const reader = new FileReader()
+          reader.onload = (event) => {
+            const base64 = event.target?.result as string
+            setScreenshot(base64)
+          }
+          reader.readAsDataURL(blob)
+          break
+        }
+      }
+    }
+
+    document.addEventListener('paste', handlePaste)
+    return () => {
+      document.removeEventListener('paste', handlePaste)
+    }
+  }, [isOpen])
 
   const handleSend = async () => {
     if (!feedback.trim()) return
@@ -185,23 +220,28 @@ export function FeedbackButton() {
                       </div>
                     </div>
                   ) : (
-                    <button
-                      onClick={captureScreenshot}
-                      disabled={isCapturingScreenshot}
-                      className="w-full py-2.5 bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {isCapturingScreenshot ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Capturing...
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="w-4 h-4" />
-                          Attach Screenshot
-                        </>
-                      )}
-                    </button>
+                    <div>
+                      <button
+                        onClick={captureScreenshot}
+                        disabled={isCapturingScreenshot}
+                        className="w-full py-2.5 bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isCapturingScreenshot ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Capturing...
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-4 h-4" />
+                            Attach Screenshot
+                          </>
+                        )}
+                      </button>
+                      <p className="mt-2 text-xs text-center text-gray-500 dark:text-slate-400">
+                        Or paste an image with Cmd+V (Ctrl+V on Windows)
+                      </p>
+                    </div>
                   )}
                 </div>
 

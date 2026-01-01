@@ -17,6 +17,7 @@ interface KanbanStatusSectionProps {
   onCardClick: (card: KanbanCardWithDetails) => void
   onPriorityChange?: (cardId: string, priority: number | null) => void
   onTimerToggle?: (cardId: string, isActive: boolean) => void
+  onComplete?: (cardId: string, isDone: boolean) => void
 }
 
 const statusLabels = {
@@ -38,6 +39,7 @@ export function KanbanStatusSection({
   onCardClick,
   onPriorityChange,
   onTimerToggle,
+  onComplete,
 }: KanbanStatusSectionProps) {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
@@ -120,6 +122,7 @@ export function KanbanStatusSection({
                 onClick={() => onCardClick(card)}
                 onPriorityChange={onPriorityChange}
                 onTimerToggle={onTimerToggle}
+                onComplete={onComplete}
               />
             ))}
           </SortableContext>

@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckSquare, Target, MoreVertical, GripVertical, Flag, Play, Square, Clock } from 'lucide-react'
+import { CheckSquare, Target, MoreVertical, GripVertical, Flag, Play, Square, Clock, Circle, CheckCircle2 } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { KanbanCardWithDetails } from '@/lib/types/database'
@@ -10,6 +10,7 @@ interface KanbanCardProps {
   onClick: () => void
   onPriorityChange?: (cardId: string, priority: number | null) => void
   onTimerToggle?: (cardId: string, isActive: boolean) => void
+  onComplete?: (cardId: string, isDone: boolean) => void
 }
 
 const TAG_COLORS = [
@@ -45,7 +46,7 @@ function formatTime(milliseconds: number): string {
   return `${minutes}m`
 }
 
-export function KanbanCard({ card, onClick, onPriorityChange, onTimerToggle }: KanbanCardProps) {
+export function KanbanCard({ card, onClick, onPriorityChange, onTimerToggle, onComplete }: KanbanCardProps) {
   const completedSubtasks = card.subtasks.filter((s) => s.completed).length
   const totalSubtasks = card.subtasks.length
 
@@ -80,8 +81,17 @@ export function KanbanCard({ card, onClick, onPriorityChange, onTimerToggle }: K
     onTimerToggle(card.id, isActive)
   }
 
+  const handleCompleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!onComplete) return
+
+    const isDone = card.status === 'done'
+    onComplete(card.id, isDone)
+  }
+
   const isTimerActive = !!card.activeTimer
   const totalTime = card.totalTimeSpent || 0
+  const isDone = card.status === 'done'
 
   return (
     <div
@@ -103,6 +113,19 @@ export function KanbanCard({ card, onClick, onPriorityChange, onTimerToggle }: K
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              {onComplete && (
+                <button
+                  onClick={handleCompleteClick}
+                  className="flex-shrink-0 transition-all hover:scale-110"
+                  title={isDone ? 'Mark as incomplete' : 'Mark as complete'}
+                >
+                  {isDone ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500 dark:text-green-400" fill="currentColor" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-gray-400 dark:text-slate-500 hover:text-green-500 dark:hover:text-green-400" />
+                  )}
+                </button>
+              )}
               {card.priority && (
                 <button
                   onClick={handlePriorityClick}
@@ -128,7 +151,11 @@ export function KanbanCard({ card, onClick, onPriorityChange, onTimerToggle }: K
               )}
               <h4
                 onClick={onClick}
-                className="font-medium text-sm text-gray-900 dark:text-white cursor-pointer"
+                className={`font-medium text-sm cursor-pointer ${
+                  isDone
+                    ? 'text-gray-500 dark:text-slate-500 line-through'
+                    : 'text-gray-900 dark:text-white'
+                }`}
               >
                 {card.title}
               </h4>

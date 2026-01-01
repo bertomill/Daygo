@@ -16,6 +16,7 @@ interface KanbanColumnProps {
   onEditColumn: (column: KanbanColumnWithCards) => void
   onPriorityChange?: (cardId: string, priority: number | null) => void
   onTimerToggle?: (cardId: string, isActive: boolean) => void
+  onComplete?: (cardId: string, isDone: boolean) => void
 }
 
 export function KanbanColumn({
@@ -24,6 +25,7 @@ export function KanbanColumn({
   onEditColumn,
   onPriorityChange,
   onTimerToggle,
+  onComplete,
 }: KanbanColumnProps) {
   const [showDescription, setShowDescription] = useState(false)
 
@@ -110,6 +112,7 @@ export function KanbanColumn({
           onCardClick={onCardClick}
           onPriorityChange={onPriorityChange}
           onTimerToggle={onTimerToggle}
+          onComplete={onComplete}
         />
         <KanbanStatusSection
           status="in_progress"
@@ -118,6 +121,7 @@ export function KanbanColumn({
           onCardClick={onCardClick}
           onPriorityChange={onPriorityChange}
           onTimerToggle={onTimerToggle}
+          onComplete={onComplete}
         />
         <KanbanStatusSection
           status="done"
@@ -126,6 +130,7 @@ export function KanbanColumn({
           onCardClick={onCardClick}
           onPriorityChange={onPriorityChange}
           onTimerToggle={onTimerToggle}
+          onComplete={onComplete}
         />
       </div>
     </div>

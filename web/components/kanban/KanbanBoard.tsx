@@ -36,6 +36,7 @@ interface KanbanBoardProps {
   onColumnReorder: (columnIds: string[]) => void
   onPriorityChange?: (cardId: string, priority: number | null) => void
   onTimerToggle?: (cardId: string, isActive: boolean) => void
+  onComplete?: (cardId: string, isDone: boolean) => void
 }
 
 export function KanbanBoard({
@@ -48,6 +49,7 @@ export function KanbanBoard({
   onColumnReorder,
   onPriorityChange,
   onTimerToggle,
+  onComplete,
 }: KanbanBoardProps) {
   const [activeCard, setActiveCard] = useState<KanbanCardWithDetails | null>(null)
   const [activeColumn, setActiveColumn] = useState<KanbanColumnWithCards | null>(null)
@@ -175,6 +177,7 @@ export function KanbanBoard({
                 onEditColumn={onEditColumn}
                 onPriorityChange={onPriorityChange}
                 onTimerToggle={onTimerToggle}
+                onComplete={onComplete}
               />
             ))}
 
@@ -199,11 +202,12 @@ export function KanbanBoard({
               onEditColumn={onEditColumn}
               onPriorityChange={onPriorityChange}
               onTimerToggle={onTimerToggle}
+              onComplete={onComplete}
             />
           </div>
         ) : activeCard ? (
           <div className="opacity-80 rotate-3 scale-105">
-            <KanbanCard card={activeCard} onClick={() => {}} onPriorityChange={onPriorityChange} onTimerToggle={onTimerToggle} />
+            <KanbanCard card={activeCard} onClick={() => {}} onPriorityChange={onPriorityChange} onTimerToggle={onTimerToggle} onComplete={onComplete} />
           </div>
         ) : null}
       </DragOverlay>

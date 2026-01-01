@@ -173,6 +173,12 @@ export default function KanbanPage() {
     })
   }
 
+  const handleComplete = (cardId: string, isDone: boolean) => {
+    // Toggle between done and todo status
+    const newStatus = isDone ? 'todo' : 'done'
+    updateCardMutation.mutate({ cardId, status: newStatus, columnId: columns.flatMap(col => [...col.todoCards, ...col.inProgressCards, ...col.doneCards]).find(c => c.id === cardId)?.column_id || '' })
+  }
+
   // Empty state when no columns
   if (!isLoading && columns.length === 0) {
     return (
@@ -232,6 +238,7 @@ export default function KanbanPage() {
           onColumnReorder={handleColumnReorder}
           onPriorityChange={handlePriorityChange}
           onTimerToggle={handleTimerToggle}
+          onComplete={handleComplete}
         />
       )}
 
