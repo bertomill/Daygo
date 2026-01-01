@@ -22,6 +22,7 @@
     "@tiptap/pm": "^3.14.0",
     "@tiptap/react": "^3.14.0",
     "@tiptap/starter-kit": "^3.14.0",
+    "clsx": "^2.1.1",
     "googleapis": "^169.0.0",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.468.0",
@@ -33,6 +34,7 @@
     "recharts": "^3.6.0",
     "resend": "^6.6.0",
     "stripe": "^20.0.0",
+    "tailwind-merge": "^3.4.0",
     "tldraw": "^4.2.1",
     "zustand": "^5.0.9"
   },
