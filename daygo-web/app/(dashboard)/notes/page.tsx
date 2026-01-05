@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, X, FileText, Calendar, ChevronLeft, ChevronRight, PenTool, MoreVertical } from 'lucide-react'
+import { Plus, Trash2, X, FileText, Calendar, ChevronLeft, ChevronRight, PenTool, MoreVertical, Tag } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { notesService, type NoteType } from '@/lib/services/notes'
 import { RichTextEditor } from '@/components/RichTextEditor'
@@ -32,10 +32,19 @@ export default function NotesPage() {
   const canvasEditorRef = useRef<CanvasEditorHandle>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
   const [isNewNote, setIsNewNote] = useState(false)
+  const [editTags, setEditTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null)
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes', user?.id],
     queryFn: () => notesService.getNotes(user!.id),
+    enabled: !!user,
+  })
+
+  const { data: allTags = [] } = useQuery({
+    queryKey: ['notes-tags', user?.id],
+    queryFn: () => notesService.getAllTags(user!.id),
     enabled: !!user,
   })
 
@@ -142,10 +151,11 @@ export default function NotesPage() {
       updates,
     }: {
       noteId: string
-      updates: { title?: string; content?: string; canvas_data?: Record<string, unknown> }
+      updates: { title?: string; content?: string; canvas_data?: Record<string, unknown>; tags?: string[] }
     }) => notesService.updateNote(noteId, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] })
+      queryClient.invalidateQueries({ queryKey: ['notes-tags'] })
     },
   })
 
@@ -177,6 +187,7 @@ export default function NotesPage() {
         updates: {
           title: editTitle || (isCanvas ? 'Untitled Canvas' : 'Untitled Note'),
           content: editContent,
+          tags: editTags,
           ...(isCanvas && canvasData ? { canvas_data: canvasData } : {}),
         },
       })
@@ -191,6 +202,8 @@ export default function NotesPage() {
     setEditTitle(note.title)
     setEditContent(note.content)
     setEditCanvasData(note.canvas_data)
+    setEditTags(note.tags || [])
+    setTagInput('')
     setIsEditing(true)
   }
 
@@ -214,9 +227,17 @@ export default function NotesPage() {
     return tmp.textContent || tmp.innerText || ''
   }
 
-  // Filter notes by date
+  // Filter notes by date and tag
   const filteredNotes = useMemo(() => {
-    if (dateFilter === 'all') return notes
+    let filtered = notes
+
+    // Apply tag filter
+    if (selectedTagFilter) {
+      filtered = filtered.filter((note) => note.tags?.includes(selectedTagFilter))
+    }
+
+    // Apply date filter
+    if (dateFilter === 'all') return filtered
 
     const now = new Date()
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -235,19 +256,19 @@ export default function NotesPage() {
         startDate = new Date(startOfToday.getTime() - 30 * 24 * 60 * 60 * 1000)
         break
       case 'custom':
-        if (!customStartDate || !customEndDate) return notes
+        if (!customStartDate || !customEndDate) return filtered
         startDate = customStartDate
         endDate = new Date(customEndDate.getTime() + 24 * 60 * 60 * 1000)
         break
       default:
-        return notes
+        return filtered
     }
 
-    return notes.filter((note) => {
+    return filtered.filter((note) => {
       const noteDate = new Date(note.updated_at)
       return noteDate >= startDate && noteDate < endDate
     })
-  }, [notes, dateFilter, customStartDate, customEndDate])
+  }, [notes, dateFilter, customStartDate, customEndDate, selectedTagFilter])
 
   // Calendar helpers
   const getDaysInMonth = (date: Date) => {
@@ -331,7 +352,7 @@ export default function NotesPage() {
       </div>
 
       {/* Active filter indicator */}
-      {dateFilter !== 'all' && (
+      {(dateFilter !== 'all' || selectedTagFilter) && (
         <div className="flex items-center gap-2 mb-4">
           <span className="text-sm text-gray-500 dark:text-slate-400">
             {filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}
@@ -341,11 +362,42 @@ export default function NotesPage() {
               setDateFilter('all')
               setCustomStartDate(null)
               setCustomEndDate(null)
+              setSelectedTagFilter(null)
             }}
             className="text-sm text-accent hover:underline"
           >
-            Clear filter
+            Clear filters
           </button>
+        </div>
+      )}
+
+      {/* Tag filters */}
+      {allTags.length > 0 && (
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4">
+          <button
+            onClick={() => setSelectedTagFilter(null)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              !selectedTagFilter
+                ? 'bg-accent text-white'
+                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            All
+          </button>
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTagFilter(selectedTagFilter === tag ? null : tag)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                selectedTagFilter === tag
+                  ? 'bg-accent text-white'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Tag className="w-3 h-3" />
+              {tag}
+            </button>
+          ))}
         </div>
       )}
 
@@ -414,9 +466,30 @@ export default function NotesPage() {
                       ? stripHtml(note.content)
                       : 'No content'}
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">
-                    {formatDate(note.updated_at)}
-                  </p>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <p className="text-xs text-gray-400 dark:text-slate-500">
+                      {formatDate(note.updated_at)}
+                    </p>
+                    {note.tags && note.tags.length > 0 && (
+                      <>
+                        <span className="text-gray-300 dark:text-slate-600">•</span>
+                        {note.tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 text-xs rounded-full"
+                          >
+                            <Tag className="w-2.5 h-2.5" />
+                            {tag}
+                          </span>
+                        ))}
+                        {note.tags.length > 3 && (
+                          <span className="text-xs text-gray-400 dark:text-slate-500">
+                            +{note.tags.length - 3}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
                 {/* Menu Button */}
                 <div className="relative">
@@ -559,6 +632,46 @@ export default function NotesPage() {
               placeholder={selectedNote.note_type === 'canvas' ? 'Canvas title...' : 'Note title...'}
               className="w-full px-4 py-3 text-xl font-semibold bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none border-b border-white/20 dark:border-white/10"
             />
+
+            {/* Tags Input */}
+            <div className="px-4 py-3 border-b border-white/20 dark:border-white/10">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Tag className="w-4 h-4 text-gray-400 dark:text-slate-500 flex-shrink-0" />
+                {editTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent/10 text-accent text-sm rounded-full"
+                  >
+                    {tag}
+                    <button
+                      onClick={() => setEditTags(editTags.filter((t) => t !== tag))}
+                      className="hover:bg-accent/20 rounded-full p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault()
+                      const newTag = tagInput.trim().toLowerCase()
+                      if (newTag && !editTags.includes(newTag)) {
+                        setEditTags([...editTags, newTag])
+                      }
+                      setTagInput('')
+                    } else if (e.key === 'Backspace' && !tagInput && editTags.length > 0) {
+                      setEditTags(editTags.slice(0, -1))
+                    }
+                  }}
+                  placeholder={editTags.length === 0 ? 'Add tags...' : ''}
+                  className="flex-1 min-w-[100px] bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none"
+                />
+              </div>
+            </div>
 
             {/* Content Editor - Conditional based on note type */}
             {selectedNote.note_type === 'canvas' ? (

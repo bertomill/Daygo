@@ -52,12 +52,27 @@ export const notesService = {
     return data as Note
   },
 
+  async getAllTags(userId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('tags')
+      .eq('user_id', userId)
+
+    if (error) throw error
+
+    // Flatten and deduplicate tags
+    const allTags = (data as { tags: string[] }[])
+      .flatMap((note) => note.tags || [])
+    return [...new Set(allTags)].sort()
+  },
+
   async updateNote(
     noteId: string,
     updates: {
       title?: string
       content?: string
       canvas_data?: Record<string, unknown>
+      tags?: string[]
     }
   ): Promise<Note> {
     const { data, error } = await (supabase.from('notes') as any)

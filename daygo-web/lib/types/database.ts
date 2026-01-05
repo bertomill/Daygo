@@ -571,6 +571,7 @@ export interface Database {
           sort_order: number;
           created_at: string;
           updated_at: string;
+          completed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -585,6 +586,7 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+          completed_at?: string | null;
         };
         Update: {
           id?: string;
@@ -599,6 +601,7 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+          completed_at?: string | null;
         };
       };
       kanban_subtasks: {
@@ -702,6 +705,38 @@ export interface Database {
           updated_at?: string;
         };
       };
+      ai_journals: {
+        Row: {
+          id: string;
+          user_id: string;
+          prompt: string;
+          response: string | null;
+          date: string;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          prompt: string;
+          response?: string | null;
+          date?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          prompt?: string;
+          response?: string | null;
+          date?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -744,6 +779,7 @@ export type KanbanSubtask = Database['public']['Tables']['kanban_subtasks']['Row
 export type KanbanGoalLink = Database['public']['Tables']['kanban_goal_links']['Row'];
 export type KanbanTimeEntry = Database['public']['Tables']['kanban_time_entries']['Row'];
 export type ScheduleTemplate = Database['public']['Tables']['schedule_templates']['Row'];
+export type AIJournal = Database['public']['Tables']['ai_journals']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {

@@ -120,6 +120,13 @@ export default function GoalsPage() {
     },
   })
 
+  const deleteGoalMutation = useMutation({
+    mutationFn: (goalId: string) => goalsService.deleteGoal(goalId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+
   const resetForm = () => {
     setShowCreateModal(false)
     setEditingGoalId(null)
@@ -144,6 +151,13 @@ export default function GoalsPage() {
     setMetricTarget(goal.metric_target.toString())
     setDeadline(goal.deadline || '')
     setLinkedHabitIds(goal.habits?.map((h) => h.id) || [])
+  }
+
+  const handleDelete = (goalId: string) => {
+    if (confirm('Are you sure you want to delete this goal?')) {
+      deleteGoalMutation.mutate(goalId)
+      resetForm()
+    }
   }
 
   const handleSubmit = () => {
@@ -334,6 +348,15 @@ export default function GoalsPage() {
                 {editingGoalId ? 'Update' : 'Create'}
               </button>
             </div>
+
+            {editingGoalId && (
+              <button
+                onClick={() => handleDelete(editingGoalId)}
+                className="w-full mt-3 py-3.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-xl font-semibold transition-all"
+              >
+                Delete Goal
+              </button>
+            )}
           </div>
         </div>
       )}

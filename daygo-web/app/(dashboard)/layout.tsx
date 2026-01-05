@@ -91,7 +91,7 @@ export default function DashboardLayout({
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 pb-4 px-4">
-        <div className="max-w-lg mx-auto bg-bevel-card dark:bg-slate-800 rounded-3xl shadow-bevel-lg">
+        <div className="max-w-lg mx-auto bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/20 dark:border-slate-700/50">
           <div className="flex justify-around">
             {navItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/')

@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { LayoutGrid } from 'lucide-react'
+import { LayoutGrid, BarChart3 } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { kanbanService } from '@/lib/services/kanban'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
+import { KanbanStats } from '@/components/kanban/KanbanStats'
 import { CreateColumnModal } from '@/components/kanban/CreateColumnModal'
 import { EditColumnModal } from '@/components/kanban/EditColumnModal'
 import { KanbanCardModal } from '@/components/kanban/KanbanCardModal'
@@ -14,9 +15,14 @@ import type {
   KanbanCardWithDetails,
 } from '@/lib/types/database'
 
+type TabView = 'board' | 'stats'
+
 export default function KanbanPage() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<TabView>('board')
 
   // Modal states
   const [showCreateColumn, setShowCreateColumn] = useState(false)
@@ -216,30 +222,62 @@ export default function KanbanPage() {
   return (
     <div className="h-[calc(100vh-5rem)] flex flex-col">
       <div className="px-4 py-4 border-b border-gray-200 dark:border-slate-800">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white pl-12">
-          Kanban Board
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white pl-12 mb-3">
+          Kanban
         </h1>
+
+        {/* Tab Buttons */}
+        <div className="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-1 w-fit ml-12">
+          <button
+            onClick={() => setActiveTab('board')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'board'
+                ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Board
+          </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'stats'
+                ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Stats
+          </button>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-pulse text-gray-500 dark:text-slate-400">
-            Loading...
+      {activeTab === 'board' ? (
+        isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-pulse text-gray-500 dark:text-slate-400">
+              Loading...
+            </div>
           </div>
-        </div>
+        ) : (
+          <KanbanBoard
+            columns={columns}
+            onCardClick={handleCardClick}
+            onAddColumn={() => setShowCreateColumn(true)}
+            onEditColumn={handleEditColumn}
+            onCardDrop={handleCardDrop}
+            onCardReorder={handleCardReorder}
+            onColumnReorder={handleColumnReorder}
+            onPriorityChange={handlePriorityChange}
+            onTimerToggle={handleTimerToggle}
+            onComplete={handleComplete}
+          />
+        )
       ) : (
-        <KanbanBoard
-          columns={columns}
-          onCardClick={handleCardClick}
-          onAddColumn={() => setShowCreateColumn(true)}
-          onEditColumn={handleEditColumn}
-          onCardDrop={handleCardDrop}
-          onCardReorder={handleCardReorder}
-          onColumnReorder={handleColumnReorder}
-          onPriorityChange={handlePriorityChange}
-          onTimerToggle={handleTimerToggle}
-          onComplete={handleComplete}
-        />
+        <div className="flex-1 overflow-y-auto bg-bevel-bg dark:bg-slate-900">
+          <KanbanStats />
+        </div>
       )}
 
       {/* Modals */}

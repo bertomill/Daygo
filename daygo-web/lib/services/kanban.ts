@@ -280,8 +280,20 @@ export const kanbanService = {
       priority?: number | null
     }
   ): Promise<KanbanCard> {
+    // Handle completed_at timestamp based on status changes
+    const finalUpdates: any = { ...updates }
+    const newStatus = updates.status
+
+    if (newStatus === 'done') {
+      // Set completed_at when marking as done
+      finalUpdates.completed_at = new Date().toISOString()
+    } else if (newStatus === 'todo' || newStatus === 'in_progress') {
+      // Clear completed_at when changing away from done
+      finalUpdates.completed_at = null
+    }
+
     const { data, error } = await (supabase.from('kanban_cards') as any)
-      .update(updates)
+      .update(finalUpdates)
       .eq('id', cardId)
       .select()
       .single()
@@ -473,5 +485,25 @@ export const kanbanService = {
       const end = new Date(entry.end_time).getTime()
       return total + (end - start)
     }, 0)
+  },
+
+  // ============ STATS ============
+
+  async getCompletedCardsByDateRange(
+    userId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<KanbanCard[]> {
+    const { data, error } = await supabase
+      .from('kanban_cards')
+      .select('*')
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null)
+      .gte('completed_at', startDate)
+      .lte('completed_at', endDate)
+      .order('completed_at', { ascending: false })
+
+    if (error) throw error
+    return (data as KanbanCard[]) ?? []
   },
 }
