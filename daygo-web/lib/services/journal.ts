@@ -108,4 +108,43 @@ export const journalService = {
 
     if (error) throw error
   },
+
+  async reorderPrompts(orderedIds: string[]): Promise<void> {
+    for (let i = 0; i < orderedIds.length; i++) {
+      const { error } = await (supabase
+        .from('journal_prompts') as any)
+        .update({ sort_order: i })
+        .eq('id', orderedIds[i])
+      if (error) throw error
+    }
+  },
+
+  async getEntriesForYear(userId: string, year: number): Promise<(JournalEntry & { prompt: JournalPrompt })[]> {
+    const startDate = `${year}-01-01`
+    const endDate = `${year}-12-31`
+
+    const { data, error } = await supabase
+      .from('journal_entries')
+      .select('*, prompt:journal_prompts(*)')
+      .eq('user_id', userId)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true })
+
+    if (error) throw error
+    return (data as (JournalEntry & { prompt: JournalPrompt })[]) ?? []
+  },
+
+  async getHighlightPrompt(userId: string): Promise<JournalPrompt | null> {
+    const { data, error } = await supabase
+      .from('journal_prompts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .ilike('prompt', '%highlight%')
+      .single()
+
+    if (error && error.code !== 'PGRST116') throw error
+    return data as JournalPrompt | null
+  },
 }

@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSwipeable } from 'react-swipeable'
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Trash2, X, Sparkles, RefreshCw, Pencil } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Trash2, X, Sparkles, RefreshCw, Pencil, CalendarDays } from 'lucide-react'
+import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import {
   DndContext,
@@ -37,6 +38,10 @@ import { dailyNotesService } from '@/lib/services/dailyNotes'
 import { scheduleTemplatesService } from '@/lib/services/scheduleTemplates'
 import { aiJournalsService } from '@/lib/services/aiJournals'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
+import { SortableMantraCard } from '@/components/SortableMantraCard'
+import { SortableVisionCard } from '@/components/SortableVisionCard'
+import { SortableTodoCard } from '@/components/SortableTodoCard'
+import { SortableJournalCard } from '@/components/SortableJournalCard'
 import { ScheduleGrid } from '@/components/ScheduleGrid'
 import { CalendarRulesPanel } from '@/components/CalendarRulesPanel'
 import { GoogleCalendarPanel } from '@/components/GoogleCalendarPanel'
@@ -44,10 +49,6 @@ import { SchedulePreferences } from '@/components/SchedulePreferences'
 import { DailyNotes } from '@/components/DailyNotes'
 import { ScheduleTemplates } from '@/components/ScheduleTemplates'
 import { TimePicker } from '@/components/TimePicker'
-import { MantraCard } from '@/components/MantraCard'
-import { JournalCard } from '@/components/JournalCard'
-import { TodoCard } from '@/components/TodoCard'
-import { VisionCard } from '@/components/VisionCard'
 import { ScoreRing } from '@/components/ScoreRing'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { PepTalkAudioPlayer } from '@/components/PepTalkAudioPlayer'
@@ -119,6 +120,7 @@ export default function TodayPage() {
   const [aiJournalResponse, setAiJournalResponse] = useState('')
   const [isGeneratingAiJournal, setIsGeneratingAiJournal] = useState(false)
   const [selectedAiJournal, setSelectedAiJournal] = useState<AIJournal | null>(null)
+  const [localDailyNote, setLocalDailyNote] = useState('')
 
   // Section collapse/expand state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
@@ -369,6 +371,13 @@ export default function TodayPage() {
     queryFn: () => dailyNotesService.getNote(user!.id, dateStr),
     enabled: !!user,
   })
+
+  // Sync local daily note state with query result
+  useEffect(() => {
+    if (dailyNote?.note !== undefined) {
+      setLocalDailyNote(dailyNote.note)
+    }
+  }, [dailyNote?.note])
 
   // Schedule templates
   const { data: scheduleTemplates = [] } = useQuery({
@@ -698,6 +707,34 @@ export default function TodayPage() {
     },
   })
 
+  const reorderMantrasMutation = useMutation({
+    mutationFn: (orderedIds: string[]) => mantrasService.reorderMantras(orderedIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mantras'] })
+    },
+  })
+
+  const reorderVisionsMutation = useMutation({
+    mutationFn: (orderedIds: string[]) => visionsService.reorderVisions(orderedIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visions'] })
+    },
+  })
+
+  const reorderTodosMutation = useMutation({
+    mutationFn: (orderedIds: string[]) => todosService.reorderTodos(orderedIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos'] })
+    },
+  })
+
+  const reorderJournalsMutation = useMutation({
+    mutationFn: (orderedIds: string[]) => journalService.reorderPrompts(orderedIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journal-prompts'] })
+    },
+  })
+
   const deleteMantraMutation = useMutation({
     mutationFn: (mantraId: string) => mantrasService.deleteMantra(mantraId),
     onSuccess: () => {
@@ -954,6 +991,10 @@ export default function TodayPage() {
 
   const saveDailyNoteMutation = useMutation({
     mutationFn: (note: string) => dailyNotesService.saveNote(user!.id, dateStr, note),
+    onMutate: (note) => {
+      // Immediately update local state so it's available for schedule generation
+      setLocalDailyNote(note)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['daily-note', user?.id, dateStr] })
     },
@@ -976,7 +1017,7 @@ export default function TodayPage() {
           visions: visions.map(v => ({ text: v.text })),
           mantras: mantras.map(m => ({ text: m.text })),
           date: dateStr,
-          dailyNote: dailyNote?.note || '',
+          dailyNote: localDailyNote,
           preferences: {
             wake_time: userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00',
             bed_time: userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00',
@@ -1104,7 +1145,7 @@ export default function TodayPage() {
     })
   )
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleHabitDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
       const oldIndex = habits.findIndex((h) => h.id === active.id)
@@ -1112,6 +1153,50 @@ export default function TodayPage() {
       const newOrder = arrayMove(habits, oldIndex, newIndex)
       const orderedIds = newOrder.map((h) => h.id)
       reorderHabitsMutation.mutate(orderedIds)
+    }
+  }
+
+  const handleMantraDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = mantras.findIndex((m) => m.id === active.id)
+      const newIndex = mantras.findIndex((m) => m.id === over.id)
+      const newOrder = arrayMove(mantras, oldIndex, newIndex)
+      const orderedIds = newOrder.map((m) => m.id)
+      reorderMantrasMutation.mutate(orderedIds)
+    }
+  }
+
+  const handleVisionDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = visions.findIndex((v) => v.id === active.id)
+      const newIndex = visions.findIndex((v) => v.id === over.id)
+      const newOrder = arrayMove(visions, oldIndex, newIndex)
+      const orderedIds = newOrder.map((v) => v.id)
+      reorderVisionsMutation.mutate(orderedIds)
+    }
+  }
+
+  const handleTodoDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = todos.findIndex((t) => t.id === active.id)
+      const newIndex = todos.findIndex((t) => t.id === over.id)
+      const newOrder = arrayMove(todos, oldIndex, newIndex)
+      const orderedIds = newOrder.map((t) => t.id)
+      reorderTodosMutation.mutate(orderedIds)
+    }
+  }
+
+  const handleJournalDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = prompts.findIndex((p) => p.id === active.id)
+      const newIndex = prompts.findIndex((p) => p.id === over.id)
+      const newOrder = arrayMove(prompts, oldIndex, newIndex)
+      const orderedIds = newOrder.map((p) => p.id)
+      reorderJournalsMutation.mutate(orderedIds)
     }
   }
 
@@ -1209,6 +1294,13 @@ export default function TodayPage() {
           <p className="text-sm text-gray-500 dark:text-slate-400">
             {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
+          <Link
+            href="/year"
+            className="inline-flex items-center gap-1 mt-1 text-xs text-accent hover:text-accent/80 transition-colors"
+          >
+            <CalendarDays className="w-3 h-3" />
+            Year View
+          </Link>
         </div>
         <button
           onClick={handleNextDay}
@@ -1310,15 +1402,26 @@ export default function TodayPage() {
                 )}
               </button>
               {expandedSections.visions && (
-                <div className="space-y-3">
-                  {visions.map((vision) => (
-                    <VisionCard
-                      key={vision.id}
-                      vision={vision}
-                      onEdit={(v) => setSelectedVision(v)}
-                    />
-                  ))}
-                </div>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleVisionDragEnd}
+                >
+                  <SortableContext
+                    items={visions.map((v) => v.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3">
+                      {visions.map((vision) => (
+                        <SortableVisionCard
+                          key={vision.id}
+                          vision={vision}
+                          onEdit={(v) => setSelectedVision(v)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </section>
           )}
@@ -1340,15 +1443,26 @@ export default function TodayPage() {
                 )}
               </button>
               {expandedSections.mantras && (
-                <div className="space-y-3">
-                  {mantras.map((mantra) => (
-                    <MantraCard
-                      key={mantra.id}
-                      mantra={mantra}
-                      onEdit={(m) => setSelectedMantra(m)}
-                    />
-                  ))}
-                </div>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleMantraDragEnd}
+                >
+                  <SortableContext
+                    items={mantras.map((m) => m.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3">
+                      {mantras.map((mantra) => (
+                        <SortableMantraCard
+                          key={mantra.id}
+                          mantra={mantra}
+                          onEdit={(m) => setSelectedMantra(m)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </section>
           )}
@@ -1373,7 +1487,7 @@ export default function TodayPage() {
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
+                  onDragEnd={handleHabitDragEnd}
                 >
                   <SortableContext
                     items={habits.map((h) => h.id)}
@@ -1411,22 +1525,33 @@ export default function TodayPage() {
                 )}
               </button>
               {expandedSections.journal && (
-                <div className="space-y-3">
-                  {prompts.map((prompt) => (
-                    <JournalCard
-                      key={prompt.id}
-                      prompt={prompt}
-                      onSave={(promptId, entry) =>
-                        saveEntryMutation.mutate({ promptId, entry })
-                      }
-                      onEdit={(p) => {
-                        setSelectedJournal(p)
-                        setEditJournalText(p.prompt)
-                        setEditJournalTemplate(p.template_text || '')
-                      }}
-                    />
-                  ))}
-                </div>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleJournalDragEnd}
+                >
+                  <SortableContext
+                    items={prompts.map((p) => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3">
+                      {prompts.map((prompt) => (
+                        <SortableJournalCard
+                          key={prompt.id}
+                          prompt={prompt}
+                          onSave={(promptId, entry) =>
+                            saveEntryMutation.mutate({ promptId, entry })
+                          }
+                          onEdit={(p) => {
+                            setSelectedJournal(p)
+                            setEditJournalText(p.prompt)
+                            setEditJournalTemplate(p.template_text || '')
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </section>
           )}
@@ -1536,18 +1661,29 @@ export default function TodayPage() {
                 )}
               </button>
               {expandedSections.todos && (
-                <div className="space-y-3">
-                  {todos.map((todo) => (
-                    <TodoCard
-                      key={todo.id}
-                      todo={todo}
-                      onToggle={(todoId, completed) =>
-                        toggleTodoMutation.mutate({ todoId, completed })
-                      }
-                      onEdit={(t) => setSelectedTodo(t)}
-                    />
-                  ))}
-                </div>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleTodoDragEnd}
+                >
+                  <SortableContext
+                    items={todos.map((t) => t.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3">
+                      {todos.map((todo) => (
+                        <SortableTodoCard
+                          key={todo.id}
+                          todo={todo}
+                          onToggle={(todoId, completed) =>
+                            toggleTodoMutation.mutate({ todoId, completed })
+                          }
+                          onEdit={(t) => setSelectedTodo(t)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </section>
           )}
@@ -1592,7 +1728,7 @@ export default function TodayPage() {
               isUpdating={updatePreferencesMutation.isPending}
             />
             <DailyNotes
-              note={dailyNote?.note || ''}
+              note={localDailyNote}
               onSave={(note) => saveDailyNoteMutation.mutate(note)}
               isSaving={saveDailyNoteMutation.isPending}
             />
@@ -2913,7 +3049,7 @@ ${scheduleEvents.length > 0
   : 'No existing events - the day is open'}
 
 === TODAY'S NOTES (IMPORTANT CONTEXT - schedule around these) ===
-${dailyNote?.note || 'No specific notes for today'}
+${localDailyNote || 'No specific notes for today'}
 
 === TODAY'S TODOS ===
 ${todos.length > 0

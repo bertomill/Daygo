@@ -43,3 +43,4 @@ yarn-error.*
 # App Store screenshots
 screenshot*.png
 simulator_screenshot*.png
+.vercel

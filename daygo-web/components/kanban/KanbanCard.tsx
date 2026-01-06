@@ -68,8 +68,8 @@ export function KanbanCard({ card, onClick, onPriorityChange, onTimerToggle, onC
     e.stopPropagation()
     if (!onPriorityChange) return
 
-    // Cycle through priorities: null -> 1 -> 2 -> 3 -> 4 -> 5 -> null
-    const nextPriority = card.priority === null ? 1 : card.priority === 5 ? null : card.priority + 1
+    // If card has priority, clear it. If not, signal auto-assign with 0
+    const nextPriority = card.priority === null ? 0 : null
     onPriorityChange(card.id, nextPriority)
   }
 

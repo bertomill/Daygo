@@ -163,7 +163,22 @@ export default function KanbanPage() {
   }
 
   const handlePriorityChange = (cardId: string, priority: number | null) => {
-    updatePriorityMutation.mutate({ cardId, priority })
+    // 0 means "auto-assign next priority"
+    if (priority === 0) {
+      const allCards = columns.flatMap(col => [...col.todoCards, ...col.inProgressCards, ...col.doneCards])
+      const existingPriorities = allCards
+        .map(c => c.priority)
+        .filter((p): p is number => p !== null)
+
+      // Find the next available priority (max + 1, or 1 if none exist)
+      const nextPriority = existingPriorities.length > 0
+        ? Math.max(...existingPriorities) + 1
+        : 1
+
+      updatePriorityMutation.mutate({ cardId, priority: nextPriority })
+    } else {
+      updatePriorityMutation.mutate({ cardId, priority })
+    }
   }
 
   const handleTimerToggle = (cardId: string, isActive: boolean) => {

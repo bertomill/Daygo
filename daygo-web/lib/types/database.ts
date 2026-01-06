@@ -328,6 +328,7 @@ export interface Database {
           note_type: 'text' | 'canvas';
           canvas_data: Record<string, unknown> | null;
           tags: string[];
+          is_starred: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -339,6 +340,7 @@ export interface Database {
           note_type?: 'text' | 'canvas';
           canvas_data?: Record<string, unknown> | null;
           tags?: string[];
+          is_starred?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -350,6 +352,7 @@ export interface Database {
           note_type?: 'text' | 'canvas';
           canvas_data?: Record<string, unknown> | null;
           tags?: string[];
+          is_starred?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -737,6 +740,35 @@ export interface Database {
           created_at?: string;
         };
       };
+      inspirations: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          reason: string;
+          image_url: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          reason: string;
+          image_url?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          reason?: string;
+          image_url?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -780,6 +812,7 @@ export type KanbanGoalLink = Database['public']['Tables']['kanban_goal_links']['
 export type KanbanTimeEntry = Database['public']['Tables']['kanban_time_entries']['Row'];
 export type ScheduleTemplate = Database['public']['Tables']['schedule_templates']['Row'];
 export type AIJournal = Database['public']['Tables']['ai_journals']['Row'];
+export type Inspiration = Database['public']['Tables']['inspirations']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {

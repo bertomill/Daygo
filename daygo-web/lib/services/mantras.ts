@@ -48,4 +48,14 @@ export const mantrasService = {
 
     if (error) throw error
   },
+
+  async reorderMantras(orderedIds: string[]): Promise<void> {
+    for (let i = 0; i < orderedIds.length; i++) {
+      const { error } = await (supabase
+        .from('mantras') as any)
+        .update({ sort_order: i })
+        .eq('id', orderedIds[i])
+      if (error) throw error
+    }
+  },
 }

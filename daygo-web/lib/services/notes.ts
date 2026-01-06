@@ -73,6 +73,7 @@ export const notesService = {
       content?: string
       canvas_data?: Record<string, unknown>
       tags?: string[]
+      is_starred?: boolean
     }
   ): Promise<Note> {
     const { data, error } = await (supabase.from('notes') as any)
@@ -86,6 +87,29 @@ export const notesService = {
 
     if (error) throw error
     return data as Note
+  },
+
+  async toggleStar(noteId: string, isStarred: boolean): Promise<Note> {
+    const { data, error } = await (supabase.from('notes') as any)
+      .update({ is_starred: isStarred })
+      .eq('id', noteId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as Note
+  },
+
+  async getStarredNotes(userId: string): Promise<Note[]> {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_starred', true)
+      .order('updated_at', { ascending: false })
+
+    if (error) throw error
+    return (data as Note[]) ?? []
   },
 
   async deleteNote(noteId: string): Promise<void> {

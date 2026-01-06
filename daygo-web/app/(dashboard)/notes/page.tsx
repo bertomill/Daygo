@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, X, FileText, Calendar, ChevronLeft, ChevronRight, PenTool, MoreVertical, Tag } from 'lucide-react'
+import { Plus, Trash2, X, FileText, Calendar, ChevronLeft, ChevronRight, PenTool, MoreVertical, Tag, Star } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { notesService, type NoteType } from '@/lib/services/notes'
 import { RichTextEditor } from '@/components/RichTextEditor'
@@ -35,6 +35,7 @@ export default function NotesPage() {
   const [editTags, setEditTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null)
+  const [showStarredOnly, setShowStarredOnly] = useState(false)
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes', user?.id],
@@ -169,6 +170,14 @@ export default function NotesPage() {
     },
   })
 
+  const toggleStarMutation = useMutation({
+    mutationFn: ({ noteId, isStarred }: { noteId: string; isStarred: boolean }) =>
+      notesService.toggleStar(noteId, isStarred),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] })
+    },
+  })
+
   const handleSave = useCallback(() => {
     if (selectedNote) {
       const isCanvas = selectedNote.note_type === 'canvas'
@@ -227,9 +236,14 @@ export default function NotesPage() {
     return tmp.textContent || tmp.innerText || ''
   }
 
-  // Filter notes by date and tag
+  // Filter notes by date, tag, and starred
   const filteredNotes = useMemo(() => {
     let filtered = notes
+
+    // Apply starred filter
+    if (showStarredOnly) {
+      filtered = filtered.filter((note) => note.is_starred)
+    }
 
     // Apply tag filter
     if (selectedTagFilter) {
@@ -268,7 +282,7 @@ export default function NotesPage() {
       const noteDate = new Date(note.updated_at)
       return noteDate >= startDate && noteDate < endDate
     })
-  }, [notes, dateFilter, customStartDate, customEndDate, selectedTagFilter])
+  }, [notes, dateFilter, customStartDate, customEndDate, selectedTagFilter, showStarredOnly])
 
   // Calendar helpers
   const getDaysInMonth = (date: Date) => {
@@ -352,7 +366,7 @@ export default function NotesPage() {
       </div>
 
       {/* Active filter indicator */}
-      {(dateFilter !== 'all' || selectedTagFilter) && (
+      {(dateFilter !== 'all' || selectedTagFilter || showStarredOnly) && (
         <div className="flex items-center gap-2 mb-4">
           <span className="text-sm text-gray-500 dark:text-slate-400">
             {filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}
@@ -363,6 +377,7 @@ export default function NotesPage() {
               setCustomStartDate(null)
               setCustomEndDate(null)
               setSelectedTagFilter(null)
+              setShowStarredOnly(false)
             }}
             className="text-sm text-accent hover:underline"
           >
@@ -371,20 +386,35 @@ export default function NotesPage() {
         </div>
       )}
 
-      {/* Tag filters */}
-      {allTags.length > 0 && (
-        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4">
-          <button
-            onClick={() => setSelectedTagFilter(null)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              !selectedTagFilter
-                ? 'bg-accent text-white'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
-            }`}
-          >
-            All
-          </button>
-          {allTags.map((tag) => (
+      {/* Starred and Tag filters */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4">
+        <button
+          onClick={() => setShowStarredOnly(!showStarredOnly)}
+          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            showStarredOnly
+              ? 'bg-amber-500 text-white'
+              : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <Star className={`w-3.5 h-3.5 ${showStarredOnly ? 'fill-current' : ''}`} />
+          Starred
+        </button>
+        {allTags.length > 0 && (
+          <>
+            <div className="w-px h-5 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+            <button
+              onClick={() => setSelectedTagFilter(null)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                !selectedTagFilter
+                  ? 'bg-accent text-white'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              All
+            </button>
+          </>
+        )}
+        {allTags.map((tag) => (
             <button
               key={tag}
               onClick={() => setSelectedTagFilter(selectedTagFilter === tag ? null : tag)}
@@ -398,8 +428,7 @@ export default function NotesPage() {
               {tag}
             </button>
           ))}
-        </div>
-      )}
+      </div>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -491,17 +520,33 @@ export default function NotesPage() {
                     )}
                   </div>
                 </div>
-                {/* Menu Button */}
-                <div className="relative">
+                {/* Star and Menu Buttons */}
+                <div className="flex items-center gap-1">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      setMenuOpenForNote(menuOpenForNote === note.id ? null : note.id)
+                      toggleStarMutation.mutate({ noteId: note.id, isStarred: !note.is_starred })
                     }}
                     className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                   >
-                    <MoreVertical className="w-5 h-5 text-gray-400 dark:text-slate-500" />
+                    <Star
+                      className={`w-5 h-5 transition-colors ${
+                        note.is_starred
+                          ? 'text-amber-500 fill-amber-500'
+                          : 'text-gray-400 dark:text-slate-500'
+                      }`}
+                    />
                   </button>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMenuOpenForNote(menuOpenForNote === note.id ? null : note.id)
+                      }}
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    >
+                      <MoreVertical className="w-5 h-5 text-gray-400 dark:text-slate-500" />
+                    </button>
                   {/* Dropdown Menu */}
                   {menuOpenForNote === note.id && (
                     <div
@@ -520,6 +565,7 @@ export default function NotesPage() {
                       </button>
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
             </div>

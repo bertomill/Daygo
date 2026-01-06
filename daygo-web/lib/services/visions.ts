@@ -48,4 +48,14 @@ export const visionsService = {
 
     if (error) throw error
   },
+
+  async reorderVisions(orderedIds: string[]): Promise<void> {
+    for (let i = 0; i < orderedIds.length; i++) {
+      const { error } = await (supabase
+        .from('visions') as any)
+        .update({ sort_order: i })
+        .eq('id', orderedIds[i])
+      if (error) throw error
+    }
+  },
 }
