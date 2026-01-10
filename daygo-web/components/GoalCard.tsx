@@ -79,7 +79,7 @@ export function GoalCard({ goal, onEdit }: GoalCardProps) {
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-bevel-text dark:text-white text-lg break-words">{goal.title}</h3>
             {goal.description && (
-              <p className="text-sm text-bevel-text-secondary dark:text-slate-400 truncate mt-1">{goal.description}</p>
+              <p className="text-sm text-bevel-text-secondary dark:text-slate-400 break-words mt-1">{goal.description}</p>
             )}
           </div>
           {onEdit && (

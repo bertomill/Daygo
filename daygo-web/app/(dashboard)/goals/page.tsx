@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, X, Upload, Trash2 } from 'lucide-react'
 import Image from 'next/image'
@@ -66,6 +67,8 @@ type Tab = 'goals' | 'inspirations'
 export default function GoalsPage() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<Tab>('goals')
 
   // Goals state
@@ -106,6 +109,26 @@ export default function GoalsPage() {
     queryFn: () => inspirationsService.getInspirations(user!.id),
     enabled: !!user,
   })
+
+  // Handle edit query param from goal detail page
+  useEffect(() => {
+    const editGoalId = searchParams.get('edit')
+    if (editGoalId && goals.length > 0) {
+      const goal = goals.find((g) => g.id === editGoalId)
+      if (goal) {
+        setEditingGoalId(editGoalId)
+        setTitle(goal.title)
+        setDescription(goal.description || '')
+        setIcon(goal.icon || 'trophy')
+        setMetricName(goal.metric_name)
+        setMetricTarget(goal.metric_target.toString())
+        setDeadline(goal.deadline || '')
+        setLinkedHabitIds(goal.habits?.map((h) => h.id) || [])
+        // Clear the query param
+        router.replace('/goals', { scroll: false })
+      }
+    }
+  }, [searchParams, goals, router])
 
   const createGoalMutation = useMutation({
     mutationFn: () =>
@@ -425,11 +448,11 @@ export default function GoalsPage() {
                 <label className="block text-sm font-semibold text-bevel-text-secondary dark:text-slate-300 mb-2">
                   Title
                 </label>
-                <input
-                  type="text"
+                <textarea
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                  rows={2}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all resize-none"
                   placeholder="e.g., Run a marathon"
                 />
               </div>
@@ -443,11 +466,11 @@ export default function GoalsPage() {
                   <label className="block text-sm font-semibold text-bevel-text-secondary dark:text-slate-300 mb-2">
                     Description (optional)
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                    rows={3}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl text-bevel-text dark:text-white placeholder-bevel-text-secondary dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all resize-none"
                     placeholder="What's this goal about?"
                   />
                 </div>

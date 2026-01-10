@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { goalsService } from '@/lib/services/goals'
 
@@ -138,6 +138,12 @@ export default function GoalDetailPage() {
           <ArrowLeft className="w-6 h-6 text-bevel-text-secondary dark:text-slate-400" />
         </button>
         <h1 className="text-2xl font-bold text-bevel-text dark:text-white flex-1">Goal Details</h1>
+        <button
+          onClick={() => router.push(`/goals?edit=${goalId}`)}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+        >
+          <Pencil className="w-5 h-5 text-bevel-text-secondary dark:text-slate-400" />
+        </button>
         <button
           onClick={() => setShowDeleteConfirm(true)}
           className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
