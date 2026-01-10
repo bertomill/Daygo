@@ -144,7 +144,7 @@ CONSTRAINTS:
 2. Fill the entire day from wake time to bed time
 3. NEVER overlap with existing events
 4. Use 30-minute increments ONLY (e.g., 09:00, 09:30, 10:00)
-5. MINIMUM event duration is 30 minutes
+5. PREFER larger time blocks (1-4 hours) for focused work - use 30-minute blocks only for short tasks like meals, breaks, or quick activities
 6. DO NOT create "Break" events - gaps between events ARE the breaks
 7. Follow the user's SCHEDULING PREFERENCES/RULES closely - they define how the day should be structured
 

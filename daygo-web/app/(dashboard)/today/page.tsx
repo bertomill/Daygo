@@ -1994,6 +1994,8 @@ export default function TodayPage() {
             <ScheduleGrid
               events={scheduleEvents}
               selectedDate={selectedDate}
+              wakeTime={userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'}
+              bedTime={userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'}
               onAddEvent={(startTime, endTime) => {
                 setNewEventStartTime(startTime)
                 setNewEventEndTime(endTime)
@@ -3190,14 +3192,14 @@ export default function TodayPage() {
       {/* Prompt Preview Modal */}
       {showPromptModal && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]"
           onClick={() => setShowPromptModal(false)}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto shadow-2xl"
+            className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-3xl max-h-[80vh] shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between mb-4 sticky top-0 bg-white dark:bg-slate-800 pb-4 border-b border-gray-200 dark:border-slate-700">
+            <div className="flex items-start justify-between p-6 pb-4 border-b border-gray-200 dark:border-slate-700">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">AI Scheduling Prompt</h2>
                 <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
@@ -3212,6 +3214,7 @@ export default function TodayPage() {
               </button>
             </div>
 
+            <div className="p-6 pb-24 overflow-y-auto flex-1">
             <div className="space-y-4">
               {/* System Prompt */}
               <div>
@@ -3226,7 +3229,7 @@ CONSTRAINTS:
 2. Fill the entire day from wake time to bed time
 3. NEVER overlap with existing events
 4. Use 30-minute increments ONLY (e.g., 09:00, 09:30, 10:00)
-5. MINIMUM event duration is 30 minutes
+5. PREFER larger time blocks (1-4 hours) for focused work - use 30-minute blocks only for short tasks like meals, breaks, or quick activities
 6. DO NOT create "Break" events - gaps between events ARE the breaks
 7. Follow the user's SCHEDULING PREFERENCES/RULES closely - they define how the day should be structured
 
@@ -3297,6 +3300,7 @@ ${mantras.length > 0
 Create a schedule from ${userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'} to ${userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'} following the user's rules. Respond with only a JSON array.`}
                 </pre>
               </div>
+            </div>
             </div>
           </div>
         </div>

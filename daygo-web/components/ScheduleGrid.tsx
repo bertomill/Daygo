@@ -104,12 +104,19 @@ interface ScheduleGridProps {
   onEditEvent: (event: ScheduleEvent) => void
   onToggleComplete: (eventId: string, completed: boolean) => void
   onResizeEvent?: (eventId: string, newEndTime: string) => void
+  wakeTime?: string // Format: "HH:MM" e.g. "07:00"
+  bedTime?: string  // Format: "HH:MM" e.g. "22:00"
 }
 
 const HOUR_HEIGHT = 60
-const START_HOUR = 4
-const END_HOUR = 22
-const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i)
+const DEFAULT_START_HOUR = 4
+const DEFAULT_END_HOUR = 22
+
+function parseTimeToHour(time: string | undefined, defaultHour: number): number {
+  if (!time) return defaultHour
+  const [hours] = time.split(':').map(Number)
+  return hours
+}
 
 function formatHourLabel(hour: number): string {
   const period = hour >= 12 ? 'PM' : 'AM'
@@ -135,14 +142,19 @@ function minutesToTimeString(totalMinutes: number): string {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`
 }
 
-function yToMinutes(y: number, gridHeight: number): number {
-  const totalMinutes = (END_HOUR - START_HOUR) * 60
+function yToMinutes(y: number, gridHeight: number, startHour: number, endHour: number): number {
+  const totalMinutes = (endHour - startHour) * 60
   const rawMinutes = (y / gridHeight) * totalMinutes
   // Round to nearest 30 minutes
   return Math.round(rawMinutes / 30) * 30
 }
 
-export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, onToggleComplete, onResizeEvent }: ScheduleGridProps) {
+export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, onToggleComplete, onResizeEvent, wakeTime, bedTime }: ScheduleGridProps) {
+  // Compute dynamic hours from props
+  const START_HOUR = parseTimeToHour(wakeTime, DEFAULT_START_HOUR)
+  const END_HOUR = parseTimeToHour(bedTime, DEFAULT_END_HOUR)
+  const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i)
+
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState<number | null>(null)
@@ -178,15 +190,15 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
     updateCurrentTime()
     const interval = setInterval(updateCurrentTime, 60000)
     return () => clearInterval(interval)
-  }, [selectedDate])
+  }, [selectedDate, START_HOUR, END_HOUR])
 
   const getMinutesFromEvent = useCallback((e: React.MouseEvent | MouseEvent | React.TouchEvent | TouchEvent): number => {
     if (!gridRef.current) return 0
     const rect = gridRef.current.getBoundingClientRect()
     const clientY = 'touches' in e ? e.touches[0]?.clientY ?? ('changedTouches' in e ? e.changedTouches[0]?.clientY ?? 0 : 0) : e.clientY
     const y = Math.max(0, Math.min(clientY - rect.top, rect.height))
-    return yToMinutes(y, rect.height)
-  }, [])
+    return yToMinutes(y, rect.height, START_HOUR, END_HOUR)
+  }, [START_HOUR, END_HOUR])
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     // Don't start drag if clicking on an event
@@ -250,7 +262,7 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
     setIsDragging(false)
     setDragStart(null)
     setDragEnd(null)
-  }, [isDragging, dragStart, getMinutesFromEvent, onAddEvent])
+  }, [isDragging, dragStart, getMinutesFromEvent, onAddEvent, START_HOUR, END_HOUR])
 
   // Touch event handlers (for mobile)
   const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
@@ -316,7 +328,7 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
     setIsDragging(false)
     setDragStart(null)
     setDragEnd(null)
-  }, [isDragging, dragStart, getMinutesFromEvent, onAddEvent])
+  }, [isDragging, dragStart, getMinutesFromEvent, onAddEvent, START_HOUR, END_HOUR])
 
   // Add global mouse and touch listeners for drag
   useEffect(() => {
@@ -341,19 +353,19 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
     setResizingEvent(event)
     const endMinutes = timeToMinutes(event.end_time) - START_HOUR * 60
     setResizeEndMinutes(endMinutes)
-  }, [])
+  }, [START_HOUR])
 
   const handleResizeMove = useCallback((e: MouseEvent) => {
     if (!resizingEvent || !gridRef.current) return
     const rect = gridRef.current.getBoundingClientRect()
     const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height))
-    const minutes = yToMinutes(y, rect.height)
+    const minutes = yToMinutes(y, rect.height, START_HOUR, END_HOUR)
 
     // Ensure minimum 15 minutes duration
     const startMinutes = timeToMinutes(resizingEvent.start_time) - START_HOUR * 60
     const minEndMinutes = startMinutes + 15
     setResizeEndMinutes(Math.max(minutes, minEndMinutes))
-  }, [resizingEvent])
+  }, [resizingEvent, START_HOUR, END_HOUR])
 
   const handleResizeEnd = useCallback(() => {
     if (!resizingEvent || resizeEndMinutes === null || !onResizeEvent) {
@@ -367,7 +379,7 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
 
     setResizingEvent(null)
     setResizeEndMinutes(null)
-  }, [resizingEvent, resizeEndMinutes, onResizeEvent])
+  }, [resizingEvent, resizeEndMinutes, onResizeEvent, START_HOUR])
 
   // Add global mouse listeners for resize
   useEffect(() => {

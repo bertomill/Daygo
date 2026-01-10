@@ -591,7 +591,7 @@ export default function NotesPage() {
           onClick={() => setShowNoteTypeModal(false)}
         >
           <div
-            className="bg-white/30 dark:bg-slate-800/30 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -602,18 +602,18 @@ export default function NotesPage() {
                 data-note-type="text"
                 onClick={() => createNoteMutation.mutate('text')}
                 disabled={createNoteMutation.isPending}
-                className="w-full flex items-center gap-4 p-4 bg-blue-50/50 dark:bg-blue-500/20 hover:bg-blue-100/60 dark:hover:bg-blue-500/30 rounded-xl transition-colors backdrop-blur-sm border border-white/20"
+                className="w-full flex items-center gap-4 p-4 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-colors border border-blue-100 dark:border-blue-800"
               >
-                <div className="w-12 h-12 bg-blue-100/80 dark:bg-blue-500/30 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800/50 rounded-xl flex items-center justify-center">
                   <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium text-gray-900 dark:text-white">Text Note</p>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                  <p className="font-semibold text-gray-900 dark:text-white">Text Note</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
                     Rich text with formatting
                   </p>
                 </div>
-                <kbd className="px-2 py-1 text-xs font-semibold text-gray-600 dark:text-slate-400 bg-white/40 dark:bg-slate-700/40 border border-white/30 dark:border-slate-600/30 rounded backdrop-blur-sm">
+                <kbd className="px-2.5 py-1 text-xs font-semibold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md">
                   T
                 </kbd>
               </button>
@@ -622,18 +622,18 @@ export default function NotesPage() {
                 data-note-type="canvas"
                 onClick={() => createNoteMutation.mutate('canvas')}
                 disabled={createNoteMutation.isPending}
-                className="w-full flex items-center gap-4 p-4 bg-purple-50/50 dark:bg-purple-500/20 hover:bg-purple-100/60 dark:hover:bg-purple-500/30 rounded-xl transition-colors backdrop-blur-sm border border-white/20"
+                className="w-full flex items-center gap-4 p-4 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-xl transition-colors border border-purple-100 dark:border-purple-800"
               >
-                <div className="w-12 h-12 bg-purple-100/80 dark:bg-purple-500/30 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-800/50 rounded-xl flex items-center justify-center">
                   <PenTool className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium text-gray-900 dark:text-white">Canvas Note</p>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                  <p className="font-semibold text-gray-900 dark:text-white">Canvas Note</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
                     Freeform drawing & shapes
                   </p>
                 </div>
-                <kbd className="px-2 py-1 text-xs font-semibold text-gray-600 dark:text-slate-400 bg-white/40 dark:bg-slate-700/40 border border-white/30 dark:border-slate-600/30 rounded backdrop-blur-sm">
+                <kbd className="px-2.5 py-1 text-xs font-semibold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md">
                   C
                 </kbd>
               </button>

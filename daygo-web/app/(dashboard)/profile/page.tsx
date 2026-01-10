@@ -17,6 +17,7 @@ interface ProfileData {
   subscription_current_period_end: string | null
   stripe_customer_id: string | null
   avatar_url: string | null
+  display_name: string | null
 }
 
 export default function ProfilePage() {
@@ -33,6 +34,8 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [isSavingName, setIsSavingName] = useState(false)
 
   // Check for success/canceled query params
   useEffect(() => {
@@ -52,14 +55,36 @@ export default function ProfilePage() {
     setIsLoadingProfile(true)
     const { data, error } = await supabase
       .from('profiles')
-      .select('subscription_tier, subscription_status, subscription_current_period_end, stripe_customer_id, avatar_url')
+      .select('subscription_tier, subscription_status, subscription_current_period_end, stripe_customer_id, avatar_url, display_name')
       .eq('id', user.id)
       .single()
 
     if (data && !error) {
-      setProfile(data as ProfileData)
+      const profileData = data as ProfileData
+      setProfile(profileData)
+      setDisplayName(profileData.display_name || '')
     }
     setIsLoadingProfile(false)
+  }
+
+  const handleSaveName = async () => {
+    if (!user?.id) return
+
+    setIsSavingName(true)
+    try {
+      const { error } = await (supabase
+        .from('profiles') as any)
+        .update({ display_name: displayName.trim() || null })
+        .eq('id', user.id)
+
+      if (error) throw error
+      setMessage({ type: 'success', text: 'Name saved!' })
+      setTimeout(() => setMessage(null), 2000)
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to save name.' })
+    } finally {
+      setIsSavingName(false)
+    }
   }
 
   useEffect(() => {
@@ -187,6 +212,32 @@ export default function ProfilePage() {
             <p className="text-sm text-gray-500 dark:text-slate-400">
               {isPro || isCanceled ? 'DayGo Pro Member' : 'DayGo Member'}
             </p>
+          </div>
+        </div>
+
+        {/* Display Name */}
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+            Your Name
+          </label>
+          <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
+            Used for personalized affirmations and greetings
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Enter your name"
+              className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bevel-blue/50"
+            />
+            <button
+              onClick={handleSaveName}
+              disabled={isSavingName || displayName === (profile?.display_name || '')}
+              className="px-4 py-2.5 bg-bevel-blue hover:bg-bevel-blue/90 disabled:bg-gray-300 dark:disabled:bg-slate-600 text-white disabled:text-gray-500 dark:disabled:text-slate-400 font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+            >
+              {isSavingName ? 'Saving...' : 'Save'}
+            </button>
           </div>
         </div>
       </div>
