@@ -437,8 +437,14 @@ export default function GoalsPage() {
 
       {/* Create/Edit Goal Modal */}
       {(showCreateModal || editingGoalId) && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-bevel-card dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-bevel-lg">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto"
+          onClick={resetForm}
+        >
+          <div
+            className="bg-bevel-card dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-bevel-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-bold text-bevel-text dark:text-white mb-5">
               {editingGoalId ? 'Edit Goal' : 'Create Goal'}
             </h2>
@@ -591,8 +597,14 @@ export default function GoalsPage() {
 
       {/* Create/Edit Inspiration Modal */}
       {(showInspirationModal || editingInspiration) && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-bevel-card dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-bevel-lg">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto"
+          onClick={resetInspirationForm}
+        >
+          <div
+            className="bg-bevel-card dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-bevel-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-bold text-bevel-text dark:text-white mb-5">
               {editingInspiration ? 'Edit Inspiration' : 'Add Inspiration'}
             </h2>
