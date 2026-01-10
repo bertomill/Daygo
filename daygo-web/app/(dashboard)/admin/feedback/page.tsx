@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/lib/auth-store'
 import { supabase } from '@/lib/supabase'
-import { Check, Loader2 } from 'lucide-react'
+import { Check, Loader2, X } from 'lucide-react'
 
 interface FeedbackItem {
   id: string
@@ -21,6 +21,7 @@ export default function AdminFeedbackPage() {
   const [feedback, setFeedback] = useState<FeedbackItem[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [expandedImage, setExpandedImage] = useState<string | null>(null)
 
   // Fetch feedback
   useEffect(() => {
@@ -133,8 +134,8 @@ export default function AdminFeedbackPage() {
                       <img
                         src={item.screenshot_url}
                         alt="Feedback screenshot"
-                        className="rounded-lg border border-gray-200 dark:border-slate-600 max-w-full cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(item.screenshot_url!, '_blank')}
+                        className="rounded-lg border border-gray-200 dark:border-slate-600 w-32 h-24 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setExpandedImage(item.screenshot_url)}
                       />
                     </div>
                   )}
@@ -142,6 +143,27 @@ export default function AdminFeedbackPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setExpandedImage(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            onClick={() => setExpandedImage(null)}
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <img
+            src={expandedImage}
+            alt="Expanded screenshot"
+            className="max-w-full max-h-[90vh] rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>
