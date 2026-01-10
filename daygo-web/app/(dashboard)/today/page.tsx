@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSwipeable } from 'react-swipeable'
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Trash2, X, Sparkles, RefreshCw, Pencil, CalendarDays } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Trash2, X, Sparkles, RefreshCw, Pencil, CalendarDays, Shuffle, Volume2, Loader2, Pause, Settings } from 'lucide-react'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import {
@@ -37,8 +37,10 @@ import { userPreferencesService } from '@/lib/services/userPreferences'
 import { dailyNotesService } from '@/lib/services/dailyNotes'
 import { scheduleTemplatesService } from '@/lib/services/scheduleTemplates'
 import { aiJournalsService } from '@/lib/services/aiJournals'
+import { profilesService } from '@/lib/services/profiles'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { SortableMantraCard } from '@/components/SortableMantraCard'
+import { MantraCard } from '@/components/MantraCard'
 import { SortableVisionCard } from '@/components/SortableVisionCard'
 import { SortableTodoCard } from '@/components/SortableTodoCard'
 import { SortableJournalCard } from '@/components/SortableJournalCard'
@@ -121,6 +123,23 @@ export default function TodayPage() {
   const [isGeneratingAiJournal, setIsGeneratingAiJournal] = useState(false)
   const [selectedAiJournal, setSelectedAiJournal] = useState<AIJournal | null>(null)
   const [localDailyNote, setLocalDailyNote] = useState('')
+  const [dailyMantraIds, setDailyMantraIds] = useState<string[]>([])
+  const [isGeneratingVisionAudio, setIsGeneratingVisionAudio] = useState(false)
+  const [isPlayingVisionAudio, setIsPlayingVisionAudio] = useState(false)
+  const visionAudioRef = useRef<HTMLAudioElement | null>(null)
+  const [showVisionVoiceSettings, setShowVisionVoiceSettings] = useState(false)
+  const [visionVoice, setVisionVoice] = useState<'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('daygo-vision-voice') as any) || 'nova'
+    }
+    return 'nova'
+  })
+  const [visionSpeed, setVisionSpeed] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      return parseFloat(localStorage.getItem('daygo-vision-speed') || '0.95')
+    }
+    return 0.95
+  })
 
   // Section collapse/expand state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
@@ -188,6 +207,17 @@ export default function TodayPage() {
     localStorage.setItem('daygo-add-hint-dismissed', 'true')
     localStorage.removeItem('daygo-just-onboarded')
   }
+
+  // Generate random daily mantras (pick 3 from all mantras)
+  const generateDailyMantras = useCallback((allMantras: Mantra[]) => {
+    if (allMantras.length === 0) return
+    const dateKey = formatDate(selectedDate)
+    const shuffled = [...allMantras].sort(() => Math.random() - 0.5)
+    const selected = shuffled.slice(0, Math.min(3, shuffled.length))
+    const selectedIds = selected.map(m => m.id)
+    setDailyMantraIds(selectedIds)
+    localStorage.setItem(`daygo-daily-mantras-${dateKey}`, JSON.stringify(selectedIds))
+  }, [selectedDate])
 
   // Auto-resize pep talk textarea
   useEffect(() => {
@@ -322,6 +352,25 @@ export default function TodayPage() {
     enabled: !!user,
   })
 
+  // Load daily mantras from localStorage when mantras load or date changes
+  useEffect(() => {
+    if (mantras.length === 0) return
+    const dateKey = formatDate(selectedDate)
+    const saved = localStorage.getItem(`daygo-daily-mantras-${dateKey}`)
+    if (saved) {
+      const savedIds = JSON.parse(saved) as string[]
+      // Filter to only include IDs that still exist in mantras
+      const validIds = savedIds.filter(id => mantras.some(m => m.id === id))
+      setDailyMantraIds(validIds)
+    } else {
+      // No saved mantras for this date, clear the selection
+      setDailyMantraIds([])
+    }
+  }, [mantras, selectedDate])
+
+  // Get the daily mantras to display
+  const dailyMantras = mantras.filter(m => dailyMantraIds.includes(m.id))
+
   const { data: prompts = [], isLoading: promptsLoading } = useQuery({
     queryKey: ['journal-prompts', user?.id, dateStr],
     queryFn: () => journalService.getPromptsWithEntries(user!.id, dateStr),
@@ -343,6 +392,12 @@ export default function TodayPage() {
   const { data: visions = [], isLoading: visionsLoading } = useQuery({
     queryKey: ['visions', user?.id],
     queryFn: () => visionsService.getVisions(user!.id),
+    enabled: !!user,
+  })
+
+  const { data: userProfile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: () => profilesService.getProfile(user!.id),
     enabled: !!user,
   })
 
@@ -1178,6 +1233,83 @@ export default function TodayPage() {
     }
   }
 
+  const handleVisionVoiceChange = (voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer') => {
+    setVisionVoice(voice)
+    localStorage.setItem('daygo-vision-voice', voice)
+    // Clear cached audio so it regenerates with new voice
+    if (visionAudioRef.current) {
+      URL.revokeObjectURL(visionAudioRef.current.src)
+      visionAudioRef.current = null
+    }
+  }
+
+  const handleVisionSpeedChange = (speed: number) => {
+    setVisionSpeed(speed)
+    localStorage.setItem('daygo-vision-speed', speed.toString())
+    // Clear cached audio so it regenerates with new speed
+    if (visionAudioRef.current) {
+      URL.revokeObjectURL(visionAudioRef.current.src)
+      visionAudioRef.current = null
+    }
+  }
+
+  const handlePlayVisionAffirmations = async () => {
+    // If already playing, pause
+    if (isPlayingVisionAudio && visionAudioRef.current) {
+      visionAudioRef.current.pause()
+      setIsPlayingVisionAudio(false)
+      return
+    }
+
+    // If we have audio loaded and it's paused, resume
+    if (visionAudioRef.current && visionAudioRef.current.src && !isPlayingVisionAudio) {
+      visionAudioRef.current.play()
+      setIsPlayingVisionAudio(true)
+      return
+    }
+
+    // Generate new audio
+    setIsGeneratingVisionAudio(true)
+    try {
+      const response = await fetch('/api/visions/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visions: visions.map(v => ({ text: v.text })),
+          voice: visionVoice,
+          speed: visionSpeed,
+          name: userProfile?.display_name || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate audio')
+      }
+
+      const audioBlob = await response.blob()
+      const audioUrl = URL.createObjectURL(audioBlob)
+
+      // Clean up previous audio
+      if (visionAudioRef.current) {
+        URL.revokeObjectURL(visionAudioRef.current.src)
+      }
+
+      const audio = new Audio(audioUrl)
+      visionAudioRef.current = audio
+
+      audio.onended = () => {
+        setIsPlayingVisionAudio(false)
+      }
+
+      await audio.play()
+      setIsPlayingVisionAudio(true)
+    } catch (error) {
+      console.error('Error generating vision audio:', error)
+    } finally {
+      setIsGeneratingVisionAudio(false)
+    }
+  }
+
   const handleTodoDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
@@ -1388,19 +1520,94 @@ export default function TodayPage() {
           {/* Visions */}
           {visions.length > 0 && (
             <section>
-              <button
-                onClick={() => toggleSection('visions')}
-                className="w-full flex items-center justify-between mb-4 group"
-              >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  Visions
-                </h2>
-                {expandedSections.visions ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
-                )}
-              </button>
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => toggleSection('visions')}
+                  className="flex items-center gap-2 group"
+                >
+                  <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                    Visions
+                  </h2>
+                  {expandedSections.visions ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  )}
+                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handlePlayVisionAffirmations}
+                    disabled={isGeneratingVisionAudio}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-bevel-blue hover:bg-bevel-blue/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Play affirmations"
+                  >
+                    {isGeneratingVisionAudio ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Generating...</span>
+                      </>
+                    ) : isPlayingVisionAudio ? (
+                      <>
+                        <Pause className="w-4 h-4" />
+                        <span>Pause</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-4 h-4" />
+                        <span>Play</span>
+                      </>
+                    )}
+                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowVisionVoiceSettings(!showVisionVoiceSettings)}
+                      className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                      title="Voice settings"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                    {showVisionVoiceSettings && (
+                      <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-3 z-50">
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1.5">Voice</label>
+                            <select
+                              value={visionVoice}
+                              onChange={(e) => handleVisionVoiceChange(e.target.value as any)}
+                              className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-bevel-blue/50"
+                            >
+                              <option value="nova">Nova (warm female)</option>
+                              <option value="shimmer">Shimmer (soft female)</option>
+                              <option value="alloy">Alloy (neutral)</option>
+                              <option value="echo">Echo (male)</option>
+                              <option value="fable">Fable (British)</option>
+                              <option value="onyx">Onyx (deep male)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1.5">
+                              Speed: {visionSpeed.toFixed(2)}x
+                            </label>
+                            <input
+                              type="range"
+                              min="0.5"
+                              max="1.5"
+                              step="0.05"
+                              value={visionSpeed}
+                              onChange={(e) => handleVisionSpeedChange(parseFloat(e.target.value))}
+                              className="w-full h-1.5 bg-gray-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-bevel-blue"
+                            />
+                            <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                              <span>Slow</span>
+                              <span>Fast</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
               {expandedSections.visions && (
                 <DndContext
                   sensors={sensors}
@@ -1434,7 +1641,7 @@ export default function TodayPage() {
                 className="w-full flex items-center justify-between mb-4 group"
               >
                 <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  Mantras
+                  Daily Mantras {dailyMantras.length > 0 && `(${dailyMantras.length})`}
                 </h2>
                 {expandedSections.mantras ? (
                   <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
@@ -1443,26 +1650,36 @@ export default function TodayPage() {
                 )}
               </button>
               {expandedSections.mantras && (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleMantraDragEnd}
-                >
-                  <SortableContext
-                    items={mantras.map((m) => m.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-3">
-                      {mantras.map((mantra) => (
-                        <SortableMantraCard
-                          key={mantra.id}
-                          mantra={mantra}
-                          onEdit={(m) => setSelectedMantra(m)}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
+                <>
+                  {dailyMantras.length === 0 ? (
+                    <button
+                      onClick={() => generateDailyMantras(mantras)}
+                      className="w-full py-4 px-4 bg-mantra/10 hover:bg-mantra/20 border border-dashed border-mantra/30 rounded-xl text-mantra font-medium flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Shuffle className="w-5 h-5" />
+                      Generate Daily Mantras
+                    </button>
+                  ) : (
+                    <>
+                      <div className="space-y-3">
+                        {dailyMantras.map((mantra) => (
+                          <MantraCard
+                            key={mantra.id}
+                            mantra={mantra}
+                            onEdit={(m) => setSelectedMantra(m)}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => generateDailyMantras(mantras)}
+                        className="w-full mt-3 py-2 px-4 text-sm text-mantra hover:bg-mantra/10 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                      >
+                        <Shuffle className="w-4 h-4" />
+                        Shuffle Mantras
+                      </button>
+                    </>
+                  )}
+                </>
               )}
             </section>
           )}
@@ -1644,6 +1861,26 @@ export default function TodayPage() {
             </section>
           )}
 
+          {/* Healthy Foods */}
+          <section>
+            <button
+              onClick={() => toggleSection('healthyFoods')}
+              className="w-full flex items-center justify-between mb-4 group"
+            >
+              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                Eat Healthy Today
+              </h2>
+              {expandedSections.healthyFoods ? (
+                <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+              )}
+            </button>
+            {expandedSections.healthyFoods && (
+              <HealthyFoodsCard />
+            )}
+          </section>
+
           {/* To-Dos */}
           {todos.length > 0 && (
             <section>
@@ -1771,26 +2008,6 @@ export default function TodayPage() {
               }
             />
               </>
-            )}
-          </section>
-
-          {/* Healthy Foods */}
-          <section>
-            <button
-              onClick={() => toggleSection('healthyFoods')}
-              className="w-full flex items-center justify-between mb-4 group"
-            >
-              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                Eat Healthy Today
-              </h2>
-              {expandedSections.healthyFoods ? (
-                <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
-              )}
-            </button>
-            {expandedSections.healthyFoods && (
-              <HealthyFoodsCard />
             )}
           </section>
 

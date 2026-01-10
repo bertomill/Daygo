@@ -769,6 +769,35 @@ export interface Database {
           created_at?: string;
         };
       };
+      food_images: {
+        Row: {
+          id: string;
+          user_id: string;
+          category: 'plants' | 'meats' | 'fish' | 'fruit' | 'superfoods';
+          image_url: string;
+          name: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          category: 'plants' | 'meats' | 'fish' | 'fruit' | 'superfoods';
+          image_url: string;
+          name?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          category?: 'plants' | 'meats' | 'fish' | 'fruit' | 'superfoods';
+          image_url?: string;
+          name?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -813,6 +842,8 @@ export type KanbanTimeEntry = Database['public']['Tables']['kanban_time_entries'
 export type ScheduleTemplate = Database['public']['Tables']['schedule_templates']['Row'];
 export type AIJournal = Database['public']['Tables']['ai_journals']['Row'];
 export type Inspiration = Database['public']['Tables']['inspirations']['Row'];
+export type FoodImage = Database['public']['Tables']['food_images']['Row'];
+export type FoodCategory = 'plants' | 'meats' | 'fish' | 'fruit' | 'superfoods';
 
 // Extended types for UI
 export type HabitWithLog = Habit & {
