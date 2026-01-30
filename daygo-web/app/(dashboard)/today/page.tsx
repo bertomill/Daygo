@@ -1584,45 +1584,58 @@ export default function TodayPage() {
           )}
 
           {/* Identities */}
-          {identities.length > 0 && (
-            <section>
-              <button
-                onClick={() => toggleSection('identities')}
-                className="w-full flex items-center justify-between mb-4 group"
-              >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  Identity
-                </h2>
-                {expandedSections.identities ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
-                )}
-              </button>
-              {expandedSections.identities && (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleIdentityDragEnd}
-                >
-                  <SortableContext
-                    items={identities.map((i) => i.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-3">
-                      {identities.map((identity) => (
-                        <SortableIdentityCard
-                          key={identity.id}
-                          identity={identity}
-                          onEdit={(i) => setSelectedIdentity(i)}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
+          <section>
+            <button
+              onClick={() => toggleSection('identities')}
+              className="w-full flex items-center justify-between mb-4 group"
+            >
+              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                Identity {identities.length > 0 && `(${identities.length})`}
+              </h2>
+              {expandedSections.identities ? (
+                <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
               )}
-            </section>
-          )}
+            </button>
+            {expandedSections.identities && (
+              <>
+                {identities.length === 0 ? (
+                  <button
+                    onClick={() => {
+                      setAddType('identity')
+                      setShowAddModal(true)
+                    }}
+                    className="w-full py-4 px-4 bg-pink-500/10 hover:bg-pink-500/20 border border-dashed border-pink-500/30 rounded-xl text-pink-500 font-medium flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Add Identity
+                  </button>
+                ) : (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleIdentityDragEnd}
+                  >
+                    <SortableContext
+                      items={identities.map((i) => i.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-3">
+                        {identities.map((identity) => (
+                          <SortableIdentityCard
+                            key={identity.id}
+                            identity={identity}
+                            onEdit={(i) => setSelectedIdentity(i)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                )}
+              </>
+            )}
+          </section>
 
           {/* Visions */}
           {visions.length > 0 && (
