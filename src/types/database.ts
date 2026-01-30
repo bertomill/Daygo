@@ -240,6 +240,32 @@ export interface Database {
           created_at?: string;
         };
       };
+      identities: {
+        Row: {
+          id: string;
+          user_id: string;
+          text: string;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          text: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          text?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -267,6 +293,7 @@ export type Mantra = Database['public']['Tables']['mantras']['Row'];
 export type JournalPrompt = Database['public']['Tables']['journal_prompts']['Row'];
 export type JournalEntry = Database['public']['Tables']['journal_entries']['Row'];
 export type Vision = Database['public']['Tables']['visions']['Row'];
+export type Identity = Database['public']['Tables']['identities']['Row'];
 export type DailyScore = Database['public']['Views']['daily_scores']['Row'];
 
 // Extended types for UI
@@ -288,4 +315,5 @@ export type TodayItem =
   | { type: 'mantra'; data: Mantra }
   | { type: 'habit'; data: HabitWithLog }
   | { type: 'journal'; data: JournalPromptWithEntry }
-  | { type: 'vision'; data: Vision };
+  | { type: 'vision'; data: Vision }
+  | { type: 'identity'; data: Identity };

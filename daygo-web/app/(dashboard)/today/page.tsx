@@ -30,6 +30,7 @@ import { goalsService } from '@/lib/services/goals'
 import { pepTalksService, type PepTalk } from '@/lib/services/pepTalks'
 import { todosService } from '@/lib/services/todos'
 import { visionsService } from '@/lib/services/visions'
+import { identitiesService } from '@/lib/services/identities'
 import { scheduleService } from '@/lib/services/schedule'
 import { calendarRulesService } from '@/lib/services/calendarRules'
 import { habitMissNotesService } from '@/lib/services/habitMissNotes'
@@ -42,6 +43,7 @@ import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { SortableMantraCard } from '@/components/SortableMantraCard'
 import { MantraCard } from '@/components/MantraCard'
 import { SortableVisionCard } from '@/components/SortableVisionCard'
+import { SortableIdentityCard } from '@/components/SortableIdentityCard'
 import { SortableTodoCard } from '@/components/SortableTodoCard'
 import { SortableJournalCard } from '@/components/SortableJournalCard'
 import { ScheduleGrid } from '@/components/ScheduleGrid'
@@ -55,7 +57,7 @@ import { ScoreRing } from '@/components/ScoreRing'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { PepTalkAudioPlayer } from '@/components/PepTalkAudioPlayer'
 import { HealthyFoodsCard } from '@/components/HealthyFoodsCard'
-import type { HabitWithLog, Mantra, Todo, Vision, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal } from '@/lib/types/database'
+import type { HabitWithLog, Mantra, Todo, Vision, Identity, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal } from '@/lib/types/database'
 import { calculateMissionScore } from '@/lib/services/missionScore'
 
 function formatDate(date: Date): string {
@@ -85,7 +87,7 @@ export default function TodayPage() {
   const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'schedule' | 'ai-journal' | null>(null)
+  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'schedule' | 'ai-journal' | null>(null)
   const [newItemText, setNewItemText] = useState('')
   const [newItemDescription, setNewItemDescription] = useState('')
   const [selectedHabit, setSelectedHabit] = useState<HabitWithLog | null>(null)
@@ -98,6 +100,9 @@ export default function TodayPage() {
   const [selectedVision, setSelectedVision] = useState<Vision | null>(null)
   const [isEditingVision, setIsEditingVision] = useState(false)
   const [editVisionText, setEditVisionText] = useState('')
+  const [selectedIdentity, setSelectedIdentity] = useState<Identity | null>(null)
+  const [isEditingIdentity, setIsEditingIdentity] = useState(false)
+  const [editIdentityText, setEditIdentityText] = useState('')
   const [selectedJournal, setSelectedJournal] = useState<JournalPromptWithEntry | null>(null)
   const [isEditingJournal, setIsEditingJournal] = useState(false)
   const [editJournalText, setEditJournalText] = useState('')
@@ -153,6 +158,7 @@ export default function TodayPage() {
     return {
       pepTalk: true,
       healthyFoods: true,
+      identities: true,
       visions: true,
       mantras: true,
       habits: true,
@@ -257,6 +263,11 @@ export default function TodayPage() {
           setIsEditingVision(false)
           setEditVisionText('')
         }
+        if (selectedIdentity) {
+          setSelectedIdentity(null)
+          setIsEditingIdentity(false)
+          setEditIdentityText('')
+        }
         if (selectedJournal) {
           setSelectedJournal(null)
           setIsEditingJournal(false)
@@ -277,7 +288,7 @@ export default function TodayPage() {
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [showAddModal, showDeleteConfirm, showMissNoteModal, selectedHabit, selectedMantra, selectedTodo, selectedVision, selectedJournal, selectedEvent, showScheduleModal])
+  }, [showAddModal, showDeleteConfirm, showMissNoteModal, selectedHabit, selectedMantra, selectedTodo, selectedVision, selectedIdentity, selectedJournal, selectedEvent, showScheduleModal])
 
   // Keyboard shortcuts for Add modal type selection
   useEffect(() => {
@@ -286,12 +297,13 @@ export default function TodayPage() {
       if (!showAddModal || addType !== null) return
 
       const key = e.key.toLowerCase()
-      const shortcuts: Record<string, 'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'schedule' | 'ai-journal'> = {
+      const shortcuts: Record<string, 'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'schedule' | 'ai-journal'> = {
         'h': 'habit',
         'm': 'mantra',
         'j': 'journal',
         't': 'todo',
         'v': 'vision',
+        'i': 'identity',
         'p': 'pep-talk',
         's': 'schedule',
         'a': 'ai-journal',
@@ -314,7 +326,7 @@ export default function TodayPage() {
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return
       }
-      if (showAddModal || showScheduleModal || selectedHabit || selectedMantra || selectedTodo || selectedVision || selectedJournal || selectedEvent) {
+      if (showAddModal || showScheduleModal || selectedHabit || selectedMantra || selectedTodo || selectedVision || selectedIdentity || selectedJournal || selectedEvent) {
         return
       }
 
@@ -336,7 +348,7 @@ export default function TodayPage() {
     }
     document.addEventListener('keydown', handleArrowKeys)
     return () => document.removeEventListener('keydown', handleArrowKeys)
-  }, [showAddModal, showScheduleModal, selectedHabit, selectedMantra, selectedTodo, selectedVision, selectedJournal, selectedEvent])
+  }, [showAddModal, showScheduleModal, selectedHabit, selectedMantra, selectedTodo, selectedVision, selectedIdentity, selectedJournal, selectedEvent])
 
   const dateStr = formatDate(selectedDate)
 
@@ -392,6 +404,12 @@ export default function TodayPage() {
   const { data: visions = [], isLoading: visionsLoading } = useQuery({
     queryKey: ['visions', user?.id],
     queryFn: () => visionsService.getVisions(user!.id),
+    enabled: !!user,
+  })
+
+  const { data: identities = [], isLoading: identitiesLoading } = useQuery({
+    queryKey: ['identities', user?.id],
+    queryFn: () => identitiesService.getIdentities(user!.id),
     enabled: !!user,
   })
 
@@ -675,6 +693,41 @@ export default function TodayPage() {
       setSelectedVision(null)
       setIsEditingVision(false)
       setEditVisionText('')
+    },
+  })
+
+  const createIdentityMutation = useMutation({
+    mutationFn: (text: string) => identitiesService.createIdentity(user!.id, text),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['identities'] })
+      setShowAddModal(false)
+      setNewItemText('')
+    },
+  })
+
+  const deleteIdentityMutation = useMutation({
+    mutationFn: (identityId: string) => identitiesService.deleteIdentity(identityId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['identities'] })
+      setSelectedIdentity(null)
+    },
+  })
+
+  const updateIdentityMutation = useMutation({
+    mutationFn: ({ id, text }: { id: string; text: string }) =>
+      identitiesService.updateIdentity(id, text),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['identities'] })
+      setSelectedIdentity(null)
+      setIsEditingIdentity(false)
+      setEditIdentityText('')
+    },
+  })
+
+  const reorderIdentitiesMutation = useMutation({
+    mutationFn: (orderedIds: string[]) => identitiesService.reorderIdentities(orderedIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['identities'] })
     },
   })
 
@@ -1233,6 +1286,17 @@ export default function TodayPage() {
     }
   }
 
+  const handleIdentityDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = identities.findIndex((i) => i.id === active.id)
+      const newIndex = identities.findIndex((i) => i.id === over.id)
+      const newOrder = arrayMove(identities, oldIndex, newIndex)
+      const orderedIds = newOrder.map((i) => i.id)
+      reorderIdentitiesMutation.mutate(orderedIds)
+    }
+  }
+
   const handleVisionVoiceChange = (voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer') => {
     setVisionVoice(voice)
     localStorage.setItem('daygo-vision-voice', voice)
@@ -1392,12 +1456,14 @@ export default function TodayPage() {
       createTodoMutation.mutate(newItemText)
     } else if (addType === 'vision') {
       createVisionMutation.mutate(newItemText)
+    } else if (addType === 'identity') {
+      createIdentityMutation.mutate(newItemText)
     } else {
       createPromptMutation.mutate(newItemText)
     }
   }
 
-  const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || scheduleLoading
+  const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || identitiesLoading || scheduleLoading
 
   return (
     <div {...swipeHandlers} className="max-w-lg mx-auto px-4 py-6 pb-32 min-h-screen bg-bevel-bg dark:bg-slate-900">
@@ -1513,6 +1579,47 @@ export default function TodayPage() {
                     </div>
                   </div>
                 </div>
+              )}
+            </section>
+          )}
+
+          {/* Identities */}
+          {identities.length > 0 && (
+            <section>
+              <button
+                onClick={() => toggleSection('identities')}
+                className="w-full flex items-center justify-between mb-4 group"
+              >
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  Identity
+                </h2>
+                {expandedSections.identities ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </button>
+              {expandedSections.identities && (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleIdentityDragEnd}
+                >
+                  <SortableContext
+                    items={identities.map((i) => i.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3">
+                      {identities.map((identity) => (
+                        <SortableIdentityCard
+                          key={identity.id}
+                          identity={identity}
+                          onEdit={(i) => setSelectedIdentity(i)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </section>
           )}
@@ -2013,7 +2120,7 @@ export default function TodayPage() {
             )}
           </section>
 
-          {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && todos.length === 0 && visions.length === 0 && (
+          {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && todos.length === 0 && visions.length === 0 && identities.length === 0 && (
             <div className="text-center py-16 px-6">
               <div className="mb-4">
                 <div className="w-16 h-16 mx-auto bg-accent/10 rounded-full flex items-center justify-center">
@@ -2024,7 +2131,7 @@ export default function TodayPage() {
                 Start your journey
               </h3>
               <p className="text-bevel-text-secondary dark:text-slate-400 mb-6 leading-relaxed">
-                Add your first habit, mantra, vision, journal prompt, or to-do to begin tracking your day!
+                Add your first habit, mantra, vision, identity, journal prompt, or to-do to begin tracking your day!
               </p>
               <button
                 onClick={() => setShowAddModal(true)}
@@ -2113,6 +2220,7 @@ export default function TodayPage() {
                     { type: 'journal' as const, label: 'Journal', key: 'J', color: 'bg-journal hover:bg-journal/90' },
                     { type: 'todo' as const, label: 'To-Do', key: 'T', color: 'bg-blue-500 hover:bg-blue-600' },
                     { type: 'vision' as const, label: 'Vision', key: 'V', color: 'bg-blue-600 hover:bg-blue-700' },
+                    { type: 'identity' as const, label: 'Identity', key: 'I', color: 'bg-pink-500 hover:bg-pink-600' },
                     { type: 'schedule' as const, label: 'Schedule', key: 'S', color: 'bg-schedule hover:bg-schedule/90' },
                     { type: 'pep-talk' as const, label: 'Pep Talk', key: 'P', color: 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' },
                     { type: 'ai-journal' as const, label: 'AI Journal', key: 'A', color: 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600' },
@@ -2360,6 +2468,23 @@ export default function TodayPage() {
                       content={newItemText}
                       onChange={setNewItemText}
                       placeholder="Your vision for the future..."
+                    />
+                  </div>
+                ) : addType === 'identity' ? (
+                  <div className="mb-3">
+                    <p className="text-sm text-pink-500 font-medium mb-2">I am...</p>
+                    <textarea
+                      value={newItemText}
+                      onChange={(e) => setNewItemText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          e.currentTarget.blur()
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+                      placeholder="someone who prioritizes my health..."
+                      rows={3}
+                      autoFocus
                     />
                   </div>
                 ) : addType === 'mantra' ? (
@@ -2837,6 +2962,107 @@ export default function TodayPage() {
                   >
                     <Trash2 className="w-5 h-5" />
                     {deleteVisionMutation.isPending ? 'Deleting...' : 'Delete Vision'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Identity Detail Modal */}
+      {selectedIdentity && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 pt-12 z-50 overflow-y-auto"
+          onClick={() => {
+            setSelectedIdentity(null)
+            setIsEditingIdentity(false)
+            setEditIdentityText('')
+          }}
+        >
+          <div
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md shadow-2xl mb-12"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {isEditingIdentity ? 'Edit Identity' : 'Identity'}
+              </h2>
+              <button
+                onClick={() => {
+                  setSelectedIdentity(null)
+                  setIsEditingIdentity(false)
+                  setEditIdentityText('')
+                }}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
+              </button>
+            </div>
+
+            {isEditingIdentity ? (
+              <>
+                <div className="mb-4">
+                  <p className="text-sm text-pink-500 font-medium mb-2">I am...</p>
+                  <textarea
+                    value={editIdentityText}
+                    onChange={(e) => setEditIdentityText(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+                    placeholder="someone who prioritizes my health..."
+                    rows={3}
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setIsEditingIdentity(false)
+                      setEditIdentityText('')
+                    }}
+                    className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (editIdentityText.trim()) {
+                        updateIdentityMutation.mutate({ id: selectedIdentity.id, text: editIdentityText })
+                      }
+                    }}
+                    disabled={!editIdentityText.trim() || updateIdentityMutation.isPending}
+                    className="flex-1 py-3 bg-pink-500 hover:bg-pink-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {updateIdentityMutation.isPending ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-6">
+                  <p className="text-sm text-pink-500 font-medium mb-1">I am...</p>
+                  <div
+                    className="text-gray-600 dark:text-slate-300 prose prose-sm dark:prose-invert max-w-none [&_p]:m-0"
+                    dangerouslySetInnerHTML={{ __html: selectedIdentity.text }}
+                  />
+                </div>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setEditIdentityText(selectedIdentity.text)
+                      setIsEditingIdentity(true)
+                    }}
+                    className="w-full py-3 bg-pink-50 dark:bg-pink-500/10 hover:bg-pink-100 dark:hover:bg-pink-500/20 text-pink-600 dark:text-pink-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Pencil className="w-5 h-5" />
+                    Edit Identity
+                  </button>
+                  <button
+                    onClick={() => deleteIdentityMutation.mutate(selectedIdentity.id)}
+                    disabled={deleteIdentityMutation.isPending}
+                    className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    {deleteIdentityMutation.isPending ? 'Deleting...' : 'Delete Identity'}
                   </button>
                 </div>
               </>

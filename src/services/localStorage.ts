@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Habit, HabitLog, HabitWithLog, Goal, GoalWithHabits, Mantra, JournalPrompt, JournalEntry, JournalPromptWithEntry, Vision } from '../types/database';
+import { Habit, HabitLog, HabitWithLog, Goal, GoalWithHabits, Mantra, JournalPrompt, JournalEntry, JournalPromptWithEntry, Vision, Identity } from '../types/database';
 
 // Storage keys
 const KEYS = {
@@ -11,6 +11,7 @@ const KEYS = {
   JOURNAL_PROMPTS: '@daygo_guest_journal_prompts',
   JOURNAL_ENTRIES: '@daygo_guest_journal_entries',
   VISIONS: '@daygo_guest_visions',
+  IDENTITIES: '@daygo_guest_identities',
 };
 
 // Guest user ID constant
@@ -451,6 +452,56 @@ export const localVisionsService = {
   },
 };
 
+// ============ IDENTITIES SERVICE ============
+export const localIdentitiesService = {
+  async getIdentities(): Promise<Identity[]> {
+    const identities = await getItems<Identity>(KEYS.IDENTITIES);
+    return identities.filter((i) => i.is_active).sort((a, b) => a.sort_order - b.sort_order);
+  },
+
+  async createIdentity(text: string): Promise<Identity> {
+    const identities = await getItems<Identity>(KEYS.IDENTITIES);
+    const newIdentity: Identity = {
+      id: generateId(),
+      user_id: GUEST_USER_ID,
+      text,
+      is_active: true,
+      sort_order: identities.length,
+      created_at: new Date().toISOString(),
+    };
+    identities.push(newIdentity);
+    await setItems(KEYS.IDENTITIES, identities);
+    return newIdentity;
+  },
+
+  async updateIdentity(id: string, text: string): Promise<Identity> {
+    const identities = await getItems<Identity>(KEYS.IDENTITIES);
+    const index = identities.findIndex((i) => i.id === id);
+    if (index === -1) throw new Error('Identity not found');
+    identities[index].text = text;
+    await setItems(KEYS.IDENTITIES, identities);
+    return identities[index];
+  },
+
+  async deleteIdentity(id: string): Promise<void> {
+    const identities = await getItems<Identity>(KEYS.IDENTITIES);
+    const index = identities.findIndex((i) => i.id === id);
+    if (index >= 0) {
+      identities[index].is_active = false;
+      await setItems(KEYS.IDENTITIES, identities);
+    }
+  },
+
+  async reorderIdentities(orderedIds: string[]): Promise<void> {
+    const identities = await getItems<Identity>(KEYS.IDENTITIES);
+    for (let i = 0; i < orderedIds.length; i++) {
+      const identity = identities.find((item) => item.id === orderedIds[i]);
+      if (identity) identity.sort_order = i;
+    }
+    await setItems(KEYS.IDENTITIES, identities);
+  },
+};
+
 // ============ CLEAR ALL GUEST DATA ============
 export async function clearAllGuestData(): Promise<void> {
   await Promise.all([
@@ -462,5 +513,6 @@ export async function clearAllGuestData(): Promise<void> {
     AsyncStorage.removeItem(KEYS.JOURNAL_PROMPTS),
     AsyncStorage.removeItem(KEYS.JOURNAL_ENTRIES),
     AsyncStorage.removeItem(KEYS.VISIONS),
+    AsyncStorage.removeItem(KEYS.IDENTITIES),
   ]);
 }

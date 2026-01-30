@@ -18,12 +18,13 @@ import {
 } from 'react-native';
 import { PanGestureHandler, State, GestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
-import { HabitWithLog, Mantra, JournalPromptWithEntry, TodayItem, Vision } from '../../src/types/database';
+import { HabitWithLog, Mantra, JournalPromptWithEntry, TodayItem, Vision, Identity } from '../../src/types/database';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HabitCard } from '../../src/components/HabitCard';
 import { MantraCard } from '../../src/components/MantraCard';
 import { JournalPromptCard } from '../../src/components/JournalPromptCard';
 import { VisionCard } from '../../src/components/VisionCard';
+import { IdentityCard } from '../../src/components/IdentityCard';
 import { ScoreRing } from '../../src/components/ScoreRing';
 import {
   useHabitsWithLogs,
@@ -41,6 +42,7 @@ import {
   useSaveJournalEntry,
 } from '../../src/hooks/useJournalPrompts';
 import { useVisions, useCreateVision, useDeleteVision } from '../../src/hooks/useVisions';
+import { useIdentities, useCreateIdentity, useDeleteIdentity } from '../../src/hooks/useIdentities';
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -53,7 +55,7 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-type AddType = 'habit' | 'mantra' | 'journal' | 'vision';
+type AddType = 'habit' | 'mantra' | 'journal' | 'vision' | 'identity';
 
 export default function TodayScreen() {
   const today = getToday();
@@ -101,6 +103,7 @@ export default function TodayScreen() {
   const [mantraModalVisible, setMantraModalVisible] = useState(false);
   const [journalModalVisible, setJournalModalVisible] = useState(false);
   const [visionModalVisible, setVisionModalVisible] = useState(false);
+  const [identityModalVisible, setIdentityModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [journalEntryModalVisible, setJournalEntryModalVisible] = useState(false);
 
@@ -109,6 +112,7 @@ export default function TodayScreen() {
   const [selectedMantra, setSelectedMantra] = useState<Mantra | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<JournalPromptWithEntry | null>(null);
   const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
+  const [selectedIdentity, setSelectedIdentity] = useState<Identity | null>(null);
 
   // Form inputs
   const [newHabitName, setNewHabitName] = useState('');
@@ -116,6 +120,7 @@ export default function TodayScreen() {
   const [newMantraText, setNewMantraText] = useState('');
   const [newPromptText, setNewPromptText] = useState('');
   const [newVisionText, setNewVisionText] = useState('');
+  const [newIdentityText, setNewIdentityText] = useState('');
   const [journalEntry, setJournalEntry] = useState('');
 
   // Edit habit state
@@ -147,7 +152,12 @@ export default function TodayScreen() {
   const createVision = useCreateVision();
   const deleteVision = useDeleteVision();
 
-  const isLoading = habitsLoading || mantrasLoading || promptsLoading || visionsLoading;
+  // Identities
+  const { data: identities, isLoading: identitiesLoading, refetch: refetchIdentities } = useIdentities();
+  const createIdentity = useCreateIdentity();
+  const deleteIdentity = useDeleteIdentity();
+
+  const isLoading = habitsLoading || mantrasLoading || promptsLoading || visionsLoading || identitiesLoading;
   const isRefetching = habitsRefetching;
 
   const refetch = () => {
@@ -155,12 +165,16 @@ export default function TodayScreen() {
     refetchMantras();
     refetchPrompts();
     refetchVisions();
+    refetchIdentities();
   };
 
   // Combine all items into a single list
   const allItems: TodayItem[] = useMemo(() => {
     const items: TodayItem[] = [];
 
+    if (identities) {
+      identities.forEach((i) => items.push({ type: 'identity', data: i }));
+    }
     if (visions) {
       visions.forEach((v) => items.push({ type: 'vision', data: v }));
     }
@@ -175,7 +189,7 @@ export default function TodayScreen() {
     }
 
     return items;
-  }, [visions, mantras, habits, journalPrompts]);
+  }, [identities, visions, mantras, habits, journalPrompts]);
 
   // Get habit index for reordering
   const getHabitIndex = useCallback((habitId: string) => {
@@ -206,6 +220,14 @@ export default function TodayScreen() {
 
   // Render item for the list
   const renderItem = useCallback(({ item }: { item: TodayItem }) => {
+    if (item.type === 'identity') {
+      return (
+        <IdentityCard
+          identity={item.data}
+          onPress={() => handleIdentityPress(item.data)}
+        />
+      );
+    }
     if (item.type === 'vision') {
       return (
         <VisionCard
@@ -325,6 +347,21 @@ export default function TodayScreen() {
     }
   };
 
+  const handleAddIdentity = async () => {
+    if (!newIdentityText.trim()) {
+      Alert.alert('Error', 'Please enter your identity');
+      return;
+    }
+
+    try {
+      await createIdentity.mutateAsync(newIdentityText.trim());
+      setNewIdentityText('');
+      setIdentityModalVisible(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create identity');
+    }
+  };
+
   const handleSaveJournalEntry = async () => {
     if (!selectedPrompt || !journalEntry.trim()) return;
 
@@ -396,6 +433,33 @@ export default function TodayScreen() {
     }
   };
 
+  const handleIdentityPress = (identity: Identity) => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Delete'],
+          destructiveButtonIndex: 1,
+          cancelButtonIndex: 0,
+          title: 'Identity',
+          message: identity.text,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            Alert.alert('Delete Identity', 'Are you sure?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete', style: 'destructive', onPress: () => deleteIdentity.mutate(identity.id) },
+            ]);
+          }
+        }
+      );
+    } else {
+      Alert.alert('Identity', identity.text, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteIdentity.mutate(identity.id) },
+      ]);
+    }
+  };
+
   const handleJournalPromptPress = (prompt: JournalPromptWithEntry) => {
     setSelectedPrompt(prompt);
     setJournalEntry('');
@@ -409,6 +473,7 @@ export default function TodayScreen() {
       else if (type === 'mantra') setMantraModalVisible(true);
       else if (type === 'journal') setJournalModalVisible(true);
       else if (type === 'vision') setVisionModalVisible(true);
+      else if (type === 'identity') setIdentityModalVisible(true);
     }, 300);
   };
 
@@ -656,6 +721,19 @@ export default function TodayScreen() {
               <View className="flex-1">
                 <Text className="text-lg font-semibold text-gray-800">Vision</Text>
                 <Text className="text-gray-500">Your vision for the future</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-row items-center p-4 bg-pink-50 rounded-xl mb-3 border border-pink-100"
+              onPress={() => handleAddTypeSelect('identity')}
+            >
+              <View className="w-12 h-12 bg-pink-100 rounded-full items-center justify-center mr-4">
+                <Ionicons name="person-outline" size={24} color="#ec4899" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-lg font-semibold text-gray-800">Identity</Text>
+                <Text className="text-gray-500">Who you are becoming</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -910,6 +988,70 @@ export default function TodayScreen() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Add Identity Modal */}
+      <Modal
+        visible={identityModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIdentityModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+        >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View className="flex-1 justify-end bg-black/50">
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View className="bg-white rounded-t-3xl p-6">
+            <Text className="text-xl font-bold text-gray-800 mb-4">
+              Add Identity
+            </Text>
+
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              I am...
+            </Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 mb-4"
+              placeholder="e.g., someone who prioritizes my health"
+              value={newIdentityText}
+              onChangeText={setNewIdentityText}
+              multiline
+              numberOfLines={3}
+              autoFocus
+              blurOnSubmit={true}
+              returnKeyType="done"
+            />
+
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                className="flex-1 py-3 rounded-xl bg-gray-200"
+                onPress={() => {
+                  setIdentityModalVisible(false);
+                  setNewIdentityText('');
+                }}
+              >
+                <Text className="text-gray-700 text-center font-semibold">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-1 py-3 rounded-xl bg-pink-500 ml-3"
+                onPress={handleAddIdentity}
+                disabled={createIdentity.isPending}
+              >
+                <Text className="text-white text-center font-semibold">
+                  {createIdentity.isPending ? 'Adding...' : 'Add Identity'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </Modal>
 
