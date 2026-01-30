@@ -702,6 +702,14 @@ export default function TodayPage() {
       queryClient.invalidateQueries({ queryKey: ['identities'] })
       setShowAddModal(false)
       setNewItemText('')
+      setAddType(null)
+    },
+    onError: (error: any) => {
+      console.error('Failed to create identity:', error)
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      console.error('Error message:', error?.message)
+      console.error('Error code:', error?.code)
+      alert(`Failed to create identity: ${error?.message || error?.code || 'Unknown error'}`)
     },
   })
 

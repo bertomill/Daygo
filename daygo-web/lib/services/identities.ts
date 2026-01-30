@@ -15,6 +15,7 @@ export const identitiesService = {
   },
 
   async createIdentity(userId: string, text: string): Promise<Identity> {
+    console.log('Creating identity for user:', userId, 'text:', text)
     const { data, error } = await supabase
       .from('identities')
       .insert({
@@ -24,7 +25,11 @@ export const identitiesService = {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error creating identity:', error)
+      throw error
+    }
+    console.log('Identity created:', data)
     return data as Identity
   },
 
