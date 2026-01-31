@@ -3,7 +3,41 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSwipeable } from 'react-swipeable'
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Trash2, X, Sparkles, RefreshCw, Pencil, CalendarDays, Shuffle, Volume2, Loader2, Pause, Settings } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Trash2,
+  X,
+  Sparkles,
+  RefreshCw,
+  Pencil,
+  CalendarDays,
+  Shuffle,
+  Volume2,
+  Loader2,
+  Pause,
+  Settings,
+  BookOpen,
+  Heart,
+  Star,
+  Target,
+  Lightbulb,
+  Flame,
+  Trophy,
+  Compass,
+  Brain,
+  Zap,
+  Sun,
+  Moon,
+  Cloud,
+  Smile,
+  Pen,
+  Check,
+  type LucideIcon
+} from 'lucide-react'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import {
@@ -31,6 +65,7 @@ import { pepTalksService, type PepTalk } from '@/lib/services/pepTalks'
 import { todosService } from '@/lib/services/todos'
 import { visionsService } from '@/lib/services/visions'
 import { identitiesService } from '@/lib/services/identities'
+import { booksService } from '@/lib/services/books'
 import { scheduleService } from '@/lib/services/schedule'
 import { calendarRulesService } from '@/lib/services/calendarRules'
 import { habitMissNotesService } from '@/lib/services/habitMissNotes'
@@ -45,7 +80,7 @@ import { MantraCard } from '@/components/MantraCard'
 import { SortableVisionCard } from '@/components/SortableVisionCard'
 import { SortableIdentityCard } from '@/components/SortableIdentityCard'
 import { SortableTodoCard } from '@/components/SortableTodoCard'
-import { SortableJournalCard } from '@/components/SortableJournalCard'
+import { SortableJournalCard, JOURNAL_ICON_OPTIONS, JOURNAL_COLOR_OPTIONS } from '@/components/SortableJournalCard'
 import { ScheduleGrid } from '@/components/ScheduleGrid'
 import { CalendarRulesPanel } from '@/components/CalendarRulesPanel'
 import { GoogleCalendarPanel } from '@/components/GoogleCalendarPanel'
@@ -57,8 +92,29 @@ import { ScoreRing } from '@/components/ScoreRing'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { PepTalkAudioPlayer } from '@/components/PepTalkAudioPlayer'
 import { HealthyFoodsCard } from '@/components/HealthyFoodsCard'
-import type { HabitWithLog, Mantra, Todo, Vision, Identity, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal } from '@/lib/types/database'
+import type { HabitWithLog, Mantra, Todo, Vision, Identity, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal, Book } from '@/lib/types/database'
 import { calculateMissionScore } from '@/lib/services/missionScore'
+import confetti from 'canvas-confetti'
+
+// Map icon names to components for journal icon picker
+const journalIconMap: Record<string, LucideIcon> = {
+  'book-open': BookOpen,
+  'heart': Heart,
+  'star': Star,
+  'target': Target,
+  'lightbulb': Lightbulb,
+  'flame': Flame,
+  'trophy': Trophy,
+  'compass': Compass,
+  'brain': Brain,
+  'sparkles': Sparkles,
+  'zap': Zap,
+  'sun': Sun,
+  'moon': Moon,
+  'cloud': Cloud,
+  'smile': Smile,
+  'pen': Pen,
+}
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]
@@ -87,7 +143,7 @@ export default function TodayPage() {
   const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'schedule' | 'ai-journal' | null>(null)
+  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'schedule' | 'ai-journal' | 'book' | null>(null)
   const [newItemText, setNewItemText] = useState('')
   const [newItemDescription, setNewItemDescription] = useState('')
   const [selectedHabit, setSelectedHabit] = useState<HabitWithLog | null>(null)
@@ -103,10 +159,14 @@ export default function TodayPage() {
   const [selectedIdentity, setSelectedIdentity] = useState<Identity | null>(null)
   const [isEditingIdentity, setIsEditingIdentity] = useState(false)
   const [editIdentityText, setEditIdentityText] = useState('')
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null)
+  const [newBookAuthor, setNewBookAuthor] = useState('')
   const [selectedJournal, setSelectedJournal] = useState<JournalPromptWithEntry | null>(null)
   const [isEditingJournal, setIsEditingJournal] = useState(false)
   const [editJournalText, setEditJournalText] = useState('')
   const [editJournalTemplate, setEditJournalTemplate] = useState('')
+  const [editJournalIcon, setEditJournalIcon] = useState('')
+  const [editJournalColor, setEditJournalColor] = useState('#E97451')
   const [showAddHint, setShowAddHint] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
@@ -133,17 +193,59 @@ export default function TodayPage() {
   const [isPlayingVisionAudio, setIsPlayingVisionAudio] = useState(false)
   const visionAudioRef = useRef<HTMLAudioElement | null>(null)
   const [showVisionVoiceSettings, setShowVisionVoiceSettings] = useState(false)
-  const [visionVoice, setVisionVoice] = useState<'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer'>(() => {
+  const [visionVoice, setVisionVoice] = useState<'rachel' | 'bella' | 'domi' | 'elli' | 'antoni' | 'arnold' | 'adam' | 'josh' | 'sam'>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('daygo-vision-voice') as any) || 'nova'
+      const stored = localStorage.getItem('daygo-vision-voice')
+      // Migrate old OpenAI voice names to ElevenLabs
+      if (stored && ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'].includes(stored)) {
+        localStorage.setItem('daygo-vision-voice', 'rachel')
+        return 'rachel'
+      }
+      return (stored as any) || 'rachel'
     }
-    return 'nova'
+    return 'rachel'
   })
   const [visionSpeed, setVisionSpeed] = useState<number>(() => {
     if (typeof window !== 'undefined') {
-      return parseFloat(localStorage.getItem('daygo-vision-speed') || '0.95')
+      return parseFloat(localStorage.getItem('daygo-vision-speed') || '1.0')
     }
-    return 0.95
+    return 1.0
+  })
+
+  // Mantra TTS state
+  const [isGeneratingMantraAudio, setIsGeneratingMantraAudio] = useState(false)
+  const [isPlayingMantraAudio, setIsPlayingMantraAudio] = useState(false)
+  const mantraAudioRef = useRef<HTMLAudioElement | null>(null)
+  const [showMantraVoiceSettings, setShowMantraVoiceSettings] = useState(false)
+  const [mantraVoice, setMantraVoice] = useState<'rachel' | 'bella' | 'domi' | 'elli' | 'antoni' | 'arnold' | 'adam' | 'josh' | 'sam'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('daygo-mantra-voice') as any) || 'rachel'
+    }
+    return 'rachel'
+  })
+  const [mantraSpeed, setMantraSpeed] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      return parseFloat(localStorage.getItem('daygo-mantra-speed') || '1.0')
+    }
+    return 1.0
+  })
+
+  // Identity TTS state
+  const [isGeneratingIdentityAudio, setIsGeneratingIdentityAudio] = useState(false)
+  const [isPlayingIdentityAudio, setIsPlayingIdentityAudio] = useState(false)
+  const identityAudioRef = useRef<HTMLAudioElement | null>(null)
+  const [showIdentityVoiceSettings, setShowIdentityVoiceSettings] = useState(false)
+  const [identityVoice, setIdentityVoice] = useState<'rachel' | 'bella' | 'domi' | 'elli' | 'antoni' | 'arnold' | 'adam' | 'josh' | 'sam'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('daygo-identity-voice') as any) || 'adam'
+    }
+    return 'adam'
+  })
+  const [identitySpeed, setIdentitySpeed] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      return parseFloat(localStorage.getItem('daygo-identity-speed') || '1.0')
+    }
+    return 1.0
   })
 
   // Section collapse/expand state
@@ -156,6 +258,7 @@ export default function TodayPage() {
     }
     // All sections expanded by default
     return {
+      yesterdayReview: true,
       pepTalk: true,
       healthyFoods: true,
       identities: true,
@@ -166,6 +269,7 @@ export default function TodayPage() {
       todos: true,
       schedule: true,
       aiJournals: true,
+      books: true,
     }
   })
 
@@ -297,7 +401,7 @@ export default function TodayPage() {
       if (!showAddModal || addType !== null) return
 
       const key = e.key.toLowerCase()
-      const shortcuts: Record<string, 'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'schedule' | 'ai-journal'> = {
+      const shortcuts: Record<string, 'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'schedule' | 'ai-journal' | 'book'> = {
         'h': 'habit',
         'm': 'mantra',
         'j': 'journal',
@@ -307,6 +411,7 @@ export default function TodayPage() {
         'p': 'pep-talk',
         's': 'schedule',
         'a': 'ai-journal',
+        'b': 'book',
       }
 
       if (shortcuts[key]) {
@@ -351,6 +456,11 @@ export default function TodayPage() {
   }, [showAddModal, showScheduleModal, selectedHabit, selectedMantra, selectedTodo, selectedVision, selectedIdentity, selectedJournal, selectedEvent])
 
   const dateStr = formatDate(selectedDate)
+
+  // Calculate yesterday's date for score review
+  const yesterday = new Date(selectedDate)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayStr = formatDate(yesterday)
 
   const { data: habits = [], isLoading: habitsLoading } = useQuery({
     queryKey: ['habits', user?.id, dateStr],
@@ -413,6 +523,12 @@ export default function TodayPage() {
     enabled: !!user,
   })
 
+  const { data: currentlyReadingBooks = [], isLoading: booksLoading } = useQuery({
+    queryKey: ['books', user?.id, 'reading'],
+    queryFn: () => booksService.getCurrentlyReading(user!.id),
+    enabled: !!user,
+  })
+
   const { data: userProfile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: () => profilesService.getProfile(user!.id),
@@ -422,6 +538,13 @@ export default function TodayPage() {
   const { data: scheduleEvents = [], isLoading: scheduleLoading } = useQuery({
     queryKey: ['schedule', user?.id, dateStr],
     queryFn: () => scheduleService.getEvents(user!.id, dateStr),
+    enabled: !!user,
+  })
+
+  // Yesterday's schedule for score review
+  const { data: yesterdayScheduleEvents = [] } = useQuery({
+    queryKey: ['schedule', user?.id, yesterdayStr],
+    queryFn: () => scheduleService.getEvents(user!.id, yesterdayStr),
     enabled: !!user,
   })
 
@@ -489,6 +612,23 @@ export default function TodayPage() {
   })
 
   const isGcalConnected = gcalStatus?.connected || false
+
+  // Fetch Google Calendar events when connected
+  const { data: googleCalendarEvents = [] } = useQuery({
+    queryKey: ['gcal-events', user?.id, dateStr],
+    queryFn: async () => {
+      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+      if (!session?.access_token) return []
+      const response = await fetch(`/api/google-calendar/events?date=${dateStr}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!response.ok) return []
+      const { events } = await response.json()
+      return events || []
+    },
+    enabled: !!user && isGcalConnected,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  })
 
   const { data: todaysPepTalk } = useQuery({
     queryKey: ['pep-talk', user?.id, dateStr],
@@ -617,11 +757,50 @@ export default function TodayPage() {
     }
   }
 
-  // Calculate mission score (based on schedule completion only)
-  const missionScore = calculateMissionScore(habits, todos, scheduleEvents)
-  const score = scheduleEvents.length > 0
-    ? Math.round((scheduleEvents.filter(e => e.completed).length / scheduleEvents.length) * 100)
+  // Calculate mission score (based on yesterday's schedule completion for daily review)
+  const missionScore = calculateMissionScore(habits, todos, yesterdayScheduleEvents)
+  const score = yesterdayScheduleEvents.length > 0
+    ? Math.round((yesterdayScheduleEvents.filter(e => e.completed).length / yesterdayScheduleEvents.length) * 100)
     : 0
+
+  // Track if we've celebrated 100% completion for this date
+  const celebratedRef = useRef<string | null>(null)
+
+  // Celebration confetti when hitting 100%!
+  useEffect(() => {
+    if (score === 100 && yesterdayScheduleEvents.length > 0 && celebratedRef.current !== yesterdayStr) {
+      celebratedRef.current = yesterdayStr
+
+      // Fire confetti from both sides for an exciting celebration!
+      const duration = 3000
+      const end = Date.now() + duration
+
+      const frame = () => {
+        // Left side
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.6 },
+          colors: ['#10b981', '#34d399', '#6ee7b7', '#fbbf24', '#f59e0b'],
+        })
+        // Right side
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.6 },
+          colors: ['#10b981', '#34d399', '#6ee7b7', '#fbbf24', '#f59e0b'],
+        })
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame)
+        }
+      }
+      frame()
+    }
+  }, [score, yesterdayScheduleEvents.length, yesterdayStr])
+
   const saveEntryMutation = useMutation({
     mutationFn: ({ promptId, entry }: { promptId: string; entry: string }) =>
       journalService.saveEntry(user!.id, promptId, entry, dateStr),
@@ -736,6 +915,35 @@ export default function TodayPage() {
     mutationFn: (orderedIds: string[]) => identitiesService.reorderIdentities(orderedIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['identities'] })
+    },
+  })
+
+  // Book mutations
+  const createBookMutation = useMutation({
+    mutationFn: ({ title, author }: { title: string; author?: string }) =>
+      booksService.createBook(user!.id, title, author),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      setShowAddModal(false)
+      setAddType(null)
+      setNewItemText('')
+      setNewBookAuthor('')
+    },
+  })
+
+  const markBookCompletedMutation = useMutation({
+    mutationFn: (bookId: string) => booksService.markAsCompleted(bookId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      setSelectedBook(null)
+    },
+  })
+
+  const deleteBookMutation = useMutation({
+    mutationFn: (bookId: string) => booksService.deleteBook(bookId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      setSelectedBook(null)
     },
   })
 
@@ -860,14 +1068,16 @@ export default function TodayPage() {
   })
 
   const updateJournalPromptMutation = useMutation({
-    mutationFn: ({ id, prompt, templateText }: { id: string; prompt: string; templateText?: string }) =>
-      journalService.updatePrompt(id, prompt, templateText),
+    mutationFn: ({ id, prompt, templateText, icon, color }: { id: string; prompt: string; templateText?: string; icon?: string; color?: string }) =>
+      journalService.updatePrompt(id, prompt, templateText, icon, color),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journal-prompts'] })
       setSelectedJournal(null)
       setIsEditingJournal(false)
       setEditJournalText('')
       setEditJournalTemplate('')
+      setEditJournalIcon('')
+      setEditJournalColor('#E97451')
     },
   })
 
@@ -973,9 +1183,42 @@ export default function TodayPage() {
     },
   })
 
+  // Toggle completion for yesterday's events (for daily review)
+  const toggleYesterdayEventMutation = useMutation({
+    mutationFn: ({ eventId, completed }: { eventId: string; completed: boolean }) =>
+      scheduleService.toggleEventCompletion(eventId, completed),
+    onMutate: async ({ eventId, completed }) => {
+      await queryClient.cancelQueries({ queryKey: ['schedule', user?.id, yesterdayStr] })
+      const previousEvents = queryClient.getQueryData<ScheduleEvent[]>(['schedule', user?.id, yesterdayStr])
+      queryClient.setQueryData<ScheduleEvent[]>(
+        ['schedule', user?.id, yesterdayStr],
+        (old) => old?.map((event) =>
+          event.id === eventId ? { ...event, completed } : event
+        ) ?? []
+      )
+      return { previousEvents }
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousEvents) {
+        queryClient.setQueryData(['schedule', user?.id, yesterdayStr], context.previousEvents)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, yesterdayStr] })
+    },
+  })
+
   const resizeEventMutation = useMutation({
     mutationFn: ({ eventId, endTime }: { eventId: string; endTime: string }) =>
       scheduleService.updateEvent(eventId, { end_time: endTime }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
+    },
+  })
+
+  const moveEventMutation = useMutation({
+    mutationFn: ({ eventId, startTime, endTime }: { eventId: string; startTime: string; endTime: string }) =>
+      scheduleService.updateEvent(eventId, { start_time: startTime, end_time: endTime }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule', user?.id, dateStr] })
     },
@@ -1131,7 +1374,7 @@ export default function TodayPage() {
           todos: todos.map(t => ({ text: t.text, completed: t.completed })),
           goals: goals.map(g => ({ title: g.title, description: g.description })),
           visions: visions.map(v => ({ text: v.text })),
-          mantras: mantras.map(m => ({ text: m.text })),
+          mantras: dailyMantras.map(m => ({ text: m.text })),
           date: dateStr,
           dailyNote: localDailyNote,
           preferences: {
@@ -1248,13 +1491,13 @@ export default function TodayPage() {
     },
   })
 
-  // Drag and drop sensors
+  // Drag and drop sensors - optimized for quick shuffle feel
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 3 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 5 },
+      activationConstraint: { delay: 100, tolerance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -1305,7 +1548,7 @@ export default function TodayPage() {
     }
   }
 
-  const handleVisionVoiceChange = (voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer') => {
+  const handleVisionVoiceChange = (voice: typeof visionVoice) => {
     setVisionVoice(voice)
     localStorage.setItem('daygo-vision-voice', voice)
     // Clear cached audio so it regenerates with new voice
@@ -1350,12 +1593,13 @@ export default function TodayPage() {
           visions: visions.map(v => ({ text: v.text })),
           voice: visionVoice,
           speed: visionSpeed,
-          name: userProfile?.display_name || undefined,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to generate audio')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('TTS API error:', errorData)
+        throw new Error(errorData.error || 'Failed to generate audio')
       }
 
       const audioBlob = await response.blob()
@@ -1379,6 +1623,160 @@ export default function TodayPage() {
       console.error('Error generating vision audio:', error)
     } finally {
       setIsGeneratingVisionAudio(false)
+    }
+  }
+
+  const handleMantraVoiceChange = (voice: typeof mantraVoice) => {
+    setMantraVoice(voice)
+    localStorage.setItem('daygo-mantra-voice', voice)
+    // Clear cached audio so it regenerates with new voice
+    if (mantraAudioRef.current) {
+      URL.revokeObjectURL(mantraAudioRef.current.src)
+      mantraAudioRef.current = null
+    }
+  }
+
+  const handleMantraSpeedChange = (speed: number) => {
+    setMantraSpeed(speed)
+    localStorage.setItem('daygo-mantra-speed', speed.toString())
+    // Clear cached audio so it regenerates with new speed
+    if (mantraAudioRef.current) {
+      URL.revokeObjectURL(mantraAudioRef.current.src)
+      mantraAudioRef.current = null
+    }
+  }
+
+  const handlePlayMantraAffirmations = async () => {
+    if (dailyMantras.length === 0) return
+
+    // If already playing, pause
+    if (isPlayingMantraAudio && mantraAudioRef.current) {
+      mantraAudioRef.current.pause()
+      setIsPlayingMantraAudio(false)
+      return
+    }
+
+    // If we have audio loaded and it's paused, resume
+    if (mantraAudioRef.current && mantraAudioRef.current.src && !isPlayingMantraAudio) {
+      mantraAudioRef.current.play()
+      setIsPlayingMantraAudio(true)
+      return
+    }
+
+    // Generate new audio
+    setIsGeneratingMantraAudio(true)
+    try {
+      const response = await fetch('/api/mantras/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mantras: dailyMantras.map(m => ({ text: m.text })),
+          voice: mantraVoice,
+          speed: mantraSpeed,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Mantra TTS API error:', errorData)
+        throw new Error(errorData.error || 'Failed to generate audio')
+      }
+
+      const audioBlob = await response.blob()
+      const audioUrl = URL.createObjectURL(audioBlob)
+
+      // Clean up previous audio
+      if (mantraAudioRef.current) {
+        URL.revokeObjectURL(mantraAudioRef.current.src)
+      }
+
+      const audio = new Audio(audioUrl)
+      mantraAudioRef.current = audio
+
+      audio.onended = () => {
+        setIsPlayingMantraAudio(false)
+      }
+
+      await audio.play()
+      setIsPlayingMantraAudio(true)
+    } catch (error) {
+      console.error('Error generating mantra audio:', error)
+    } finally {
+      setIsGeneratingMantraAudio(false)
+    }
+  }
+
+  const handleIdentityVoiceChange = (voice: typeof identityVoice) => {
+    setIdentityVoice(voice)
+    localStorage.setItem('daygo-identity-voice', voice)
+    if (identityAudioRef.current) {
+      URL.revokeObjectURL(identityAudioRef.current.src)
+      identityAudioRef.current = null
+    }
+  }
+
+  const handleIdentitySpeedChange = (speed: number) => {
+    setIdentitySpeed(speed)
+    localStorage.setItem('daygo-identity-speed', speed.toString())
+    if (identityAudioRef.current) {
+      URL.revokeObjectURL(identityAudioRef.current.src)
+      identityAudioRef.current = null
+    }
+  }
+
+  const handlePlayIdentityAffirmations = async () => {
+    if (identities.length === 0) return
+
+    if (isPlayingIdentityAudio && identityAudioRef.current) {
+      identityAudioRef.current.pause()
+      setIsPlayingIdentityAudio(false)
+      return
+    }
+
+    if (identityAudioRef.current && identityAudioRef.current.src && !isPlayingIdentityAudio) {
+      identityAudioRef.current.play()
+      setIsPlayingIdentityAudio(true)
+      return
+    }
+
+    setIsGeneratingIdentityAudio(true)
+    try {
+      const response = await fetch('/api/identities/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identities: identities.map(i => ({ text: i.text })),
+          voice: identityVoice,
+          speed: identitySpeed,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Identity TTS API error:', errorData)
+        throw new Error(errorData.error || 'Failed to generate audio')
+      }
+
+      const audioBlob = await response.blob()
+      const audioUrl = URL.createObjectURL(audioBlob)
+
+      if (identityAudioRef.current) {
+        URL.revokeObjectURL(identityAudioRef.current.src)
+      }
+
+      const audio = new Audio(audioUrl)
+      identityAudioRef.current = audio
+
+      audio.onended = () => {
+        setIsPlayingIdentityAudio(false)
+      }
+
+      await audio.play()
+      setIsPlayingIdentityAudio(true)
+    } catch (error) {
+      console.error('Error generating identity audio:', error)
+    } finally {
+      setIsGeneratingIdentityAudio(false)
     }
   }
 
@@ -1466,6 +1864,8 @@ export default function TodayPage() {
       createVisionMutation.mutate(newItemText)
     } else if (addType === 'identity') {
       createIdentityMutation.mutate(newItemText)
+    } else if (addType === 'book') {
+      createBookMutation.mutate({ title: newItemText, author: newBookAuthor || undefined })
     } else {
       createPromptMutation.mutate(newItemText)
     }
@@ -1519,11 +1919,11 @@ export default function TodayPage() {
       {/* Score Ring */}
       <div className="flex flex-col items-center mb-8">
         <ScoreRing score={score} />
-        {/* Schedule completion breakdown */}
-        {scheduleEvents.length > 0 && (
+        {/* Yesterday's schedule completion breakdown */}
+        {yesterdayScheduleEvents.length > 0 && (
           <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
-            <span className="text-schedule font-medium">{scheduleEvents.filter(e => e.completed).length}</span>
-            /{scheduleEvents.length} schedule items completed
+            <span className="text-schedule font-medium">{yesterdayScheduleEvents.filter(e => e.completed).length}</span>
+            /{yesterdayScheduleEvents.length} yesterday&apos;s items completed
           </p>
         )}
       </div>
@@ -1544,6 +1944,73 @@ export default function TodayPage() {
             ''
           }`}
         >
+          {/* Yesterday's Review - First thing to see each day */}
+          {yesterdayScheduleEvents.length > 0 && (
+            <section>
+              <button
+                onClick={() => toggleSection('yesterdayReview')}
+                className="w-full flex items-center justify-between mb-4 group"
+              >
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  Yesterday&apos;s Review
+                </h2>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-400 dark:text-slate-500">
+                    {yesterdayScheduleEvents.filter(e => e.completed).length}/{yesterdayScheduleEvents.length} done
+                  </span>
+                  {expandedSections.yesterdayReview ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  )}
+                </div>
+              </button>
+              {expandedSections.yesterdayReview && (
+                <div className="space-y-2">
+                  {yesterdayScheduleEvents
+                    .sort((a, b) => a.start_time.localeCompare(b.start_time))
+                    .map((event) => (
+                      <div
+                        key={event.id}
+                        className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                          event.completed
+                            ? 'bg-green-50 dark:bg-green-900/20'
+                            : 'bg-bevel-card dark:bg-slate-800 shadow-bevel-sm'
+                        }`}
+                      >
+                        <button
+                          onClick={() => toggleYesterdayEventMutation.mutate({ eventId: event.id, completed: !event.completed })}
+                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                            event.completed
+                              ? 'bg-green-500 border-green-500 text-white'
+                              : 'border-gray-300 dark:border-slate-600 hover:border-green-400'
+                          }`}
+                        >
+                          {event.completed && (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium truncate ${
+                            event.completed
+                              ? 'text-green-700 dark:text-green-400 line-through'
+                              : 'text-bevel-text dark:text-white'
+                          }`}>
+                            {event.title}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400">
+                            {event.start_time} - {event.end_time}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </section>
+          )}
+
           {/* Today's Pep Talk */}
           {todaysPepTalk && (
             <section>
@@ -1593,19 +2060,99 @@ export default function TodayPage() {
 
           {/* Identities */}
           <section>
-            <button
-              onClick={() => toggleSection('identities')}
-              className="w-full flex items-center justify-between mb-4 group"
-            >
-              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                Identity {identities.length > 0 && `(${identities.length})`}
-              </h2>
-              {expandedSections.identities ? (
-                <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => toggleSection('identities')}
+                className="flex items-center gap-2 group"
+              >
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  Identity {identities.length > 0 && `(${identities.length})`}
+                </h2>
+                {expandedSections.identities ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </button>
+              {identities.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handlePlayIdentityAffirmations}
+                    disabled={isGeneratingIdentityAudio}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-pink-500 hover:bg-pink-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Play identities"
+                  >
+                    {isGeneratingIdentityAudio ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Generating...</span>
+                      </>
+                    ) : isPlayingIdentityAudio ? (
+                      <>
+                        <Pause className="w-4 h-4" />
+                        <span>Pause</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-4 h-4" />
+                        <span>Play</span>
+                      </>
+                    )}
+                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowIdentityVoiceSettings(!showIdentityVoiceSettings)}
+                      className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                      title="Voice settings"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                    {showIdentityVoiceSettings && (
+                      <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-3 z-50">
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1.5">Voice</label>
+                            <select
+                              value={identityVoice}
+                              onChange={(e) => handleIdentityVoiceChange(e.target.value as any)}
+                              className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500/50"
+                            >
+                              <option value="adam">Adam (deep male)</option>
+                              <option value="rachel">Rachel (warm female)</option>
+                              <option value="bella">Bella (soft female)</option>
+                              <option value="domi">Domi (strong female)</option>
+                              <option value="elli">Elli (young female)</option>
+                              <option value="antoni">Antoni (warm male)</option>
+                              <option value="arnold">Arnold (deep male)</option>
+                              <option value="josh">Josh (deep male)</option>
+                              <option value="sam">Sam (raspy male)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1.5">
+                              Speed: {identitySpeed.toFixed(2)}x
+                            </label>
+                            <input
+                              type="range"
+                              min="0.5"
+                              max="1.5"
+                              step="0.05"
+                              value={identitySpeed}
+                              onChange={(e) => handleIdentitySpeedChange(parseFloat(e.target.value))}
+                              className="w-full h-1.5 bg-gray-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-pink-500"
+                            />
+                            <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                              <span>Slow</span>
+                              <span>Fast</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
             {expandedSections.identities && (
               <>
                 {identities.length === 0 ? (
@@ -1704,12 +2251,15 @@ export default function TodayPage() {
                               onChange={(e) => handleVisionVoiceChange(e.target.value as any)}
                               className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-bevel-blue/50"
                             >
-                              <option value="nova">Nova (warm female)</option>
-                              <option value="shimmer">Shimmer (soft female)</option>
-                              <option value="alloy">Alloy (neutral)</option>
-                              <option value="echo">Echo (male)</option>
-                              <option value="fable">Fable (British)</option>
-                              <option value="onyx">Onyx (deep male)</option>
+                              <option value="rachel">Rachel (warm female)</option>
+                              <option value="bella">Bella (soft female)</option>
+                              <option value="domi">Domi (strong female)</option>
+                              <option value="elli">Elli (young female)</option>
+                              <option value="antoni">Antoni (warm male)</option>
+                              <option value="arnold">Arnold (deep male)</option>
+                              <option value="adam">Adam (deep male)</option>
+                              <option value="josh">Josh (deep male)</option>
+                              <option value="sam">Sam (raspy male)</option>
                             </select>
                           </div>
                           <div>
@@ -1764,19 +2314,99 @@ export default function TodayPage() {
           {/* Mantras */}
           {mantras.length > 0 && (
             <section>
-              <button
-                onClick={() => toggleSection('mantras')}
-                className="w-full flex items-center justify-between mb-4 group"
-              >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  Daily Mantras {dailyMantras.length > 0 && `(${dailyMantras.length})`}
-                </h2>
-                {expandedSections.mantras ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => toggleSection('mantras')}
+                  className="flex items-center gap-2 group"
+                >
+                  <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                    Daily Mantras {dailyMantras.length > 0 && `(${dailyMantras.length})`}
+                  </h2>
+                  {expandedSections.mantras ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  )}
+                </button>
+                {dailyMantras.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={handlePlayMantraAffirmations}
+                      disabled={isGeneratingMantraAudio}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-mantra hover:bg-mantra/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Play mantras"
+                    >
+                      {isGeneratingMantraAudio ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Generating...</span>
+                        </>
+                      ) : isPlayingMantraAudio ? (
+                        <>
+                          <Pause className="w-4 h-4" />
+                          <span>Pause</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-4 h-4" />
+                          <span>Play</span>
+                        </>
+                      )}
+                    </button>
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowMantraVoiceSettings(!showMantraVoiceSettings)}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        title="Voice settings"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+                      {showMantraVoiceSettings && (
+                        <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-3 z-50">
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1.5">Voice</label>
+                              <select
+                                value={mantraVoice}
+                                onChange={(e) => handleMantraVoiceChange(e.target.value as any)}
+                                className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-mantra/50"
+                              >
+                                <option value="rachel">Rachel (warm female)</option>
+                                <option value="bella">Bella (soft female)</option>
+                                <option value="domi">Domi (strong female)</option>
+                                <option value="elli">Elli (young female)</option>
+                                <option value="antoni">Antoni (warm male)</option>
+                                <option value="arnold">Arnold (deep male)</option>
+                                <option value="adam">Adam (deep male)</option>
+                                <option value="josh">Josh (deep male)</option>
+                                <option value="sam">Sam (raspy male)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1.5">
+                                Speed: {mantraSpeed.toFixed(2)}x
+                              </label>
+                              <input
+                                type="range"
+                                min="0.5"
+                                max="1.5"
+                                step="0.05"
+                                value={mantraSpeed}
+                                onChange={(e) => handleMantraSpeedChange(parseFloat(e.target.value))}
+                                className="w-full h-1.5 bg-gray-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-mantra"
+                              />
+                              <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                                <span>Slow</span>
+                                <span>Fast</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
-              </button>
+              </div>
               {expandedSections.mantras && (
                 <>
                   {dailyMantras.length === 0 ? (
@@ -1891,6 +2521,8 @@ export default function TodayPage() {
                             setSelectedJournal(p)
                             setEditJournalText(p.prompt)
                             setEditJournalTemplate(p.template_text || '')
+                            setEditJournalIcon(p.icon || 'book-open')
+                            setEditJournalColor(p.color || '#E97451')
                           }}
                         />
                       ))}
@@ -2009,6 +2641,67 @@ export default function TodayPage() {
             )}
           </section>
 
+          {/* Books */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => toggleSection('books')}
+                className="flex items-center gap-2 group"
+              >
+                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  Currently Reading {currentlyReadingBooks.length > 0 && `(${currentlyReadingBooks.length})`}
+                </h2>
+                {expandedSections.books ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </button>
+            </div>
+            {expandedSections.books && (
+              <>
+                {currentlyReadingBooks.length === 0 ? (
+                  <button
+                    onClick={() => {
+                      setAddType('book')
+                      setShowAddModal(true)
+                    }}
+                    className="w-full py-4 px-4 bg-amber-500/10 hover:bg-amber-500/20 border border-dashed border-amber-500/30 rounded-xl text-amber-600 dark:text-amber-400 font-medium flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Add a Book
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    {currentlyReadingBooks.map((book) => (
+                      <div
+                        key={book.id}
+                        onClick={() => setSelectedBook(book)}
+                        className="bg-bevel-card dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-100 dark:border-slate-700/50 cursor-pointer hover:shadow-bevel transition-all"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <BookOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-bevel-text dark:text-white">
+                              {book.title}
+                            </p>
+                            {book.author && (
+                              <p className="text-sm text-gray-500 dark:text-slate-400">
+                                by {book.author}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
           {/* To-Dos */}
           {todos.length > 0 && (
             <section>
@@ -2085,6 +2778,7 @@ export default function TodayPage() {
               onExportEvents={() => exportGcalEventsMutation.mutate()}
               isImporting={importGcalEventsMutation.isPending}
               isExporting={exportGcalEventsMutation.isPending}
+              eventCount={googleCalendarEvents.filter((e: { is_all_day?: boolean }) => !e.is_all_day).length}
             />
             <SchedulePreferences
               wakeTime={userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'}
@@ -2121,6 +2815,7 @@ export default function TodayPage() {
             />
             <ScheduleGrid
               events={scheduleEvents}
+              googleCalendarEvents={googleCalendarEvents}
               selectedDate={selectedDate}
               wakeTime={userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'}
               bedTime={userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'}
@@ -2135,6 +2830,9 @@ export default function TodayPage() {
               }
               onResizeEvent={(eventId, newEndTime) =>
                 resizeEventMutation.mutate({ eventId, endTime: newEndTime })
+              }
+              onMoveEvent={(eventId, newStartTime, newEndTime) =>
+                moveEventMutation.mutate({ eventId, startTime: newStartTime, endTime: newEndTime })
               }
             />
               </>
@@ -2242,6 +2940,7 @@ export default function TodayPage() {
                     { type: 'todo' as const, label: 'To-Do', key: 'T', color: 'bg-blue-500 hover:bg-blue-600' },
                     { type: 'vision' as const, label: 'Vision', key: 'V', color: 'bg-blue-600 hover:bg-blue-700' },
                     { type: 'identity' as const, label: 'Identity', key: 'I', color: 'bg-pink-500 hover:bg-pink-600' },
+                    { type: 'book' as const, label: 'Book', key: 'B', color: 'bg-amber-500 hover:bg-amber-600' },
                     { type: 'schedule' as const, label: 'Schedule', key: 'S', color: 'bg-schedule hover:bg-schedule/90' },
                     { type: 'pep-talk' as const, label: 'Pep Talk', key: 'P', color: 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' },
                     { type: 'ai-journal' as const, label: 'AI Journal', key: 'A', color: 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600' },
@@ -2506,6 +3205,34 @@ export default function TodayPage() {
                       placeholder="someone who prioritizes my health..."
                       rows={3}
                       autoFocus
+                    />
+                  </div>
+                ) : addType === 'book' ? (
+                  <div className="space-y-3 mb-3">
+                    <input
+                      type="text"
+                      value={newItemText}
+                      onChange={(e) => setNewItemText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          e.currentTarget.blur()
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Book title"
+                      autoFocus
+                    />
+                    <input
+                      type="text"
+                      value={newBookAuthor}
+                      onChange={(e) => setNewBookAuthor(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          e.currentTarget.blur()
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Author (optional)"
                     />
                   </div>
                 ) : addType === 'mantra' ? (
@@ -3092,6 +3819,71 @@ export default function TodayPage() {
         </div>
       )}
 
+      {/* Book Detail Modal */}
+      {selectedBook && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 pt-12 z-50 overflow-y-auto"
+          onClick={() => setSelectedBook(null)}
+        >
+          <div
+            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md shadow-2xl mb-12"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Book</h2>
+              <button
+                onClick={() => setSelectedBook(null)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-lg font-medium text-gray-900 dark:text-white">
+                    {selectedBook.title}
+                  </p>
+                  {selectedBook.author && (
+                    <p className="text-sm text-gray-500 dark:text-slate-400">
+                      by {selectedBook.author}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {selectedBook.started_at && (
+                <p className="text-sm text-gray-500 dark:text-slate-400">
+                  Started reading on {new Date(selectedBook.started_at).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => markBookCompletedMutation.mutate(selectedBook.id)}
+                disabled={markBookCompletedMutation.isPending}
+                className="w-full py-3 bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 disabled:opacity-50 text-green-600 dark:text-green-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Check className="w-5 h-5" />
+                {markBookCompletedMutation.isPending ? 'Marking...' : 'Mark as Completed'}
+              </button>
+              <button
+                onClick={() => deleteBookMutation.mutate(selectedBook.id)}
+                disabled={deleteBookMutation.isPending}
+                className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-5 h-5" />
+                {deleteBookMutation.isPending ? 'Removing...' : 'Remove Book'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Journal Prompt Detail Modal */}
       {selectedJournal && (
         <div
@@ -3139,6 +3931,52 @@ export default function TodayPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    Icon
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {JOURNAL_ICON_OPTIONS.map((iconName) => {
+                      const IconComponent = journalIconMap[iconName]
+                      return (
+                        <button
+                          key={iconName}
+                          type="button"
+                          onClick={() => setEditJournalIcon(iconName)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            editJournalIcon === iconName
+                              ? 'text-white'
+                              : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+                          }`}
+                          style={editJournalIcon === iconName ? { backgroundColor: editJournalColor } : undefined}
+                        >
+                          <IconComponent className="w-5 h-5" />
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    Color
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {JOURNAL_COLOR_OPTIONS.map((colorOption) => (
+                      <button
+                        key={colorOption.name}
+                        type="button"
+                        onClick={() => setEditJournalColor(colorOption.value)}
+                        className={`w-8 h-8 rounded-lg transition-all ${
+                          editJournalColor === colorOption.value
+                            ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-slate-400 dark:ring-offset-slate-800'
+                            : ''
+                        }`}
+                        style={{ backgroundColor: colorOption.value }}
+                        title={colorOption.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Template (optional)
                   </label>
                   <textarea
@@ -3158,6 +3996,8 @@ export default function TodayPage() {
                       setIsEditingJournal(false)
                       setEditJournalText(selectedJournal.prompt)
                       setEditJournalTemplate(selectedJournal.template_text || '')
+                      setEditJournalIcon(selectedJournal.icon || 'book-open')
+                      setEditJournalColor(selectedJournal.color || '#E97451')
                     }}
                     className="flex-1 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
                   >
@@ -3165,16 +4005,19 @@ export default function TodayPage() {
                   </button>
                   <button
                     onClick={() => {
-                      if (editJournalText.trim() && (editJournalText !== selectedJournal.prompt || editJournalTemplate !== (selectedJournal.template_text || ''))) {
+                      if (editJournalText.trim() && (editJournalText !== selectedJournal.prompt || editJournalTemplate !== (selectedJournal.template_text || '') || editJournalIcon !== (selectedJournal.icon || 'book-open') || editJournalColor !== (selectedJournal.color || '#E97451'))) {
                         updateJournalPromptMutation.mutate({
                           id: selectedJournal.id,
                           prompt: editJournalText,
-                          templateText: editJournalTemplate
+                          templateText: editJournalTemplate,
+                          icon: editJournalIcon,
+                          color: editJournalColor
                         })
                       }
                     }}
-                    disabled={!editJournalText.trim() || (editJournalText === selectedJournal.prompt && editJournalTemplate === (selectedJournal.template_text || '')) || updateJournalPromptMutation.isPending}
-                    className="flex-1 py-2 bg-journal hover:bg-journal/90 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                    disabled={!editJournalText.trim() || (editJournalText === selectedJournal.prompt && editJournalTemplate === (selectedJournal.template_text || '') && editJournalIcon === (selectedJournal.icon || 'book-open') && editJournalColor === (selectedJournal.color || '#E97451')) || updateJournalPromptMutation.isPending}
+                    className="flex-1 py-2 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                    style={{ backgroundColor: editJournalColor }}
                   >
                     {updateJournalPromptMutation.isPending ? 'Saving...' : 'Save'}
                   </button>
