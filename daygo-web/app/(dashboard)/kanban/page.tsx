@@ -81,11 +81,8 @@ export default function KanbanPage() {
       return { previousColumns }
     },
     onError: (_err, _variables, context) => {
-      // Rollback on error
+      // Rollback on error and refetch
       queryClient.setQueryData(['kanban-columns', user?.id], context?.previousColumns)
-    },
-    onSettled: () => {
-      // Refetch after mutation to ensure sync
       queryClient.invalidateQueries({ queryKey: ['kanban-columns', user?.id] })
     },
   })
@@ -95,32 +92,73 @@ export default function KanbanPage() {
     mutationFn: async (cardIds: string[]) => {
       return kanbanService.reorderCards(cardIds)
     },
-    onSettled: () => {
+    onError: () => {
+      // Only refetch on error to restore correct order
       queryClient.invalidateQueries({ queryKey: ['kanban-columns', user?.id] })
     },
   })
 
-  // Mutation to reorder columns
+  // Mutation to reorder columns with optimistic update
   const reorderColumnsMutation = useMutation({
     mutationFn: async (columnIds: string[]) => {
       return kanbanService.reorderColumns(columnIds)
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kanban-columns'] })
+    onMutate: async (columnIds) => {
+      await queryClient.cancelQueries({ queryKey: ['kanban-columns', user?.id] })
+      const previousColumns = queryClient.getQueryData(['kanban-columns', user?.id])
+
+      // Optimistically reorder columns
+      queryClient.setQueryData(['kanban-columns', user?.id], (old: KanbanColumnWithCards[] | undefined) => {
+        if (!old) return old
+        // Reorder based on the new columnIds order
+        return columnIds.map(id => old.find(col => col.id === id)).filter(Boolean) as KanbanColumnWithCards[]
+      })
+
+      return { previousColumns }
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error and refetch
+      queryClient.setQueryData(['kanban-columns', user?.id], context?.previousColumns)
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns', user?.id] })
     },
   })
 
-  // Mutation to update card priority
+  // Mutation to update card priority with optimistic update
   const updatePriorityMutation = useMutation({
     mutationFn: async ({ cardId, priority }: { cardId: string; priority: number | null }) => {
       return kanbanService.updateCard(cardId, { priority })
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kanban-columns'] })
+    onMutate: async ({ cardId, priority }) => {
+      await queryClient.cancelQueries({ queryKey: ['kanban-columns', user?.id] })
+      const previousColumns = queryClient.getQueryData(['kanban-columns', user?.id])
+
+      // Optimistically update priority
+      queryClient.setQueryData(['kanban-columns', user?.id], (old: KanbanColumnWithCards[] | undefined) => {
+        if (!old) return old
+        return old.map((col) => ({
+          ...col,
+          todoCards: col.todoCards.map((card) =>
+            card.id === cardId ? { ...card, priority } : card
+          ),
+          inProgressCards: col.inProgressCards.map((card) =>
+            card.id === cardId ? { ...card, priority } : card
+          ),
+          doneCards: col.doneCards.map((card) =>
+            card.id === cardId ? { ...card, priority } : card
+          ),
+        }))
+      })
+
+      return { previousColumns }
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error and refetch
+      queryClient.setQueryData(['kanban-columns', user?.id], context?.previousColumns)
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns', user?.id] })
     },
   })
 
-  // Mutation for timer start/stop
+  // Mutation for timer start/stop with optimistic update
   const timerMutation = useMutation({
     mutationFn: async ({ cardId, isActive, timerId }: { cardId: string; isActive: boolean; timerId?: string }) => {
       if (isActive && timerId) {
@@ -131,8 +169,43 @@ export default function KanbanPage() {
         return kanbanService.startTimer(user!.id, cardId)
       }
     },
+    onMutate: async ({ cardId, isActive }) => {
+      await queryClient.cancelQueries({ queryKey: ['kanban-columns', user?.id] })
+      const previousColumns = queryClient.getQueryData(['kanban-columns', user?.id])
+
+      // Optimistically toggle timer state
+      queryClient.setQueryData(['kanban-columns', user?.id], (old: KanbanColumnWithCards[] | undefined) => {
+        if (!old) return old
+        return old.map((col) => ({
+          ...col,
+          todoCards: col.todoCards.map((card) =>
+            card.id === cardId
+              ? { ...card, activeTimer: isActive ? null : { id: 'temp', start_time: new Date().toISOString() } }
+              : card
+          ),
+          inProgressCards: col.inProgressCards.map((card) =>
+            card.id === cardId
+              ? { ...card, activeTimer: isActive ? null : { id: 'temp', start_time: new Date().toISOString() } }
+              : card
+          ),
+          doneCards: col.doneCards.map((card) =>
+            card.id === cardId
+              ? { ...card, activeTimer: isActive ? null : { id: 'temp', start_time: new Date().toISOString() } }
+              : card
+          ),
+        }))
+      })
+
+      return { previousColumns }
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error and refetch
+      queryClient.setQueryData(['kanban-columns', user?.id], context?.previousColumns)
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns', user?.id] })
+    },
+    // On success, fetch fresh data to get actual timer ID
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kanban-columns'] })
+      queryClient.invalidateQueries({ queryKey: ['kanban-columns', user?.id] })
     },
   })
 
@@ -163,22 +236,28 @@ export default function KanbanPage() {
   }
 
   const handlePriorityChange = (cardId: string, priority: number | null) => {
-    // 0 means "auto-assign next priority"
-    if (priority === 0) {
-      const allCards = columns.flatMap(col => [...col.todoCards, ...col.inProgressCards, ...col.doneCards])
-      const existingPriorities = allCards
-        .map(c => c.priority)
-        .filter((p): p is number => p !== null)
-
-      // Find the next available priority (max + 1, or 1 if none exist)
-      const nextPriority = existingPriorities.length > 0
-        ? Math.max(...existingPriorities) + 1
-        : 1
-
-      updatePriorityMutation.mutate({ cardId, priority: nextPriority })
-    } else {
-      updatePriorityMutation.mutate({ cardId, priority })
+    // Priority is limited to 1, 2, 3 (or null to clear)
+    // The card picker component handles showing which are available
+    if (priority !== null && (priority < 1 || priority > 3)) {
+      return // Ignore invalid priorities
     }
+
+    // Find which column the card belongs to
+    const cardColumn = columns.find(col =>
+      [...col.todoCards, ...col.inProgressCards, ...col.doneCards].some(c => c.id === cardId)
+    )
+
+    // If setting a priority, check if it's already in use by another card in the same column
+    if (priority !== null && cardColumn) {
+      const columnCards = [...cardColumn.todoCards, ...cardColumn.inProgressCards, ...cardColumn.doneCards]
+      const cardWithPriority = columnCards.find(c => c.priority === priority && c.id !== cardId)
+      if (cardWithPriority) {
+        // Clear the priority from the other card first
+        updatePriorityMutation.mutate({ cardId: cardWithPriority.id, priority: null })
+      }
+    }
+
+    updatePriorityMutation.mutate({ cardId, priority })
   }
 
   const handleTimerToggle = (cardId: string, isActive: boolean) => {
@@ -205,7 +284,7 @@ export default function KanbanPage() {
     return (
       <div className="max-w-lg mx-auto px-4 py-6 min-h-screen bg-bevel-bg dark:bg-slate-900">
         <h1 className="text-2xl font-bold text-bevel-text dark:text-white mb-6">
-          Kanban Board
+          Contribution Board
         </h1>
         <div className="text-center py-16 px-6">
           <div className="mb-4">
@@ -238,7 +317,7 @@ export default function KanbanPage() {
     <div className="h-[calc(100vh-5rem)] flex flex-col">
       <div className="px-4 py-4 border-b border-gray-200 dark:border-slate-800">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white pl-12 mb-3">
-          Kanban
+          Contribution
         </h1>
 
         {/* Tab Buttons */}

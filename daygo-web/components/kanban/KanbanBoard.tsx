@@ -54,6 +54,13 @@ export function KanbanBoard({
   const [activeCard, setActiveCard] = useState<KanbanCardWithDetails | null>(null)
   const [activeColumn, setActiveColumn] = useState<KanbanColumnWithCards | null>(null)
 
+  // Compute which priorities (1, 2, 3) are already in use per column
+  const getUsedPrioritiesForColumn = (column: KanbanColumnWithCards) => {
+    return [...column.todoCards, ...column.inProgressCards, ...column.doneCards]
+      .map(card => card.priority)
+      .filter((p): p is number => p !== null && p >= 1 && p <= 3)
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(TouchSensor),
@@ -178,6 +185,7 @@ export function KanbanBoard({
                 onPriorityChange={onPriorityChange}
                 onTimerToggle={onTimerToggle}
                 onComplete={onComplete}
+                usedPriorities={getUsedPrioritiesForColumn(column)}
               />
             ))}
 
@@ -203,11 +211,19 @@ export function KanbanBoard({
               onPriorityChange={onPriorityChange}
               onTimerToggle={onTimerToggle}
               onComplete={onComplete}
+              usedPriorities={getUsedPrioritiesForColumn(activeColumn)}
             />
           </div>
         ) : activeCard ? (
           <div className="opacity-80 rotate-3 scale-105">
-            <KanbanCard card={activeCard} onClick={() => {}} onPriorityChange={onPriorityChange} onTimerToggle={onTimerToggle} onComplete={onComplete} />
+            <KanbanCard
+              card={activeCard}
+              onClick={() => {}}
+              onPriorityChange={onPriorityChange}
+              onTimerToggle={onTimerToggle}
+              onComplete={onComplete}
+              usedPriorities={columns.find(col => col.id === activeCard.column_id) ? getUsedPrioritiesForColumn(columns.find(col => col.id === activeCard.column_id)!) : []}
+            />
           </div>
         ) : null}
       </DragOverlay>
