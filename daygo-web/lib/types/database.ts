@@ -189,6 +189,8 @@ export interface Database {
           user_id: string;
           prompt: string;
           template_text: string | null;
+          icon: string | null;
+          color: string | null;
           is_active: boolean;
           sort_order: number;
           created_at: string;
@@ -198,6 +200,8 @@ export interface Database {
           user_id: string;
           prompt: string;
           template_text?: string | null;
+          icon?: string | null;
+          color?: string | null;
           is_active?: boolean;
           sort_order?: number;
           created_at?: string;
@@ -207,6 +211,8 @@ export interface Database {
           user_id?: string;
           prompt?: string;
           template_text?: string | null;
+          icon?: string | null;
+          color?: string | null;
           is_active?: boolean;
           sort_order?: number;
           created_at?: string;
@@ -824,6 +830,44 @@ export interface Database {
           created_at?: string;
         };
       };
+      books: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          author: string | null;
+          is_reading: boolean;
+          completed_at: string | null;
+          started_at: string;
+          notes: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          author?: string | null;
+          is_reading?: boolean;
+          completed_at?: string | null;
+          started_at?: string;
+          notes?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          author?: string | null;
+          is_reading?: boolean;
+          completed_at?: string | null;
+          started_at?: string;
+          notes?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -869,8 +913,9 @@ export type ScheduleTemplate = Database['public']['Tables']['schedule_templates'
 export type AIJournal = Database['public']['Tables']['ai_journals']['Row'];
 export type Inspiration = Database['public']['Tables']['inspirations']['Row'];
 export type FoodImage = Database['public']['Tables']['food_images']['Row'];
-export type FoodCategory = 'plants' | 'meats' | 'fish' | 'fruit' | 'superfoods';
+export type FoodCategory = 'plants' | 'meats' | 'fish' | 'carbs' | 'fruit' | 'superfoods';
 export type Identity = Database['public']['Tables']['identities']['Row'];
+export type Book = Database['public']['Tables']['books']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {
