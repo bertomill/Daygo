@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { HelpCircle, Shield, LogOut, Moon, Sun, Crown, Loader2, Trash2, AlertTriangle } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { HelpCircle, Shield, LogOut, Moon, Sun, Crown, Loader2, Trash2, AlertTriangle, BookOpen, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { useThemeStore } from '@/lib/theme-store'
 import { supabase } from '@/lib/supabase'
 import AvatarUpload from '@/components/AvatarUpload'
+import { booksService } from '@/lib/services/books'
+import type { Book } from '@/lib/types/database'
 
 type SubscriptionTier = 'free' | 'pro'
 type SubscriptionStatus = 'inactive' | 'active' | 'canceled' | 'past_due'
@@ -23,6 +26,7 @@ interface ProfileData {
 export default function ProfilePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const queryClient = useQueryClient()
   const { user, signOut } = useAuthStore()
   const { theme, setTheme } = useThemeStore()
 
@@ -36,6 +40,24 @@ export default function ProfilePage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [isSavingName, setIsSavingName] = useState(false)
+  const [expandedYears, setExpandedYears] = useState<Record<number, boolean>>({})
+
+  // Fetch completed books by year
+  const { data: booksByYear = {} } = useQuery({
+    queryKey: ['books', user?.id, 'completed-by-year'],
+    queryFn: () => booksService.getCompletedBooksByYear(user!.id),
+    enabled: !!user,
+  })
+
+  // Mutation to mark book as currently reading
+  const markAsReadingMutation = useMutation({
+    mutationFn: (bookId: string) => booksService.markAsReading(bookId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      setMessage({ type: 'success', text: 'Book moved back to Currently Reading' })
+      setTimeout(() => setMessage(null), 2000)
+    },
+  })
 
   // Check for success/canceled query params
   useEffect(() => {
@@ -361,6 +383,86 @@ export default function ProfilePage() {
           </button>
         </div>
       </div>
+
+      {/* Books Read */}
+      {Object.keys(booksByYear).length > 0 && (
+        <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl p-5 mb-6 shadow-bevel">
+          <div className="flex items-center gap-3 mb-4">
+            <BookOpen className="w-5 h-5 text-amber-500" />
+            <span className="text-gray-900 dark:text-white font-medium">Books Read</span>
+            <span className="text-sm text-gray-500 dark:text-slate-400">
+              ({Object.values(booksByYear).flat().length} total)
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {Object.entries(booksByYear)
+              .sort(([yearA], [yearB]) => Number(yearB) - Number(yearA))
+              .map(([year, books]) => {
+                const yearNum = Number(year)
+                const isExpanded = expandedYears[yearNum] !== false // default to expanded
+
+                return (
+                  <div key={year}>
+                    <button
+                      onClick={() => setExpandedYears(prev => ({ ...prev, [yearNum]: !isExpanded }))}
+                      className="w-full flex items-center justify-between py-2 group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-700 dark:text-slate-300">
+                          {year}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+                          {books.length} {books.length === 1 ? 'book' : 'books'}
+                        </span>
+                      </div>
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                      )}
+                    </button>
+
+                    {isExpanded && (
+                      <div className="space-y-2 pl-2">
+                        {books.map((book: Book) => (
+                          <div
+                            key={book.id}
+                            className="flex items-start gap-3 py-2 border-l-2 border-amber-500/30 pl-3"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {book.title}
+                              </p>
+                              {book.author && (
+                                <p className="text-xs text-gray-500 dark:text-slate-400">
+                                  by {book.author}
+                                </p>
+                              )}
+                              {book.completed_at && (
+                                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                                  Finished {new Date(book.completed_at).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => markAsReadingMutation.mutate(book.id)}
+                              disabled={markAsReadingMutation.isPending}
+                              className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors disabled:opacity-50"
+                              title="Mark as currently reading"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+          </div>
+        </div>
+      )}
 
       {/* Delete Account */}
       <button
