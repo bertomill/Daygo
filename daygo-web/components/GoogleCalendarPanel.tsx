@@ -11,6 +11,7 @@ interface GoogleCalendarPanelProps {
   onExportEvents: () => void
   isImporting: boolean
   isExporting: boolean
+  eventCount?: number
 }
 
 export function GoogleCalendarPanel({
@@ -21,6 +22,7 @@ export function GoogleCalendarPanel({
   onExportEvents,
   isImporting,
   isExporting,
+  eventCount = 0,
 }: GoogleCalendarPanelProps) {
   const [showOptions, setShowOptions] = useState(false)
 
@@ -50,7 +52,7 @@ export function GoogleCalendarPanel({
           </span>
           <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full">
             <Check className="w-3 h-3" />
-            Connected
+            {eventCount > 0 ? `${eventCount} event${eventCount !== 1 ? 's' : ''}` : 'Connected'}
           </span>
         </div>
         <span className="text-xs text-gray-400 dark:text-slate-500">
@@ -94,7 +96,7 @@ export function GoogleCalendarPanel({
             Disconnect
           </button>
           <p className="text-xs text-gray-400 dark:text-slate-500 text-center">
-            Import pulls events from Google Calendar. Export pushes your schedule to Google Calendar.
+            Your Google Calendar events automatically appear on the schedule below. Use Import to copy them as editable Daygo events, or Export to push your Daygo schedule to Google Calendar.
           </p>
         </div>
       )}

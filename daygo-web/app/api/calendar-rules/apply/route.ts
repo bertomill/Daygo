@@ -134,8 +134,8 @@ export async function POST(request: NextRequest) {
       ? mantras.map(m => `- "${m.text}"`).join('\n')
       : 'No mantras defined'
 
-    // This is the "system" prompt for OpenAI - kept minimal, user's rules drive the scheduling
-    const systemPrompt = `You are a daily planner AI. Create a schedule based on the user's context and their scheduling preferences/rules.
+    // This is the "system" prompt for OpenAI
+    const systemPrompt = `You are a daily planner AI. Create a schedule based on the user's habits, todos, goals, visions, and daily mantras.
 
 IMPORTANT: ALWAYS create a schedule that fills the ENTIRE day from wake time to bed time. Ignore the current time - schedule ALL time slots even if they appear to be "in the past." The user wants a complete day plan.
 
@@ -146,7 +146,9 @@ CONSTRAINTS:
 4. Use 30-minute increments ONLY (e.g., 09:00, 09:30, 10:00)
 5. PREFER larger time blocks (1-4 hours) for focused work - use 30-minute blocks only for short tasks like meals, breaks, or quick activities
 6. DO NOT create "Break" events - gaps between events ARE the breaks
-7. Follow the user's SCHEDULING PREFERENCES/RULES closely - they define how the day should be structured
+7. Schedule time for ALL habits - they are the user's daily commitments
+8. Work towards the user's goals and vision
+9. Let the user's daily mantras guide the tone and focus of the day
 
 RESPONSE FORMAT:
 Respond with ONLY a valid JSON array. No explanation, no markdown, no code blocks.
@@ -164,9 +166,6 @@ NEVER return an empty array unless ALL time slots are filled.`
     const userPrompt = `Today's date: ${date}
 Wake time: ${wakeTime} | Bed time: ${bedTime}
 
-=== SCHEDULING PREFERENCES/RULES (FOLLOW THESE CLOSELY) ===
-${rulesContext}
-
 === EXISTING EVENTS (DO NOT OVERLAP) ===
 ${existingEventsContext}
 
@@ -177,7 +176,7 @@ ${dailyNote || 'No specific notes for today'}
 ${todosContext}
 ${completedTodosContext > 0 ? `(${completedTodosContext} already completed today)` : ''}
 
-=== HABITS ===
+=== HABITS (schedule time for these) ===
 ${habitsContext}
 
 === GOALS ===
@@ -186,10 +185,10 @@ ${goalsContext}
 === VISION ===
 ${visionsContext}
 
-=== MANTRAS ===
+=== TODAY'S MANTRAS (user's focus for the day) ===
 ${mantrasContext}
 
-Create a schedule from ${wakeTime} to ${bedTime} following the user's rules. Respond with only a JSON array.`
+Create a schedule from ${wakeTime} to ${bedTime}. Respond with only a JSON array.`
 
     // Logging what we're about to send to OpenAI
     console.log('Calling OpenAI to plan day...')

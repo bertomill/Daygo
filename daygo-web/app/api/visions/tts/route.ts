@@ -1,27 +1,34 @@
 import { NextRequest } from 'next/server'
-import OpenAI from 'openai'
 
-type Voice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer'
+// ElevenLabs voice IDs
+const ELEVENLABS_VOICES = {
+  rachel: '21m00Tcm4TlvDq8ikWAM',    // Calm, warm female
+  bella: 'EXAVITQu4vr4xnSDxMaL',     // Soft female
+  antoni: 'ErXwobaYiN019PkySvjV',    // Warm male
+  arnold: 'VR6AewLTigWG4xSOukaG',    // Deep male
+  adam: 'pNInz6obpgDQGcFmaJgB',      // Deep male
+  domi: 'AZnzlk1XvdvUeBnXmlld',      // Strong female
+  elli: 'MF3mGyEYCl7XYWbV9V6O',      // Young female
+  josh: 'TxGEqnHWrfWFTfGW9XjX',      // Deep male
+  sam: 'yoZ06aMxZJJ28mfd3POQ',       // Raspy male
+} as const
+
+type Voice = keyof typeof ELEVENLABS_VOICES
 
 export async function POST(request: NextRequest) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY is not set')
+    if (!process.env.ELEVENLABS_API_KEY) {
+      console.error('ELEVENLABS_API_KEY is not set')
       return new Response(
-        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        JSON.stringify({ error: 'ElevenLabs API key not configured' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-
-    const { visions, voice = 'nova', speed = 0.95, name } = await request.json() as {
+    const { visions, voice = 'rachel', speed = 1.0 } = await request.json() as {
       visions: { text: string }[]
       voice?: Voice
       speed?: number
-      name?: string
     }
 
     if (!visions || visions.length === 0) {
@@ -31,24 +38,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate voice
-    const validVoices: Voice[] = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
-    const selectedVoice = validVoices.includes(voice) ? voice : 'nova'
+    // Get voice ID (default to rachel)
+    const voiceId = ELEVENLABS_VOICES[voice] || ELEVENLABS_VOICES.rachel
 
-    // Validate speed (0.25 to 4.0)
-    const selectedSpeed = Math.min(4.0, Math.max(0.25, speed))
+    // Map speed to stability (lower speed = higher stability for slower speech)
+    const stability = Math.min(1.0, Math.max(0.0, 1.1 - speed))
 
-    // Personalized greeting
-    const greeting = name
-      ? `${name}, take a deep breath. ... These are your visions. ... This is who you are becoming. ...`
-      : `Take a deep breath. ... These are your visions. ... This is who you are becoming. ...`
-
-    // Transform visions into affirmations
-    // Strip HTML tags and convert "I'm" statements to "You are" statements
-    const affirmations = visions.map(v => {
-      // Remove HTML tags
+    // Transform visions: strip HTML and convert first-person to second-person
+    const transformedVisions = visions.map(v => {
       let text = v.text.replace(/<[^>]*>/g, '')
-      // Convert common first-person patterns to second-person
       text = text
         .replace(/\bI'm\b/gi, 'You are')
         .replace(/\bI am\b/gi, 'You are')
@@ -58,24 +56,41 @@ export async function POST(request: NextRequest) {
       return text
     })
 
-    // Create inspiring closing message
-    const closing = name
-      ? `... ${name}, these visions are not dreams. ... They are your destiny. ... Every day, you are stepping into this future. ... Trust the process. ... You've got this.`
-      : `... These visions are not dreams. ... They are your destiny. ... Every day, you are stepping into this future. ... Trust the process. ... You've got this.`
+    // Create the script with pauses between each
+    const script = transformedVisions.join('. ... ')
 
-    // Create the affirmation script with pauses between each
-    const script = `${greeting} ... ${affirmations.join('. ... ')}. ${closing}`
+    // Generate audio using ElevenLabs TTS
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': process.env.ELEVENLABS_API_KEY,
+        },
+        body: JSON.stringify({
+          text: script,
+          model_id: 'eleven_turbo_v2',
+          voice_settings: {
+            stability,
+            similarity_boost: 0.75,
+          },
+        }),
+      }
+    )
 
-    // Generate audio using OpenAI TTS
-    const mp3Response = await openai.audio.speech.create({
-      model: 'tts-1',
-      voice: selectedVoice,
-      input: script,
-      speed: selectedSpeed,
-    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('ElevenLabs API error:', response.status, errorText)
+      return new Response(
+        JSON.stringify({ error: `ElevenLabs error: ${response.status} - ${errorText}` }),
+        { status: response.status, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Return the audio directly as a stream
-    const buffer = Buffer.from(await mp3Response.arrayBuffer())
+    const buffer = Buffer.from(await response.arrayBuffer())
 
     return new Response(buffer, {
       status: 200,

@@ -12,7 +12,7 @@ import { FeedbackButton } from '@/components/FeedbackButton'
 const navItems = [
   { href: '/today', label: 'Today', icon: Calendar },
   { href: '/notes', label: 'Notes', icon: FileText },
-  { href: '/kanban', label: 'Kanban', icon: LayoutGrid },
+  { href: '/kanban', label: 'Contribution', icon: LayoutGrid },
   { href: '/goals', label: 'Goals', icon: Target },
   { href: '/profile', label: 'Profile', icon: User },
 ]

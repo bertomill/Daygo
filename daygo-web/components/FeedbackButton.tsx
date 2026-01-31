@@ -116,22 +116,22 @@ export function FeedbackButton() {
   return (
     <>
       {/* Floating Buttons */}
-      <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+      <div className="fixed top-2 right-2 z-40 flex items-center gap-1.5">
         {isAdmin && (
           <a
             href="/admin/feedback"
-            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            className="flex items-center gap-1 px-2 py-1 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-slate-700/50 rounded-full shadow-sm hover:shadow transition-all text-xs"
           >
-            <Inbox className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-gray-700 dark:text-slate-200">Admin</span>
+            <Inbox className="w-3 h-3 text-accent" />
+            <span className="font-medium text-gray-600 dark:text-slate-300">Admin</span>
           </a>
         )}
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          className="flex items-center gap-1 px-2 py-1 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-slate-700/50 rounded-full shadow-sm hover:shadow transition-all text-xs"
         >
-          <MessageSquare className="w-4 h-4 text-accent" />
-          <span className="text-sm font-medium text-gray-700 dark:text-slate-200">Feedback</span>
+          <MessageSquare className="w-3 h-3 text-accent" />
+          <span className="font-medium text-gray-600 dark:text-slate-300">Feedback</span>
         </button>
       </div>
 
