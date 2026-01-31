@@ -3,9 +3,69 @@
 import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, BookOpen, Check, MoreHorizontal } from 'lucide-react'
+import {
+  GripVertical,
+  BookOpen,
+  Check,
+  MoreHorizontal,
+  Heart,
+  Star,
+  Target,
+  Lightbulb,
+  Flame,
+  Trophy,
+  Compass,
+  Brain,
+  Sparkles,
+  Zap,
+  Sun,
+  Moon,
+  Cloud,
+  Smile,
+  Pen,
+  type LucideIcon
+} from 'lucide-react'
 import type { JournalPromptWithEntry } from '@/lib/types/database'
 import { RichTextEditor } from './RichTextEditor'
+
+// Map icon names to components
+const iconMap: Record<string, LucideIcon> = {
+  'book-open': BookOpen,
+  'heart': Heart,
+  'star': Star,
+  'target': Target,
+  'lightbulb': Lightbulb,
+  'flame': Flame,
+  'trophy': Trophy,
+  'compass': Compass,
+  'brain': Brain,
+  'sparkles': Sparkles,
+  'zap': Zap,
+  'sun': Sun,
+  'moon': Moon,
+  'cloud': Cloud,
+  'smile': Smile,
+  'pen': Pen,
+}
+
+export const JOURNAL_ICON_OPTIONS = Object.keys(iconMap)
+
+// Color options with their display values
+export const JOURNAL_COLOR_OPTIONS: { name: string; value: string; bg: string; bgHover: string }[] = [
+  { name: 'orange', value: '#E97451', bg: 'bg-[#E97451]', bgHover: 'hover:bg-[#d4673f]' },
+  { name: 'red', value: '#EF4444', bg: 'bg-red-500', bgHover: 'hover:bg-red-600' },
+  { name: 'pink', value: '#EC4899', bg: 'bg-pink-500', bgHover: 'hover:bg-pink-600' },
+  { name: 'purple', value: '#8B5CF6', bg: 'bg-violet-500', bgHover: 'hover:bg-violet-600' },
+  { name: 'blue', value: '#3B82F6', bg: 'bg-blue-500', bgHover: 'hover:bg-blue-600' },
+  { name: 'cyan', value: '#06B6D4', bg: 'bg-cyan-500', bgHover: 'hover:bg-cyan-600' },
+  { name: 'teal', value: '#14B8A6', bg: 'bg-teal-500', bgHover: 'hover:bg-teal-600' },
+  { name: 'green', value: '#22C55E', bg: 'bg-green-500', bgHover: 'hover:bg-green-600' },
+  { name: 'yellow', value: '#EAB308', bg: 'bg-yellow-500', bgHover: 'hover:bg-yellow-600' },
+  { name: 'slate', value: '#64748B', bg: 'bg-slate-500', bgHover: 'hover:bg-slate-600' },
+]
+
+// Default journal color (orange)
+const DEFAULT_COLOR = '#E97451'
 
 interface SortableJournalCardProps {
   prompt: JournalPromptWithEntry
@@ -16,6 +76,8 @@ interface SortableJournalCardProps {
 export function SortableJournalCard({ prompt, onSave, onEdit }: SortableJournalCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [entry, setEntry] = useState(prompt.todayEntry || prompt.template_text || '')
+
+  const promptColor = prompt.color || DEFAULT_COLOR
 
   const {
     attributes,
@@ -28,7 +90,7 @@ export function SortableJournalCard({ prompt, onSave, onEdit }: SortableJournalC
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isDragging ? 'none' : 'transform 150ms cubic-bezier(0.25, 1, 0.5, 1)',
   }
 
   const handleSave = () => {
@@ -60,7 +122,10 @@ export function SortableJournalCard({ prompt, onSave, onEdit }: SortableJournalC
           <GripVertical className="w-5 h-5" />
         </button>
 
-        <BookOpen className="w-6 h-6 text-journal flex-shrink-0" />
+        {(() => {
+          const IconComponent = iconMap[prompt.icon || 'book-open'] || BookOpen
+          return <IconComponent className="w-6 h-6 flex-shrink-0" style={{ color: promptColor }} />
+        })()}
         <p className="text-bevel-text dark:text-white font-semibold flex-1 leading-relaxed">{prompt.prompt}</p>
         <button
           onClick={handleOptionsClick}
@@ -82,7 +147,8 @@ export function SortableJournalCard({ prompt, onSave, onEdit }: SortableJournalC
           <div className="flex gap-2 mt-3">
             <button
               onClick={handleSave}
-              className="px-5 py-2.5 bg-journal hover:bg-journal/90 text-white rounded-xl text-sm font-semibold transition-colors shadow-bevel-sm"
+              className="px-5 py-2.5 text-white rounded-xl text-sm font-semibold transition-colors shadow-bevel-sm"
+              style={{ backgroundColor: promptColor }}
             >
               Save
             </button>

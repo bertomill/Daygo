@@ -42,13 +42,15 @@ export const journalService = {
     }))
   },
 
-  async createPrompt(userId: string, prompt: string, templateText?: string): Promise<JournalPrompt> {
+  async createPrompt(userId: string, prompt: string, templateText?: string, icon?: string, color?: string): Promise<JournalPrompt> {
     const { data, error } = await supabase
       .from('journal_prompts')
       .insert({
         user_id: userId,
         prompt,
         template_text: templateText ?? null,
+        icon: icon ?? null,
+        color: color ?? null,
       } as any)
       .select()
       .single()
@@ -83,10 +85,16 @@ export const journalService = {
     return data as JournalEntry
   },
 
-  async updatePrompt(id: string, prompt: string, templateText?: string): Promise<JournalPrompt> {
+  async updatePrompt(id: string, prompt: string, templateText?: string, icon?: string, color?: string): Promise<JournalPrompt> {
     const updateData: any = { prompt }
     if (templateText !== undefined) {
       updateData.template_text = templateText || null
+    }
+    if (icon !== undefined) {
+      updateData.icon = icon || null
+    }
+    if (color !== undefined) {
+      updateData.color = color || null
     }
 
     const { data, error } = await (supabase

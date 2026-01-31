@@ -22,6 +22,16 @@ import {
 } from 'lucide-react'
 import type { ScheduleEvent } from '@/lib/types/database'
 
+// Google Calendar event type for display
+export interface GoogleCalendarDisplayEvent {
+  id: string
+  title: string
+  description?: string | null
+  start_time: string
+  end_time: string
+  is_all_day?: boolean
+}
+
 type EventCategory = 'work' | 'exercise' | 'meal' | 'break' | 'learning' | 'mindfulness' | 'admin' | 'social' | 'creative' | 'podcast' | 'sleep' | 'call' | 'errand' | 'health' | 'default'
 
 interface CategoryStyle {
@@ -32,21 +42,21 @@ interface CategoryStyle {
 }
 
 const categoryStyles: Record<EventCategory, CategoryStyle> = {
-  work: { icon: Laptop, bg: 'bg-blue-500/90', hover: 'hover:bg-blue-500', border: 'border-blue-400/30' },
-  exercise: { icon: Dumbbell, bg: 'bg-orange-500/90', hover: 'hover:bg-orange-500', border: 'border-orange-400/30' },
-  meal: { icon: Utensils, bg: 'bg-amber-500/90', hover: 'hover:bg-amber-500', border: 'border-amber-400/30' },
-  break: { icon: Coffee, bg: 'bg-slate-500/90', hover: 'hover:bg-slate-500', border: 'border-slate-400/30' },
-  learning: { icon: BookOpen, bg: 'bg-indigo-500/90', hover: 'hover:bg-indigo-500', border: 'border-indigo-400/30' },
-  mindfulness: { icon: Brain, bg: 'bg-teal-500/90', hover: 'hover:bg-teal-500', border: 'border-teal-400/30' },
-  admin: { icon: Mail, bg: 'bg-gray-500/90', hover: 'hover:bg-gray-500', border: 'border-gray-400/30' },
-  social: { icon: Users, bg: 'bg-pink-500/90', hover: 'hover:bg-pink-500', border: 'border-pink-400/30' },
-  creative: { icon: Pencil, bg: 'bg-purple-500/90', hover: 'hover:bg-purple-500', border: 'border-purple-400/30' },
-  podcast: { icon: Mic, bg: 'bg-rose-500/90', hover: 'hover:bg-rose-500', border: 'border-rose-400/30' },
-  sleep: { icon: Moon, bg: 'bg-indigo-600/90', hover: 'hover:bg-indigo-600', border: 'border-indigo-500/30' },
-  call: { icon: Phone, bg: 'bg-green-500/90', hover: 'hover:bg-green-500', border: 'border-green-400/30' },
-  errand: { icon: ShoppingBag, bg: 'bg-cyan-500/90', hover: 'hover:bg-cyan-500', border: 'border-cyan-400/30' },
-  health: { icon: Heart, bg: 'bg-red-500/90', hover: 'hover:bg-red-500', border: 'border-red-400/30' },
-  default: { icon: Sparkles, bg: 'bg-schedule/90', hover: 'hover:bg-schedule', border: 'border-schedule/30' },
+  work: { icon: Laptop, bg: 'bg-blue-500/50', hover: 'hover:bg-blue-500/65', border: 'border-blue-300/40' },
+  exercise: { icon: Dumbbell, bg: 'bg-orange-500/50', hover: 'hover:bg-orange-500/65', border: 'border-orange-300/40' },
+  meal: { icon: Utensils, bg: 'bg-amber-500/50', hover: 'hover:bg-amber-500/65', border: 'border-amber-300/40' },
+  break: { icon: Coffee, bg: 'bg-slate-500/50', hover: 'hover:bg-slate-500/65', border: 'border-slate-300/40' },
+  learning: { icon: BookOpen, bg: 'bg-indigo-500/50', hover: 'hover:bg-indigo-500/65', border: 'border-indigo-300/40' },
+  mindfulness: { icon: Brain, bg: 'bg-teal-500/50', hover: 'hover:bg-teal-500/65', border: 'border-teal-300/40' },
+  admin: { icon: Mail, bg: 'bg-gray-500/50', hover: 'hover:bg-gray-500/65', border: 'border-gray-300/40' },
+  social: { icon: Users, bg: 'bg-pink-500/50', hover: 'hover:bg-pink-500/65', border: 'border-pink-300/40' },
+  creative: { icon: Pencil, bg: 'bg-purple-500/50', hover: 'hover:bg-purple-500/65', border: 'border-purple-300/40' },
+  podcast: { icon: Mic, bg: 'bg-rose-500/50', hover: 'hover:bg-rose-500/65', border: 'border-rose-300/40' },
+  sleep: { icon: Moon, bg: 'bg-indigo-600/50', hover: 'hover:bg-indigo-600/65', border: 'border-indigo-400/40' },
+  call: { icon: Phone, bg: 'bg-green-500/50', hover: 'hover:bg-green-500/65', border: 'border-green-300/40' },
+  errand: { icon: ShoppingBag, bg: 'bg-cyan-500/50', hover: 'hover:bg-cyan-500/65', border: 'border-cyan-300/40' },
+  health: { icon: Heart, bg: 'bg-red-500/50', hover: 'hover:bg-red-500/65', border: 'border-red-300/40' },
+  default: { icon: Sparkles, bg: 'bg-schedule/50', hover: 'hover:bg-schedule/65', border: 'border-schedule/40' },
 }
 
 function inferCategory(title: string): EventCategory {
@@ -99,11 +109,13 @@ function inferCategory(title: string): EventCategory {
 
 interface ScheduleGridProps {
   events: ScheduleEvent[]
+  googleCalendarEvents?: GoogleCalendarDisplayEvent[]
   selectedDate: Date
   onAddEvent: (startTime: string, endTime: string) => void
   onEditEvent: (event: ScheduleEvent) => void
   onToggleComplete: (eventId: string, completed: boolean) => void
   onResizeEvent?: (eventId: string, newEndTime: string) => void
+  onMoveEvent?: (eventId: string, newStartTime: string, newEndTime: string) => void
   wakeTime?: string // Format: "HH:MM" e.g. "07:00"
   bedTime?: string  // Format: "HH:MM" e.g. "22:00"
 }
@@ -149,7 +161,7 @@ function yToMinutes(y: number, gridHeight: number, startHour: number, endHour: n
   return Math.round(rawMinutes / 30) * 30
 }
 
-export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, onToggleComplete, onResizeEvent, wakeTime, bedTime }: ScheduleGridProps) {
+export function ScheduleGrid({ events, googleCalendarEvents = [], selectedDate, onAddEvent, onEditEvent, onToggleComplete, onResizeEvent, onMoveEvent, wakeTime, bedTime }: ScheduleGridProps) {
   // Compute dynamic hours from props
   const START_HOUR = parseTimeToHour(wakeTime, DEFAULT_START_HOUR)
   const END_HOUR = parseTimeToHour(bedTime, DEFAULT_END_HOUR)
@@ -161,8 +173,12 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
   const [dragEnd, setDragEnd] = useState<number | null>(null)
   const [resizingEvent, setResizingEvent] = useState<ScheduleEvent | null>(null)
   const [resizeEndMinutes, setResizeEndMinutes] = useState<number | null>(null)
+  const [draggingEvent, setDraggingEvent] = useState<ScheduleEvent | null>(null)
+  const [dragEventOffset, setDragEventOffset] = useState<number>(0) // Offset from top of event where user grabbed
+  const [dragEventMinutes, setDragEventMinutes] = useState<number | null>(null) // New start time while dragging
   const gridRef = useRef<HTMLDivElement>(null)
   const dragStartTime = useRef<number>(0)
+  const eventDragStartTime = useRef<number>(0)
 
   useEffect(() => {
     const updateCurrentTime = () => {
@@ -393,12 +409,110 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
     }
   }, [resizingEvent, handleResizeMove, handleResizeEnd])
 
+  // Event drag handlers (for moving events)
+  const handleEventDragStart = useCallback((e: React.MouseEvent, event: ScheduleEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (!gridRef.current) return
+
+    const rect = gridRef.current.getBoundingClientRect()
+    const y = e.clientY - rect.top
+    const clickedMinutes = yToMinutes(y, rect.height, START_HOUR, END_HOUR)
+    const eventStartMinutes = timeToMinutes(event.start_time) - START_HOUR * 60
+
+    // Calculate offset from top of event where user clicked
+    const offset = clickedMinutes - eventStartMinutes
+
+    setDraggingEvent(event)
+    setDragEventOffset(offset)
+    setDragEventMinutes(eventStartMinutes)
+    eventDragStartTime.current = Date.now()
+  }, [START_HOUR, END_HOUR])
+
+  const handleEventDragMove = useCallback((e: MouseEvent) => {
+    if (!draggingEvent || !gridRef.current) return
+
+    const rect = gridRef.current.getBoundingClientRect()
+    const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height))
+    const minutes = yToMinutes(y, rect.height, START_HOUR, END_HOUR)
+
+    // Adjust for where user grabbed the event
+    const newStartMinutes = minutes - dragEventOffset
+
+    // Clamp to valid range
+    const eventDuration = timeToMinutes(draggingEvent.end_time) - timeToMinutes(draggingEvent.start_time)
+    const maxStart = (END_HOUR - START_HOUR) * 60 - eventDuration
+    const clampedStart = Math.max(0, Math.min(newStartMinutes, maxStart))
+
+    // Round to nearest 15 minutes for snapping
+    const snappedStart = Math.round(clampedStart / 15) * 15
+
+    setDragEventMinutes(snappedStart)
+  }, [draggingEvent, dragEventOffset, START_HOUR, END_HOUR])
+
+  const handleEventDragEnd = useCallback(() => {
+    if (!draggingEvent || dragEventMinutes === null || !onMoveEvent) {
+      // Check if it was a quick click (not a drag) - open edit modal
+      const dragDuration = Date.now() - eventDragStartTime.current
+      if (draggingEvent && dragDuration < 200) {
+        onEditEvent(draggingEvent)
+      }
+      setDraggingEvent(null)
+      setDragEventMinutes(null)
+      setDragEventOffset(0)
+      return
+    }
+
+    const dragDuration = Date.now() - eventDragStartTime.current
+    const originalStartMinutes = timeToMinutes(draggingEvent.start_time) - START_HOUR * 60
+    const hasMoved = Math.abs(dragEventMinutes - originalStartMinutes) >= 15
+
+    // If it was a quick click without movement, treat as a click to edit
+    if (dragDuration < 200 && !hasMoved) {
+      onEditEvent(draggingEvent)
+      setDraggingEvent(null)
+      setDragEventMinutes(null)
+      setDragEventOffset(0)
+      return
+    }
+
+    // Only update if the event actually moved
+    if (hasMoved) {
+      const eventDuration = timeToMinutes(draggingEvent.end_time) - timeToMinutes(draggingEvent.start_time)
+      const newStartTime = minutesToTimeString(START_HOUR * 60 + dragEventMinutes)
+      const newEndTime = minutesToTimeString(START_HOUR * 60 + dragEventMinutes + eventDuration)
+      onMoveEvent(draggingEvent.id, newStartTime, newEndTime)
+    }
+
+    setDraggingEvent(null)
+    setDragEventMinutes(null)
+    setDragEventOffset(0)
+  }, [draggingEvent, dragEventMinutes, onMoveEvent, onEditEvent, START_HOUR])
+
+  // Add global mouse listeners for event dragging
+  useEffect(() => {
+    if (draggingEvent) {
+      document.addEventListener('mousemove', handleEventDragMove)
+      document.addEventListener('mouseup', handleEventDragEnd)
+      return () => {
+        document.removeEventListener('mousemove', handleEventDragMove)
+        document.removeEventListener('mouseup', handleEventDragEnd)
+      }
+    }
+  }, [draggingEvent, handleEventDragMove, handleEventDragEnd])
+
   const getEventStyle = (event: ScheduleEvent) => {
-    const startMinutes = timeToMinutes(event.start_time)
+    // Use drag preview position if this event is being dragged
+    const isDragging = draggingEvent?.id === event.id && dragEventMinutes !== null
+    const startMinutes = isDragging
+      ? START_HOUR * 60 + dragEventMinutes
+      : timeToMinutes(event.start_time)
     // Use resize preview if this event is being resized
     const endMinutes = resizingEvent?.id === event.id && resizeEndMinutes !== null
       ? START_HOUR * 60 + resizeEndMinutes
-      : timeToMinutes(event.end_time)
+      : isDragging
+        ? startMinutes + (timeToMinutes(event.end_time) - timeToMinutes(event.start_time))
+        : timeToMinutes(event.end_time)
     const startOffset = startMinutes - START_HOUR * 60
     const duration = endMinutes - startMinutes
     const rawHeight = (duration / 60) * HOUR_HEIGHT
@@ -513,11 +627,17 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
 
           {/* Events */}
           {events.filter(isEventVisible).map((event) => {
-            const startMinutes = timeToMinutes(event.start_time)
+            const isDragging = draggingEvent?.id === event.id
+            const displayStartMinutes = isDragging && dragEventMinutes !== null
+              ? START_HOUR * 60 + dragEventMinutes
+              : timeToMinutes(event.start_time)
+            const eventDuration = timeToMinutes(event.end_time) - timeToMinutes(event.start_time)
             const displayEndMinutes = resizingEvent?.id === event.id && resizeEndMinutes !== null
               ? START_HOUR * 60 + resizeEndMinutes
-              : timeToMinutes(event.end_time)
-            const duration = displayEndMinutes - startMinutes
+              : isDragging
+                ? displayStartMinutes + eventDuration
+                : timeToMinutes(event.end_time)
+            const duration = displayEndMinutes - displayStartMinutes
             const isShort = duration <= 30
             const category = inferCategory(event.title)
             const style = categoryStyles[category]
@@ -528,13 +648,19 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
               <div
                 key={event.id}
                 data-event
-                className={`absolute left-1 right-1 rounded-lg px-2 cursor-pointer transition-colors z-10 overflow-hidden ${
-                  isShort ? 'py-0.5' : 'py-1'
-                } ${style.bg} ${style.hover} ${event.completed ? 'opacity-60' : ''} ${isResizing ? 'ring-2 ring-white/50' : ''}`}
+                className={`absolute left-1 right-1 rounded-xl px-2 z-10 overflow-hidden transition-all backdrop-blur-md border shadow-sm ${
+                  isShort ? 'py-0.5' : 'py-1.5'
+                } ${style.bg} ${style.hover} ${style.border} ${event.completed ? 'opacity-50' : ''} ${
+                  isResizing ? 'ring-2 ring-white/60' : ''
+                } ${isDragging ? 'ring-2 ring-white/80 shadow-xl z-30 cursor-grabbing scale-[1.02]' : 'cursor-grab hover:shadow-md'}`}
                 style={getEventStyle(event)}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (!resizingEvent) onEditEvent(event)
+                onMouseDown={(e) => {
+                  // Don't start drag from checkbox or resize handle
+                  if ((e.target as HTMLElement).closest('button') ||
+                      (e.target as HTMLElement).closest('[data-resize-handle]')) return
+                  if (onMoveEvent) {
+                    handleEventDragStart(e, event)
+                  }
                 }}
               >
                 <div className="flex items-center gap-1.5">
@@ -544,32 +670,86 @@ export function ScheduleGrid({ events, selectedDate, onAddEvent, onEditEvent, on
                       e.stopPropagation()
                       onToggleComplete(event.id, !event.completed)
                     }}
-                    className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors backdrop-blur-sm ${
                       event.completed
-                        ? 'bg-white/90 border-white/90'
-                        : 'border-white/60 hover:border-white/90'
+                        ? 'bg-white/80 border-white/80'
+                        : 'border-white/70 hover:border-white bg-white/10'
                     }`}
                   >
                     {event.completed && (
                       <Check className="w-3 h-3 text-gray-700" />
                     )}
                   </button>
-                  <Icon className={`text-white/80 flex-shrink-0 ${isShort ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                  <p className={`text-white font-medium truncate ${isShort ? 'text-xs' : 'text-sm'} ${event.completed ? 'line-through' : ''}`}>
+                  <Icon className={`text-white drop-shadow-sm flex-shrink-0 ${isShort ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                  <p className={`text-white font-semibold truncate drop-shadow-sm ${isShort ? 'text-xs' : 'text-sm'} ${event.completed ? 'line-through opacity-70' : ''}`}>
                     {event.title}
                   </p>
                 </div>
                 {!isShort && (
-                  <p className="text-white/80 text-xs truncate ml-10">
-                    {formatTimeDisplay(event.start_time)} - {formatTimeDisplay(isResizing ? minutesToTimeString(displayEndMinutes) : event.end_time)}
+                  <p className="text-white/90 text-xs truncate ml-10 drop-shadow-sm">
+                    {formatTimeDisplay(isDragging ? minutesToTimeString(displayStartMinutes) : event.start_time)} - {formatTimeDisplay(isResizing ? minutesToTimeString(displayEndMinutes) : isDragging ? minutesToTimeString(displayEndMinutes) : event.end_time)}
                   </p>
                 )}
                 {/* Resize handle */}
                 {onResizeEvent && (
                   <div
+                    data-resize-handle
                     className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-white/20 transition-colors"
                     onMouseDown={(e) => handleResizeStart(e, event)}
                   />
+                )}
+              </div>
+            )
+          })}
+
+          {/* Google Calendar Events (read-only) */}
+          {googleCalendarEvents.filter(event => {
+            if (event.is_all_day) return false
+            const startMinutes = timeToMinutes(event.start_time)
+            const endMinutes = timeToMinutes(event.end_time)
+            return startMinutes < END_HOUR * 60 && endMinutes > START_HOUR * 60
+          }).map((event) => {
+            const startMinutes = timeToMinutes(event.start_time)
+            const endMinutes = timeToMinutes(event.end_time)
+            const startOffset = startMinutes - START_HOUR * 60
+            const duration = endMinutes - startMinutes
+            const rawHeight = (duration / 60) * HOUR_HEIGHT
+            const height = Math.max(rawHeight - 2, 28)
+            const isShort = duration <= 30
+
+            return (
+              <div
+                key={`gcal-${event.id}`}
+                data-event
+                className={`absolute left-1 right-1 rounded-xl px-2 z-5 overflow-hidden backdrop-blur-md border shadow-sm cursor-default ${
+                  isShort ? 'py-0.5' : 'py-1.5'
+                } bg-white/40 dark:bg-slate-700/40 border-gray-300/50 dark:border-slate-500/50 hover:bg-white/50 dark:hover:bg-slate-700/50`}
+                style={{
+                  top: `${(startOffset / 60) * HOUR_HEIGHT}px`,
+                  height: `${height}px`,
+                }}
+                title="Google Calendar event (read-only)"
+              >
+                <div className="flex items-center gap-1.5">
+                  {/* Google Calendar icon */}
+                  <div className="flex-shrink-0 w-4 h-4 rounded-sm flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none">
+                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" className="text-gray-500 dark:text-slate-400" />
+                      <path d="M3 9h18" stroke="currentColor" strokeWidth="2" className="text-gray-500 dark:text-slate-400" />
+                      <rect x="7" y="12" width="3" height="3" rx="0.5" className="fill-blue-500" />
+                      <rect x="7" y="16" width="3" height="3" rx="0.5" className="fill-green-500" />
+                      <rect x="11" y="12" width="3" height="3" rx="0.5" className="fill-yellow-500" />
+                      <rect x="11" y="16" width="3" height="3" rx="0.5" className="fill-red-500" />
+                    </svg>
+                  </div>
+                  <p className={`text-gray-700 dark:text-slate-200 font-medium truncate drop-shadow-sm ${isShort ? 'text-xs' : 'text-sm'}`}>
+                    {event.title}
+                  </p>
+                </div>
+                {!isShort && (
+                  <p className="text-gray-500 dark:text-slate-400 text-xs truncate ml-5">
+                    {formatTimeDisplay(event.start_time)} - {formatTimeDisplay(event.end_time)}
+                  </p>
                 )}
               </div>
             )
