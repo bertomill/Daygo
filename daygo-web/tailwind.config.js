@@ -7,25 +7,48 @@ module.exports = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+  			heading: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+  		},
   		colors: {
   			navy: '#0f172a',
   			accent: {
   				DEFAULT: 'hsl(var(--accent))',
   				foreground: 'hsl(var(--accent-foreground))'
   			},
+  			// Primary brand colors - calming indigo palette
+  			brand: {
+  				50: '#eef2ff',
+  				100: '#e0e7ff',
+  				200: '#c7d2fe',
+  				300: '#a5b4fc',
+  				400: '#818cf8',
+  				500: '#6366f1',
+  				600: '#4f46e5',
+  				700: '#4338ca',
+  				800: '#3730a3',
+  				900: '#312e81',
+  			},
   			teal: '#14b8a6',
-  			success: '#22c55e',
-  			mantra: '#9333ea',
-  			journal: '#f97316',
+  			success: '#10b981',
+  			// Section-specific colors - harmonized
+  			mantra: '#8b5cf6',
+  			journal: '#f59e0b',
   			schedule: '#10b981',
-  			'bevel-bg': '#F8F9FA',
-  			'bevel-card': '#FFFFFF',
-  			'bevel-text': '#1a1a1a',
-  			'bevel-text-secondary': '#6B7280',
-  			'bevel-yellow': '#F5C518',
-  			'bevel-green': '#4CAF50',
-  			'bevel-red': '#EF5350',
-  			'bevel-blue': '#42A5F5',
+  			identity: '#ec4899',
+  			vision: '#3b82f6',
+  			habit: '#10b981',
+  			todo: '#6366f1',
+  			// Refined bevel system
+  			'bevel-bg': '#fafbfc',
+  			'bevel-card': '#ffffff',
+  			'bevel-text': '#1e293b',
+  			'bevel-text-secondary': '#64748b',
+  			'bevel-yellow': '#f59e0b',
+  			'bevel-green': '#10b981',
+  			'bevel-red': '#ef4444',
+  			'bevel-blue': '#3b82f6',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -64,10 +87,12 @@ module.exports = {
   			}
   		},
   		boxShadow: {
-  			'bevel-sm': '0 1px 3px 0 rgba(0, 0, 0, 0.08)',
-  			bevel: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
-  			'bevel-md': '0 4px 12px 0 rgba(0, 0, 0, 0.12)',
-  			'bevel-lg': '0 8px 24px 0 rgba(0, 0, 0, 0.15)'
+  			'bevel-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 3px 0 rgba(0, 0, 0, 0.06)',
+  			bevel: '0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 4px 12px 0 rgba(0, 0, 0, 0.06)',
+  			'bevel-md': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 20px -2px rgba(0, 0, 0, 0.08)',
+  			'bevel-lg': '0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 20px 40px -4px rgba(0, 0, 0, 0.1)',
+  			'card': '0 0 0 1px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.02), 0 8px 16px rgba(0, 0, 0, 0.04)',
+  			'card-hover': '0 0 0 1px rgba(99, 102, 241, 0.1), 0 4px 8px rgba(0, 0, 0, 0.04), 0 12px 24px rgba(99, 102, 241, 0.08)'
   		},
   		keyframes: {
   			'slide-in-from-left': {

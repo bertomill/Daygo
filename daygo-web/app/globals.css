@@ -1,20 +1,40 @@
+/* Plus Jakarta Sans - Modern SaaS font */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 255, 255, 255;
+  --foreground-rgb: 30, 41, 59;
+  --background-rgb: 250, 251, 252;
+
+  /* Brand colors */
+  --brand-primary: 99, 102, 241;
+  --brand-secondary: 129, 140, 248;
+  --brand-accent: 16, 185, 129;
+
+  /* Section colors */
+  --color-habit: 16, 185, 129;
+  --color-mantra: 139, 92, 246;
+  --color-journal: 245, 158, 11;
+  --color-schedule: 16, 185, 129;
+  --color-identity: 236, 72, 153;
+  --color-vision: 59, 130, 246;
+  --color-todo: 99, 102, 241;
 }
 
 .dark {
-  --foreground-rgb: 255, 255, 255;
+  --foreground-rgb: 248, 250, 252;
   --background-rgb: 15, 23, 42;
 }
 
 body {
   background: rgb(var(--background-rgb));
   min-height: 100vh;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom scrollbar - light theme */
@@ -62,6 +82,60 @@ body {
 
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
+}
+
+/* Section header styles */
+.section-header {
+  @apply text-xs font-semibold uppercase tracking-wider;
+  letter-spacing: 0.08em;
+}
+
+/* Card hover effect */
+.card-interactive {
+  @apply transition-all duration-200 ease-out;
+}
+
+.card-interactive:hover {
+  @apply shadow-card-hover;
+  transform: translateY(-1px);
+}
+
+/* Subtle gradient backgrounds for sections */
+.section-gradient-habit {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(16, 185, 129, 0.01) 100%);
+}
+
+.section-gradient-mantra {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(139, 92, 246, 0.01) 100%);
+}
+
+.section-gradient-journal {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.04) 0%, rgba(245, 158, 11, 0.01) 100%);
+}
+
+.section-gradient-identity {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.04) 0%, rgba(236, 72, 153, 0.01) 100%);
+}
+
+.section-gradient-vision {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(59, 130, 246, 0.01) 100%);
+}
+
+.section-gradient-schedule {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(16, 185, 129, 0.01) 100%);
+}
+
+/* Badge/pill styles */
+.badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+  @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400;
+}
+
+.badge-brand {
+  @apply bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400;
 }
 
 

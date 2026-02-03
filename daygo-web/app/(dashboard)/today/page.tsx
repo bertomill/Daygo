@@ -1916,7 +1916,7 @@ export default function TodayPage() {
   const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || identitiesLoading || scheduleLoading
 
   return (
-    <div {...swipeHandlers} className="max-w-lg mx-auto px-4 py-6 pb-32 min-h-screen bg-bevel-bg dark:bg-slate-900">
+    <div {...swipeHandlers} className="max-w-lg mx-auto px-5 py-8 pb-32 min-h-screen bg-gradient-to-b from-bevel-bg to-white dark:from-slate-900 dark:to-slate-950">
       {/* Google Calendar notification toast */}
       {gcalNotification && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 bg-green-500 text-white rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
@@ -1928,33 +1928,33 @@ export default function TodayPage() {
       )}
 
       {/* Header with date navigation */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <button
           onClick={handlePrevDay}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+          className="p-2.5 hover:bg-brand-50 dark:hover:bg-slate-800 rounded-xl transition-all duration-200 active:scale-95"
         >
-          <ChevronLeft className="w-6 h-6 text-gray-400 dark:text-slate-400" />
+          <ChevronLeft className="w-5 h-5 text-bevel-text-secondary dark:text-slate-400" />
         </button>
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-bevel-text dark:text-white tracking-tight">
             {formatDisplayDate(selectedDate)}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
+          <p className="text-sm text-bevel-text-secondary dark:text-slate-400 mt-0.5">
             {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
           <Link
             href="/year"
-            className="inline-flex items-center gap-1 mt-1 text-xs text-accent hover:text-accent/80 transition-colors"
+            className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 transition-colors"
           >
-            <CalendarDays className="w-3 h-3" />
+            <CalendarDays className="w-3.5 h-3.5" />
             Year View
           </Link>
         </div>
         <button
           onClick={handleNextDay}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+          className="p-2.5 hover:bg-brand-50 dark:hover:bg-slate-800 rounded-xl transition-all duration-200 active:scale-95"
         >
-          <ChevronRight className="w-6 h-6 text-gray-400 dark:text-slate-400" />
+          <ChevronRight className="w-5 h-5 text-bevel-text-secondary dark:text-slate-400" />
         </button>
       </div>
 
@@ -1971,53 +1971,56 @@ export default function TodayPage() {
       </div>
 
       {/* Metrics Dashboard */}
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
-          <div className="flex items-center gap-2 mb-2">
-            <Youtube className="w-4 h-4 text-red-500" />
-            <span className="text-xs text-gray-500 dark:text-slate-400">Content</span>
+      <div className="grid grid-cols-3 gap-3 mb-10">
+        <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 shadow-card border border-gray-100/80 dark:border-slate-700/50 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+              <Youtube className="w-4 h-4 text-red-500" />
+            </div>
           </div>
-          <p className="text-xl font-semibold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-bevel-text dark:text-white tracking-tight">
             {youtubeStats?.subscriberCount?.toLocaleString() ?? '—'}
           </p>
-          <div className="flex items-center gap-1">
-            <p className="text-xs text-gray-400 dark:text-slate-500">YT Subs</p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">YT Subs</p>
             {youtubeStats?.momChange !== null && youtubeStats?.momChange !== undefined && (
-              <span className={`text-xs font-medium ${youtubeStats.momChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <span className={`text-xs font-semibold ${youtubeStats.momChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {youtubeStats.momChange >= 0 ? '+' : ''}{youtubeStats.momChange}%
               </span>
             )}
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-purple-500" />
-            <span className="text-xs text-gray-500 dark:text-slate-400">Community</span>
+        <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 shadow-card border border-gray-100/80 dark:border-slate-700/50 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
+              <Users className="w-4 h-4 text-brand-500" />
+            </div>
           </div>
-          <p className="text-xl font-semibold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-bevel-text dark:text-white tracking-tight">
             {makersloungeStats?.memberCount?.toLocaleString() ?? '—'}
           </p>
-          <div className="flex items-center gap-1">
-            <p className="text-xs text-gray-400 dark:text-slate-500">Makerslounge Users</p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">Community</p>
             {makersloungeStats?.momChange !== null && makersloungeStats?.momChange !== undefined && (
-              <span className={`text-xs font-medium ${makersloungeStats.momChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <span className={`text-xs font-semibold ${makersloungeStats.momChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {makersloungeStats.momChange >= 0 ? '+' : ''}{makersloungeStats.momChange}%
               </span>
             )}
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4 text-green-500" />
-            <span className="text-xs text-gray-500 dark:text-slate-400">Sales</span>
+        <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 shadow-card border border-gray-100/80 dark:border-slate-700/50 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+              <Calendar className="w-4 h-4 text-emerald-500" />
+            </div>
           </div>
-          <p className="text-xl font-semibold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-bevel-text dark:text-white tracking-tight">
             {lightenStats?.totalCalls?.toLocaleString() ?? '—'}
           </p>
-          <div className="flex items-center gap-1">
-            <p className="text-xs text-gray-400 dark:text-slate-500">Lighten Calls</p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">Sales Calls</p>
             {lightenStats?.momChange !== null && lightenStats?.momChange !== undefined && (
-              <span className={`text-xs font-medium ${lightenStats.momChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <span className={`text-xs font-semibold ${lightenStats.momChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {lightenStats.momChange >= 0 ? '+' : ''}{lightenStats.momChange}%
               </span>
             )}
@@ -2026,14 +2029,14 @@ export default function TodayPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+            <div key={i} className="h-20 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-slate-800 dark:to-slate-800/50 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : (
         <div
-          className={`space-y-5 ${
+          className={`space-y-8 ${
             swipeDirection === 'left' ? 'animate-slide-out-left' :
             swipeDirection === 'right' ? 'animate-slide-out-right' :
             slideInDirection === 'left' ? 'animate-slide-in-left' :
@@ -2043,22 +2046,22 @@ export default function TodayPage() {
         >
           {/* Yesterday's Review - First thing to see each day */}
           {yesterdayScheduleEvents.length > 0 && (
-            <section>
+            <section className="section-gradient-schedule rounded-2xl p-4 -mx-4">
               <button
                 onClick={() => toggleSection('yesterdayReview')}
-                className="w-full flex items-center justify-between mb-4 group"
+                className="w-full flex items-center justify-between mb-4 group cursor-pointer"
               >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
                   Yesterday&apos;s Review
                 </h2>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-400 dark:text-slate-500">
-                    {yesterdayScheduleEvents.filter(e => e.completed).length}/{yesterdayScheduleEvents.length} done
+                  <span className="badge badge-success">
+                    {yesterdayScheduleEvents.filter(e => e.completed).length}/{yesterdayScheduleEvents.length}
                   </span>
                   {expandedSections.yesterdayReview ? (
-                    <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                    <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                    <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                   )}
                 </div>
               </button>
@@ -2110,25 +2113,27 @@ export default function TodayPage() {
 
           {/* Today's Pep Talk */}
           {todaysPepTalk && (
-            <section>
+            <section className="section-gradient-mantra rounded-2xl p-4 -mx-4">
               <button
                 onClick={() => toggleSection('pepTalk')}
-                className="w-full flex items-center justify-between mb-4 group"
+                className="w-full flex items-center justify-between mb-4 group cursor-pointer"
               >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
                   Today&apos;s Pep Talk
                 </h2>
                 {expandedSections.pepTalk ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 )}
               </button>
               {expandedSections.pepTalk && (
                 <div className="space-y-4">
-                  <div className="bg-bevel-card dark:bg-slate-800 shadow-bevel rounded-2xl p-5">
+                  <div className="bg-white dark:bg-slate-800/80 shadow-card rounded-2xl p-5 border border-mantra/10">
                     <div className="flex items-start gap-4">
-                      <Sparkles className="w-6 h-6 text-purple-500 flex-shrink-0" />
+                      <div className="w-10 h-10 rounded-xl bg-mantra/10 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5 text-mantra" />
+                      </div>
                       <div className="flex-1">
                         <p className="text-bevel-text dark:text-white font-medium leading-relaxed italic">{todaysPepTalk.text}</p>
                       </div>
@@ -2156,14 +2161,14 @@ export default function TodayPage() {
           )}
 
           {/* Identities */}
-          <section>
+          <section className="section-gradient-identity rounded-2xl p-4 -mx-4">
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => toggleSection('identities')}
-                className="flex items-center gap-2 group"
+                className="flex items-center gap-2 group cursor-pointer"
               >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  Identity {identities.length > 0 && `(${identities.length})`}
+                <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
+                  Identity {identities.length > 0 && <span className="text-identity">({identities.length})</span>}
                 </h2>
                 {expandedSections.identities ? (
                   <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
@@ -2291,13 +2296,13 @@ export default function TodayPage() {
 
           {/* Visions */}
           {visions.length > 0 && (
-            <section>
+            <section className="section-gradient-vision rounded-2xl p-4 -mx-4">
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={() => toggleSection('visions')}
-                  className="flex items-center gap-2 group"
+                  className="flex items-center gap-2 group cursor-pointer"
                 >
-                  <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                  <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
                     Visions
                   </h2>
                   {expandedSections.visions ? (
@@ -2410,14 +2415,14 @@ export default function TodayPage() {
 
           {/* Mantras */}
           {mantras.length > 0 && (
-            <section>
+            <section className="section-gradient-mantra rounded-2xl p-4 -mx-4">
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={() => toggleSection('mantras')}
-                  className="flex items-center gap-2 group"
+                  className="flex items-center gap-2 group cursor-pointer"
                 >
-                  <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                    Daily Mantras {dailyMantras.length > 0 && `(${dailyMantras.length})`}
+                  <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
+                    Daily Mantras {dailyMantras.length > 0 && <span className="text-mantra">({dailyMantras.length})</span>}
                   </h2>
                   {expandedSections.mantras ? (
                     <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
@@ -2541,18 +2546,18 @@ export default function TodayPage() {
 
           {/* Habits */}
           {habits.length > 0 && (
-            <section>
+            <section className="section-gradient-habit rounded-2xl p-4 -mx-4">
               <button
                 onClick={() => toggleSection('habits')}
-                className="w-full flex items-center justify-between mb-4 group"
+                className="w-full flex items-center justify-between mb-4 group cursor-pointer"
               >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  Habits
+                <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
+                  Habits <span className="text-habit">({habits.filter(h => h.completed).length}/{habits.length})</span>
                 </h2>
                 {expandedSections.habits ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 )}
               </button>
               {expandedSections.habits && (
@@ -2582,18 +2587,18 @@ export default function TodayPage() {
 
           {/* Journal Prompts */}
           {prompts.length > 0 && (
-            <section>
+            <section className="section-gradient-journal rounded-2xl p-4 -mx-4">
               <button
                 onClick={() => toggleSection('journal')}
-                className="w-full flex items-center justify-between mb-4 group"
+                className="w-full flex items-center justify-between mb-4 group cursor-pointer"
               >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  Journal
+                <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
+                  Journal <span className="text-journal">({prompts.length})</span>
                 </h2>
                 {expandedSections.journal ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 )}
               </button>
               {expandedSections.journal && (
@@ -2632,18 +2637,18 @@ export default function TodayPage() {
 
           {/* AI Journals */}
           {aiJournals.length > 0 && (
-            <section>
+            <section className="bg-gradient-to-br from-cyan-50/50 to-blue-50/50 dark:from-cyan-900/10 dark:to-blue-900/10 rounded-2xl p-4 -mx-4">
               <button
                 onClick={() => toggleSection('aiJournals')}
-                className="w-full flex items-center justify-between mb-4 group"
+                className="w-full flex items-center justify-between mb-4 group cursor-pointer"
               >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  AI Journals
+                <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
+                  AI Journals <span className="text-cyan-500">({aiJournals.length})</span>
                 </h2>
                 {expandedSections.aiJournals ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 )}
               </button>
               {expandedSections.aiJournals && (
@@ -2719,18 +2724,18 @@ export default function TodayPage() {
           )}
 
           {/* Healthy Foods */}
-          <section>
+          <section className="bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-2xl p-4 -mx-4">
             <button
               onClick={() => toggleSection('healthyFoods')}
-              className="w-full flex items-center justify-between mb-4 group"
+              className="w-full flex items-center justify-between mb-4 group cursor-pointer"
             >
-              <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
+              <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
                 Eat Healthy Today
               </h2>
               {expandedSections.healthyFoods ? (
-                <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
               )}
             </button>
             {expandedSections.healthyFoods && (
@@ -2739,19 +2744,19 @@ export default function TodayPage() {
           </section>
 
           {/* Books */}
-          <section>
+          <section className="bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/10 dark:to-orange-900/10 rounded-2xl p-4 -mx-4">
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => toggleSection('books')}
-                className="flex items-center gap-2 group"
+                className="flex items-center gap-2 group cursor-pointer"
               >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  Currently Reading {currentlyReadingBooks.length > 0 && `(${currentlyReadingBooks.length})`}
+                <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
+                  Currently Reading {currentlyReadingBooks.length > 0 && <span className="text-amber-500">({currentlyReadingBooks.length})</span>}
                 </h2>
                 {expandedSections.books ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 )}
               </button>
             </div>
@@ -2801,18 +2806,18 @@ export default function TodayPage() {
 
           {/* To-Dos */}
           {todos.length > 0 && (
-            <section>
+            <section className="bg-brand-50/30 dark:bg-brand-900/10 rounded-2xl p-4 -mx-4">
               <button
                 onClick={() => toggleSection('todos')}
-                className="w-full flex items-center justify-between mb-4 group"
+                className="w-full flex items-center justify-between mb-4 group cursor-pointer"
               >
-                <h2 className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                  To-Do
+                <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
+                  To-Do <span className="text-todo">({todos.filter(t => t.completed).length}/{todos.length})</span>
                 </h2>
                 {expandedSections.todos ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 )}
               </button>
               {expandedSections.todos && (
@@ -2844,24 +2849,24 @@ export default function TodayPage() {
           )}
 
           {/* Schedule */}
-          <section>
+          <section className="section-gradient-schedule rounded-2xl p-4 -mx-4">
             <button
               onClick={() => toggleSection('schedule')}
-              className="w-full flex items-center justify-between mb-3 group"
+              className="w-full flex items-center justify-between mb-4 group cursor-pointer"
             >
-              <h2 className="text-sm font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+              <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
                 Schedule
               </h2>
               <div className="flex items-center gap-3">
                 {scheduleEvents.length > 0 && (
-                  <span className="text-xs text-gray-400 dark:text-slate-500">
-                    {scheduleEvents.filter(e => e.completed).length}/{scheduleEvents.length} completed
+                  <span className="badge badge-success">
+                    {scheduleEvents.filter(e => e.completed).length}/{scheduleEvents.length}
                   </span>
                 )}
                 {expandedSections.schedule ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
+                  <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
                 )}
               </div>
             </button>
@@ -2937,21 +2942,21 @@ export default function TodayPage() {
           </section>
 
           {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && todos.length === 0 && visions.length === 0 && identities.length === 0 && (
-            <div className="text-center py-16 px-6">
-              <div className="mb-4">
-                <div className="w-16 h-16 mx-auto bg-accent/10 rounded-full flex items-center justify-center">
-                  <Plus className="w-8 h-8 text-accent" />
+            <div className="text-center py-20 px-6">
+              <div className="mb-6">
+                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-900/30 dark:to-brand-800/20 rounded-3xl flex items-center justify-center shadow-sm">
+                  <Plus className="w-10 h-10 text-brand-500" />
                 </div>
               </div>
-              <h3 className="text-lg font-semibold text-bevel-text dark:text-white mb-2">
+              <h3 className="text-xl font-bold text-bevel-text dark:text-white mb-3">
                 Start your journey
               </h3>
-              <p className="text-bevel-text-secondary dark:text-slate-400 mb-6 leading-relaxed">
+              <p className="text-bevel-text-secondary dark:text-slate-400 mb-8 leading-relaxed max-w-xs mx-auto">
                 Add your first habit, mantra, vision, identity, journal prompt, or to-do to begin tracking your day!
               </p>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="px-6 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-semibold transition-all shadow-bevel-sm hover:shadow-bevel"
+                className="px-8 py-3.5 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white rounded-xl font-semibold transition-all shadow-card hover:shadow-card-hover active:scale-[0.98]"
               >
                 Get Started
               </button>
@@ -2961,11 +2966,11 @@ export default function TodayPage() {
       )}
 
       {/* Floating Add Button */}
-      <div className="fixed bottom-24 right-4">
+      <div className="fixed bottom-24 right-5">
         {/* Onboarding hint tooltip */}
         {showAddHint && (
           <div className="absolute bottom-16 right-0 mb-2 animate-fade-in">
-            <div className="bg-bevel-card dark:bg-slate-800 rounded-2xl shadow-bevel-lg p-5 w-64">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-card-hover p-5 w-64 border border-gray-100 dark:border-slate-700">
               <p className="text-bevel-text dark:text-white font-semibold mb-2">
                 Add habits here
               </p>
@@ -2974,13 +2979,13 @@ export default function TodayPage() {
               </p>
               <button
                 onClick={dismissAddHint}
-                className="text-sm text-accent hover:text-accent/80 font-semibold transition-colors"
+                className="text-sm text-brand-500 hover:text-brand-600 font-semibold transition-colors"
               >
                 Got it
               </button>
             </div>
             {/* Arrow pointing to button */}
-            <div className="absolute -bottom-2 right-5 w-4 h-4 bg-bevel-card dark:bg-slate-800 shadow-bevel transform rotate-45" />
+            <div className="absolute -bottom-2 right-5 w-4 h-4 bg-white dark:bg-slate-800 shadow-sm transform rotate-45 border-r border-b border-gray-100 dark:border-slate-700" />
           </div>
         )}
         <button
@@ -2988,8 +2993,8 @@ export default function TodayPage() {
             setShowAddModal(true)
             if (showAddHint) dismissAddHint()
           }}
-          className={`w-16 h-16 bg-accent hover:bg-accent/90 rounded-full flex items-center justify-center shadow-bevel-lg hover:shadow-bevel-md transition-all ${
-            showAddHint ? 'ring-4 ring-accent/30 animate-pulse' : ''
+          className={`w-14 h-14 bg-gradient-to-br from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 rounded-2xl flex items-center justify-center shadow-bevel-lg hover:shadow-card-hover transition-all active:scale-95 ${
+            showAddHint ? 'ring-4 ring-brand-500/30 animate-pulse' : ''
           }`}
         >
           <Plus className="w-7 h-7 text-white" />
