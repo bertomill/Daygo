@@ -36,6 +36,9 @@ import {
   Smile,
   Pen,
   Check,
+  Youtube,
+  Users,
+  Calendar,
   type LucideIcon
 } from 'lucide-react'
 import Link from 'next/link'
@@ -634,6 +637,50 @@ export default function TodayPage() {
     queryKey: ['pep-talk', user?.id, dateStr],
     queryFn: () => pepTalksService.getPepTalkForDate(user!.id, dateStr),
     enabled: !!user,
+  })
+
+  // YouTube stats query
+  const { data: youtubeStats } = useQuery({
+    queryKey: ['youtube-stats'],
+    queryFn: async () => {
+      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+      const headers: Record<string, string> = {}
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`
+      }
+      const response = await fetch('/api/youtube-stats', { headers })
+      if (!response.ok) throw new Error('Failed to fetch YouTube stats')
+      return response.json()
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+  })
+
+  // Makerslounge stats query
+  const { data: makersloungeStats } = useQuery({
+    queryKey: ['makerslounge-stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/makerslounge-stats')
+      if (!response.ok) throw new Error('Failed to fetch Makerslounge stats')
+      return response.json()
+    },
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+  })
+
+  // Headroom AI stats query (intro calls from Google Calendar)
+  const { data: headroomStats } = useQuery({
+    queryKey: ['headroom-stats'],
+    queryFn: async () => {
+      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+      if (!session?.access_token) return null
+      const response = await fetch('/api/headroom-stats', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!response.ok) return null
+      return response.json()
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
   })
 
   const pepTalkMutation = useMutation({
@@ -1926,6 +1973,61 @@ export default function TodayPage() {
             /{yesterdayScheduleEvents.length} yesterday&apos;s items completed
           </p>
         )}
+      </div>
+
+      {/* Metrics Dashboard */}
+      <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
+          <div className="flex items-center gap-2 mb-2">
+            <Youtube className="w-4 h-4 text-red-500" />
+            <span className="text-xs text-gray-500 dark:text-slate-400">Content</span>
+          </div>
+          <p className="text-xl font-semibold text-gray-900 dark:text-white">
+            {youtubeStats?.subscriberCount?.toLocaleString() ?? '—'}
+          </p>
+          <div className="flex items-center gap-1">
+            <p className="text-xs text-gray-400 dark:text-slate-500">YT Subs</p>
+            {youtubeStats?.momChange !== null && youtubeStats?.momChange !== undefined && (
+              <span className={`text-xs font-medium ${youtubeStats.momChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {youtubeStats.momChange >= 0 ? '+' : ''}{youtubeStats.momChange}%
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="w-4 h-4 text-purple-500" />
+            <span className="text-xs text-gray-500 dark:text-slate-400">Community</span>
+          </div>
+          <p className="text-xl font-semibold text-gray-900 dark:text-white">
+            {makersloungeStats?.memberCount?.toLocaleString() ?? '—'}
+          </p>
+          <div className="flex items-center gap-1">
+            <p className="text-xs text-gray-400 dark:text-slate-500">Makerslounge Users</p>
+            {makersloungeStats?.momChange !== null && makersloungeStats?.momChange !== undefined && (
+              <span className={`text-xs font-medium ${makersloungeStats.momChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {makersloungeStats.momChange >= 0 ? '+' : ''}{makersloungeStats.momChange}%
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar className="w-4 h-4 text-green-500" />
+            <span className="text-xs text-gray-500 dark:text-slate-400">Sales</span>
+          </div>
+          <p className="text-xl font-semibold text-gray-900 dark:text-white">
+            {headroomStats?.totalCalls?.toLocaleString() ?? '—'}
+          </p>
+          <div className="flex items-center gap-1">
+            <p className="text-xs text-gray-400 dark:text-slate-500">Headroom Calls</p>
+            {headroomStats?.momChange !== null && headroomStats?.momChange !== undefined && (
+              <span className={`text-xs font-medium ${headroomStats.momChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {headroomStats.momChange >= 0 ? '+' : ''}{headroomStats.momChange}%
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {isLoading ? (
