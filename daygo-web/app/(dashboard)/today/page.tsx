@@ -1989,6 +1989,7 @@ export default function TodayPage() {
               </span>
             )}
           </div>
+          <p className="text-[10px] text-bevel-text-secondary/60 dark:text-slate-500 mt-2 italic">Post a video</p>
         </div>
         <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 shadow-card border border-gray-100/80 dark:border-slate-700/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -2000,13 +2001,14 @@ export default function TodayPage() {
             {makersloungeStats?.memberCount?.toLocaleString() ?? '—'}
           </p>
           <div className="flex items-center gap-1.5 mt-1">
-            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">Community</p>
+            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">Maklo App Subscribers</p>
             {makersloungeStats?.momChange !== null && makersloungeStats?.momChange !== undefined && (
               <span className={`text-xs font-semibold ${makersloungeStats.momChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {makersloungeStats.momChange >= 0 ? '+' : ''}{makersloungeStats.momChange}%
               </span>
             )}
           </div>
+          <p className="text-[10px] text-bevel-text-secondary/60 dark:text-slate-500 mt-2 italic">Commit an improvement</p>
         </div>
         <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 shadow-card border border-gray-100/80 dark:border-slate-700/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -2018,13 +2020,14 @@ export default function TodayPage() {
             {lightenStats?.totalCalls?.toLocaleString() ?? '—'}
           </p>
           <div className="flex items-center gap-1.5 mt-1">
-            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">Sales Calls</p>
+            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">Lighten AI Client Calls</p>
             {lightenStats?.momChange !== null && lightenStats?.momChange !== undefined && (
               <span className={`text-xs font-semibold ${lightenStats.momChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {lightenStats.momChange >= 0 ? '+' : ''}{lightenStats.momChange}%
               </span>
             )}
           </div>
+          <p className="text-[10px] text-bevel-text-secondary/60 dark:text-slate-500 mt-2 italic">Build an agent</p>
         </div>
       </div>
 
