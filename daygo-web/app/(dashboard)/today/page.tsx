@@ -667,19 +667,14 @@ export default function TodayPage() {
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
   })
 
-  // Headroom AI stats query (intro calls from Google Calendar)
-  const { data: headroomStats } = useQuery({
-    queryKey: ['headroom-stats'],
+  // Lighten AI stats query (intro calls from Calendly)
+  const { data: lightenStats } = useQuery({
+    queryKey: ['lighten-stats'],
     queryFn: async () => {
-      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
-      if (!session?.access_token) return null
-      const response = await fetch('/api/headroom-stats', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
+      const response = await fetch('/api/lighten-stats')
       if (!response.ok) return null
       return response.json()
     },
-    enabled: !!user,
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
   })
 
@@ -2017,13 +2012,13 @@ export default function TodayPage() {
             <span className="text-xs text-gray-500 dark:text-slate-400">Sales</span>
           </div>
           <p className="text-xl font-semibold text-gray-900 dark:text-white">
-            {headroomStats?.totalCalls?.toLocaleString() ?? '—'}
+            {lightenStats?.totalCalls?.toLocaleString() ?? '—'}
           </p>
           <div className="flex items-center gap-1">
-            <p className="text-xs text-gray-400 dark:text-slate-500">Headroom Calls</p>
-            {headroomStats?.momChange !== null && headroomStats?.momChange !== undefined && (
-              <span className={`text-xs font-medium ${headroomStats.momChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {headroomStats.momChange >= 0 ? '+' : ''}{headroomStats.momChange}%
+            <p className="text-xs text-gray-400 dark:text-slate-500">Lighten Calls</p>
+            {lightenStats?.momChange !== null && lightenStats?.momChange !== undefined && (
+              <span className={`text-xs font-medium ${lightenStats.momChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {lightenStats.momChange >= 0 ? '+' : ''}{lightenStats.momChange}%
               </span>
             )}
           </div>
