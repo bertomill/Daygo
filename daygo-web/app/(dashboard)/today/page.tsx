@@ -68,6 +68,7 @@ import { pepTalksService, type PepTalk } from '@/lib/services/pepTalks'
 import { todosService } from '@/lib/services/todos'
 import { visionsService } from '@/lib/services/visions'
 import { identitiesService } from '@/lib/services/identities'
+import { valuesService } from '@/lib/services/values'
 import { booksService } from '@/lib/services/books'
 import { scheduleService } from '@/lib/services/schedule'
 import { calendarRulesService } from '@/lib/services/calendarRules'
@@ -95,7 +96,7 @@ import { ScoreRing } from '@/components/ScoreRing'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { PepTalkAudioPlayer } from '@/components/PepTalkAudioPlayer'
 import { HealthyFoodsCard } from '@/components/HealthyFoodsCard'
-import type { HabitWithLog, Mantra, Todo, Vision, Identity, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal, Book } from '@/lib/types/database'
+import type { HabitWithLog, Mantra, Todo, Vision, Identity, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal, Book, Value } from '@/lib/types/database'
 import { calculateMissionScore } from '@/lib/services/missionScore'
 import confetti from 'canvas-confetti'
 
@@ -523,6 +524,12 @@ export default function TodayPage() {
   const { data: identities = [], isLoading: identitiesLoading } = useQuery({
     queryKey: ['identities', user?.id],
     queryFn: () => identitiesService.getIdentities(user!.id),
+    enabled: !!user,
+  })
+
+  const { data: values = [] } = useQuery({
+    queryKey: ['values', user?.id],
+    queryFn: () => valuesService.getValues(user!.id),
     enabled: !!user,
   })
 
@@ -2030,6 +2037,25 @@ export default function TodayPage() {
           <p className="text-[10px] text-bevel-text-secondary/60 dark:text-slate-500 mt-2 italic">Build an agent</p>
         </div>
       </div>
+
+      {/* My Values */}
+      {values.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-bevel-text-secondary dark:text-slate-400 mb-3">
+            My Values
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {values.map((value) => (
+              <span
+                key={value.id}
+                className="px-3 py-1.5 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-full text-sm font-medium"
+              >
+                {value.text}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="space-y-4">

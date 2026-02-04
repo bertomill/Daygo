@@ -868,6 +868,32 @@ export interface Database {
           created_at?: string;
         };
       };
+      values: {
+        Row: {
+          id: string;
+          user_id: string;
+          text: string;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          text: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          text?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -916,6 +942,7 @@ export type FoodImage = Database['public']['Tables']['food_images']['Row'];
 export type FoodCategory = 'plants' | 'meats' | 'fish' | 'carbs' | 'fruit' | 'superfoods';
 export type Identity = Database['public']['Tables']['identities']['Row'];
 export type Book = Database['public']['Tables']['books']['Row'];
+export type Value = Database['public']['Tables']['values']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {
