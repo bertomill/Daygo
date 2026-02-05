@@ -460,6 +460,31 @@ export default function CrystalDayPage() {
         </button>
       </div>
 
+      {/* Deepest Values */}
+      <div className="mb-6 animate-fade-in">
+        <h2 className="section-header text-bevel-text-secondary dark:text-slate-400 mb-3 text-center">
+          My Deepest Values
+        </h2>
+        <div className="flex flex-col gap-2">
+          {[
+            { icon: '🔥', text: 'Following my passion' },
+            { icon: '💪', text: 'Prioritizing health & fitness' },
+            { icon: '🤝', text: 'Contributing to my community as much as I can' },
+          ].map((value, i) => (
+            <div
+              key={value.text}
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-500/5 to-brand-500/10 border border-brand-500/10 animate-fade-in"
+              style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'backwards' }}
+            >
+              <span className="text-lg">{value.icon}</span>
+              <span className="text-[13px] font-semibold text-bevel-text dark:text-white">
+                {value.text}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 3 Pillars */}
       <div className="grid grid-cols-3 gap-3 mb-10">
         {pillars.map((pillar, i) => (
