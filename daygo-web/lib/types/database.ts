@@ -894,6 +894,35 @@ export interface Database {
           created_at?: string;
         };
       };
+      crystal_day_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          date: string;
+          item_key: string;
+          completed: boolean;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          date: string;
+          item_key: string;
+          completed?: boolean;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          date?: string;
+          item_key?: string;
+          completed?: boolean;
+          note?: string | null;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -943,6 +972,7 @@ export type FoodCategory = 'plants' | 'meats' | 'fish' | 'carbs' | 'fruit' | 'su
 export type Identity = Database['public']['Tables']['identities']['Row'];
 export type Book = Database['public']['Tables']['books']['Row'];
 export type Value = Database['public']['Tables']['values']['Row'];
+export type CrystalDayLog = Database['public']['Tables']['crystal_day_logs']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {
