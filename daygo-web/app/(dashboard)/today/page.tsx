@@ -1965,6 +1965,55 @@ export default function TodayPage() {
         </button>
       </div>
 
+      {/* Bold Goals & Values - bertmill19 */}
+      {user?.email === 'bertmill19@gmail.com' && (
+        <div className="mb-10 space-y-4">
+          <div className="rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-[2px]">
+            <div className="rounded-2xl bg-white dark:bg-slate-900 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Flame className="w-5 h-5 text-orange-500" />
+                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">My Non-Negotiables</h2>
+              </div>
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
+                  <div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                      I run a successful AI Consulting Company called Lighten AI that earns me more than $7K/month
+                    </p>
+                    <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-1 italic">
+                      Because I&apos;m extremely passionate about following one&apos;s gifts and serving the world that way.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
+                  <div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                      I am an elite 15 Hyrox athlete
+                    </p>
+                    <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-1 italic">
+                      Because I&apos;m extremely passionate about spreading fitness as a way to a better life.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
+                  <div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                      I have a Makerslounge community of 10,000 builders that all pay an annual membership fee
+                    </p>
+                    <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-1 italic">
+                      Because I&apos;m extremely passionate about supporting those with a vision to make something great.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Score Ring */}
       <div className="flex flex-col items-center mb-8">
         <ScoreRing score={score} />
