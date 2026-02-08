@@ -11,8 +11,7 @@ export default function Home() {
   useEffect(() => {
     if (initialized) {
       if (user) {
-        const home = user.email === 'bertmill19@gmail.com' ? '/crystalday' : '/today'
-        router.replace(home)
+        router.replace('/today')
       } else {
         router.replace('/login')
       }
