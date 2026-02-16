@@ -137,14 +137,14 @@ export function SortableJournalCard({ prompt, onSave, onEdit }: SortableJournalC
       </div>
 
       {isEditing ? (
-        <div className="ml-14">
+        <div className="-mx-5 -mb-5 px-2 pb-3">
           <RichTextEditor
             content={entry}
             onChange={setEntry}
             placeholder="Write your reflection..."
             className="w-full"
           />
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-3 px-1">
             <button
               onClick={handleSave}
               className="px-5 py-2.5 text-white rounded-xl text-sm font-semibold transition-colors shadow-bevel-sm"

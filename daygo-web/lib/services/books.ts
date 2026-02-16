@@ -1,5 +1,5 @@
 import { supabase } from '../supabase'
-import type { Book } from '../types/database'
+import type { Book, BookLearning } from '../types/database'
 
 export const booksService = {
   async getCurrentlyReading(userId: string): Promise<Book[]> {
@@ -117,5 +117,40 @@ export const booksService = {
         .eq('id', orderedIds[i])
       if (error) throw error
     }
+  },
+
+  async getLearnings(bookId: string): Promise<BookLearning[]> {
+    const { data, error } = await (supabase
+      .from('book_learnings') as any)
+      .select('*')
+      .eq('book_id', bookId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return (data as BookLearning[]) ?? []
+  },
+
+  async addLearning(bookId: string, userId: string, content: string): Promise<BookLearning> {
+    const { data, error } = await (supabase
+      .from('book_learnings') as any)
+      .insert({
+        book_id: bookId,
+        user_id: userId,
+        content,
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as BookLearning
+  },
+
+  async deleteLearning(id: string): Promise<void> {
+    const { error } = await (supabase
+      .from('book_learnings') as any)
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
   },
 }

@@ -1,7 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronUp, Plus, Trash2, Sparkles, RefreshCw, Wand2, Eye } from 'lucide-react'
+
+const MOTIVATIONAL_QUOTES = [
+  "The secret of getting ahead is getting started.",
+  "Every day is a fresh start.",
+  "Small steps every day lead to big results.",
+  "You don't have to be great to start, but you have to start to be great.",
+  "Focus on progress, not perfection.",
+  "Today's effort is tomorrow's reward.",
+  "Discipline is choosing what you want most over what you want now.",
+  "The best time to plant a tree was 20 years ago. The second best time is now.",
+  "Your future self will thank you.",
+  "Consistency beats intensity.",
+  "Make today count.",
+  "Success is the sum of small efforts repeated day in and day out.",
+  "Don't watch the clock; do what it does. Keep going.",
+  "Dream big, start small, act now.",
+  "You are one decision away from a completely different life.",
+]
+
 import type { CalendarRule } from '@/lib/types/database'
 
 interface CalendarRulesPanelProps {
@@ -31,6 +50,16 @@ export function CalendarRulesPanel({
 }: CalendarRulesPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [newRuleText, setNewRuleText] = useState('')
+  const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length))
+
+  useEffect(() => {
+    if (!isApplying) return
+    setQuoteIndex(Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length))
+    const interval = setInterval(() => {
+      setQuoteIndex(prev => (prev + 1) % MOTIVATIONAL_QUOTES.length)
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [isApplying])
 
   const handleAddRule = () => {
     if (!newRuleText.trim()) return
@@ -51,14 +80,17 @@ export function CalendarRulesPanel({
     <>
       {/* Floating Planning Status Indicator - Bottom Left */}
       {isApplying && (
-        <div className="fixed bottom-24 left-4 z-40 animate-in slide-in-from-left-5 fade-in duration-300">
-          <div className="bg-gradient-to-r from-schedule to-emerald-400 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 backdrop-blur-sm">
+        <div className="fixed bottom-24 left-4 right-4 z-40 animate-in slide-in-from-left-5 fade-in duration-300">
+          <div className="bg-gradient-to-r from-schedule to-emerald-400 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 backdrop-blur-sm max-w-sm">
             <RefreshCw className="w-5 h-5 animate-spin flex-shrink-0" />
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium">Planning your day...</span>
               {planningStatus && (
                 <span className="text-xs text-white/80">{planningStatus}</span>
               )}
+              <span className="text-xs text-white/70 italic transition-opacity duration-500">
+                &ldquo;{MOTIVATIONAL_QUOTES[quoteIndex]}&rdquo;
+              </span>
             </div>
           </div>
         </div>

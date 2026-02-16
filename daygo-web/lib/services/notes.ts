@@ -117,4 +117,28 @@ export const notesService = {
 
     if (error) throw error
   },
+
+  async searchNotes(userId: string, query: string): Promise<Note[]> {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('user_id', userId)
+      .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+      .order('updated_at', { ascending: false })
+
+    if (error) throw error
+    return (data as Note[]) ?? []
+  },
+
+  async getNotesByTags(userId: string, tags: string[]): Promise<Note[]> {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('user_id', userId)
+      .overlaps('tags', tags)
+      .order('updated_at', { ascending: false })
+
+    if (error) throw error
+    return (data as Note[]) ?? []
+  },
 }

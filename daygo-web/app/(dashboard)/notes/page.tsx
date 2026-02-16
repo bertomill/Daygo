@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, X, FileText, Calendar, ChevronLeft, ChevronRight, PenTool, MoreVertical, Tag, Star } from 'lucide-react'
+import { Plus, Trash2, X, FileText, Calendar, ChevronLeft, ChevronRight, PenTool, MoreVertical, Tag, Star, MessageCircle, Send, ArrowLeft } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { notesService, type NoteType } from '@/lib/services/notes'
 import { RichTextEditor } from '@/components/RichTextEditor'
@@ -36,6 +36,20 @@ export default function NotesPage() {
   const [tagInput, setTagInput] = useState('')
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null)
   const [showStarredOnly, setShowStarredOnly] = useState(false)
+
+  // Tag suggestion state
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isSuggestingTags, setIsSuggestingTags] = useState(false)
+  const [lastSavedNoteId, setLastSavedNoteId] = useState<string | null>(null)
+
+  // Chat state
+  const [showChat, setShowChat] = useState(false)
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [isChatLoading, setIsChatLoading] = useState(false)
+  const chatEndRef = useRef<HTMLDivElement>(null)
+  const chatInputRef = useRef<HTMLInputElement>(null)
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes', user?.id],
@@ -178,6 +192,33 @@ export default function NotesPage() {
     },
   })
 
+  const fetchTagSuggestions = useCallback(async (title: string, content: string, currentTags: string[], allUserTags: string[]) => {
+    setIsSuggestingTags(true)
+    try {
+      const response = await fetch('/api/notes-suggest-tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          content,
+          existingTags: currentTags,
+          allTags: allUserTags,
+        }),
+      })
+      if (response.ok) {
+        const { suggestedTags: tags } = await response.json()
+        if (tags && tags.length > 0) {
+          setSuggestedTags(tags)
+          setShowSuggestions(true)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch tag suggestions:', error)
+    } finally {
+      setIsSuggestingTags(false)
+    }
+  }, [])
+
   const handleSave = useCallback(() => {
     if (selectedNote) {
       const isCanvas = selectedNote.note_type === 'canvas'
@@ -191,20 +232,111 @@ export default function NotesPage() {
         }
       }
 
+      const savedTitle = editTitle || (isCanvas ? 'Untitled Canvas' : 'Untitled Note')
+      const savedContent = editContent
+      const savedTags = [...editTags]
+
       updateNoteMutation.mutate({
         noteId: selectedNote.id,
         updates: {
-          title: editTitle || (isCanvas ? 'Untitled Canvas' : 'Untitled Note'),
-          content: editContent,
-          tags: editTags,
+          title: savedTitle,
+          content: savedContent,
+          tags: savedTags,
           ...(isCanvas && canvasData ? { canvas_data: canvasData } : {}),
         },
       })
+
+      // Fetch tag suggestions in background (only for text notes with content)
+      const noteId = selectedNote.id
+      if (!isCanvas && (savedContent || savedTitle)) {
+        setLastSavedNoteId(noteId)
+        fetchTagSuggestions(savedTitle, savedContent, savedTags, allTags)
+      }
+
       setIsEditing(false)
       setSelectedNote(null)
       setEditCanvasData(null)
     }
-  }, [selectedNote, editTitle, editContent, editCanvasData, updateNoteMutation])
+  }, [selectedNote, editTitle, editContent, editCanvasData, editTags, allTags, updateNoteMutation, fetchTagSuggestions])
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
+
+  // Focus chat input when opened
+  useEffect(() => {
+    if (showChat) {
+      setTimeout(() => chatInputRef.current?.focus(), 100)
+    }
+  }, [showChat])
+
+  const sendChatMessage = useCallback(async () => {
+    if (!chatInput.trim() || isChatLoading || !user) return
+
+    const userMessage = { role: 'user' as const, content: chatInput.trim() }
+    const newMessages = [...chatMessages, userMessage]
+    setChatMessages(newMessages)
+    setChatInput('')
+    setIsChatLoading(true)
+
+    try {
+      const response = await fetch('/api/notes-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+          userId: user.id,
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to get response')
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error('No reader available')
+
+      const decoder = new TextDecoder()
+      let assistantContent = ''
+
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: '' }])
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const text = decoder.decode(value, { stream: true })
+        assistantContent += text
+        setChatMessages((prev) => {
+          const updated = [...prev]
+          updated[updated.length - 1] = { role: 'assistant', content: assistantContent }
+          return updated
+        })
+      }
+    } catch (error) {
+      console.error('Chat error:', error)
+      setChatMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' },
+      ])
+    } finally {
+      setIsChatLoading(false)
+    }
+  }, [chatInput, chatMessages, isChatLoading, user])
+
+  const applySuggestedTag = useCallback((tag: string) => {
+    if (!lastSavedNoteId) return
+    const note = notes.find((n) => n.id === lastSavedNoteId)
+    if (!note) return
+
+    const newTags = [...(note.tags || []), tag]
+    updateNoteMutation.mutate({
+      noteId: lastSavedNoteId,
+      updates: { tags: newTags },
+    })
+    setSuggestedTags((prev) => prev.filter((t) => t !== tag))
+    if (suggestedTags.length <= 1) {
+      setShowSuggestions(false)
+    }
+  }, [lastSavedNoteId, notes, suggestedTags.length, updateNoteMutation])
 
   const openNote = (note: Note) => {
     setSelectedNote(note)
@@ -352,17 +484,26 @@ export default function NotesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-bevel-text dark:text-white">Notes</h1>
-        <button
-          onClick={() => setShowDateFilter(true)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-            dateFilter === 'all'
-              ? 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
-              : 'bg-accent/10 text-accent'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          {getFilterLabel()}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowChat(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Chat
+          </button>
+          <button
+            onClick={() => setShowDateFilter(true)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              dateFilter === 'all'
+                ? 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+                : 'bg-accent/10 text-accent'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            {getFilterLabel()}
+          </button>
+        </div>
       </div>
 
       {/* Active filter indicator */}
@@ -383,6 +524,40 @@ export default function NotesPage() {
           >
             Clear filters
           </button>
+        </div>
+      )}
+
+      {/* Tag Suggestions Banner */}
+      {(showSuggestions && suggestedTags.length > 0) && (
+        <div className="mb-4 p-3 bg-accent/5 border border-accent/20 rounded-xl">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-accent">Suggested tags</span>
+            <button
+              onClick={() => { setShowSuggestions(false); setSuggestedTags([]) }}
+              className="p-1 hover:bg-accent/10 rounded-lg transition-colors"
+            >
+              <X className="w-3.5 h-3.5 text-accent" />
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {suggestedTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => applySuggestedTag(tag)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-accent/30 text-accent text-sm rounded-full hover:bg-accent/10 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isSuggestingTags && (
+        <div className="mb-4 flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
+          <div className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+          Analyzing note for tag suggestions...
         </div>
       )}
 
@@ -959,6 +1134,92 @@ export default function NotesPage() {
                   Apply
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Chat Drawer */}
+      {showChat && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end">
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-200"
+          >
+            {/* Chat Header */}
+            <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-slate-700">
+              <button
+                onClick={() => setShowChat(false)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-slate-400" />
+              </button>
+              <div>
+                <h2 className="font-semibold text-gray-900 dark:text-white">Talk to your notes</h2>
+                <p className="text-xs text-gray-500 dark:text-slate-400">Ask questions about your notes</p>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {chatMessages.length === 0 && (
+                <div className="text-center py-12">
+                  <MessageCircle className="w-10 h-10 text-gray-300 dark:text-slate-600 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-slate-400 text-sm mb-1">Ask me anything about your notes</p>
+                  <p className="text-gray-400 dark:text-slate-500 text-xs">
+                    I can search by tags, find topics, and summarize your notes
+                  </p>
+                </div>
+              )}
+              {chatMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${
+                      msg.role === 'user'
+                        ? 'bg-accent text-white rounded-br-md'
+                        : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white rounded-bl-md'
+                    }`}
+                  >
+                    {msg.content || (isChatLoading && i === chatMessages.length - 1 ? (
+                      <span className="inline-flex gap-1">
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </span>
+                    ) : '')}
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Chat Input */}
+            <div className="p-4 border-t border-gray-200 dark:border-slate-700">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={chatInputRef}
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      sendChatMessage()
+                    }
+                  }}
+                  placeholder="Ask about your notes..."
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  disabled={isChatLoading}
+                />
+                <button
+                  onClick={sendChatMessage}
+                  disabled={!chatInput.trim() || isChatLoading}
+                  className="p-2.5 bg-accent hover:bg-accent/90 disabled:opacity-50 disabled:hover:bg-accent text-white rounded-xl transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

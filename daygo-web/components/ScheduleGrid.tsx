@@ -681,7 +681,7 @@ export function ScheduleGrid({ events, googleCalendarEvents = [], selectedDate, 
                     )}
                   </button>
                   <Icon className={`text-white drop-shadow-sm flex-shrink-0 ${isShort ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                  <p className={`text-white font-semibold truncate drop-shadow-sm ${isShort ? 'text-xs' : 'text-sm'} ${event.completed ? 'line-through opacity-70' : ''}`}>
+                  <p className={`text-white font-semibold drop-shadow-sm text-[11px] leading-tight ${isShort ? 'truncate' : 'line-clamp-2'} ${event.completed ? 'line-through opacity-70' : ''}`}>
                     {event.title}
                   </p>
                 </div>
@@ -742,7 +742,7 @@ export function ScheduleGrid({ events, googleCalendarEvents = [], selectedDate, 
                       <rect x="11" y="16" width="3" height="3" rx="0.5" className="fill-red-500" />
                     </svg>
                   </div>
-                  <p className={`text-gray-700 dark:text-slate-200 font-medium truncate drop-shadow-sm ${isShort ? 'text-xs' : 'text-sm'}`}>
+                  <p className={`text-gray-700 dark:text-slate-200 font-medium drop-shadow-sm text-[11px] leading-tight ${isShort ? 'truncate' : 'line-clamp-2'}`}>
                     {event.title}
                   </p>
                 </div>

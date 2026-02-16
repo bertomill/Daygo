@@ -40,6 +40,7 @@ module.exports = {
   			vision: '#3b82f6',
   			habit: '#10b981',
   			todo: '#6366f1',
+  			expense: '#f97316',
   			// Refined bevel system
   			'bevel-bg': '#fafbfc',
   			'bevel-card': '#ffffff',

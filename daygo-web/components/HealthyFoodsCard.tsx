@@ -16,13 +16,27 @@ const CATEGORIES: { key: FoodCategory; label: string; icon: React.ReactNode; col
   { key: 'superfoods', label: 'Superfoods', icon: <Sparkles className="w-4 h-4" />, color: 'text-purple-600 dark:text-purple-400' },
 ]
 
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+function weightedSelect(items: FoodImage[], count: number): FoodImage[] {
+  if (items.length <= count) return [...items]
+  const selected: FoodImage[] = []
+  const remaining = [...items]
+
+  for (let i = 0; i < count && remaining.length > 0; i++) {
+    const totalWeight = remaining.reduce((sum, item) => sum + Math.max(item.weight ?? 5, 1), 0)
+    let rand = Math.random() * totalWeight
+    let pickedIndex = 0
+    for (let j = 0; j < remaining.length; j++) {
+      rand -= Math.max(remaining[j].weight ?? 50, 1)
+      if (rand <= 0) {
+        pickedIndex = j
+        break
+      }
+    }
+    selected.push(remaining[pickedIndex])
+    remaining.splice(pickedIndex, 1)
   }
-  return shuffled
+
+  return selected
 }
 
 interface CategorySectionProps {
@@ -35,7 +49,7 @@ interface CategorySectionProps {
   onBlur: () => void
   onUpload: (file: File) => void
   onDelete: (id: string) => void
-  onUpdateLabel: (id: string, name: string) => void
+  onUpdateLabel: (id: string, name: string, weight?: number) => void
   isUploading: boolean
   editingImageId: string | null
   onStartEdit: (id: string) => void
@@ -70,15 +84,28 @@ function CategorySection({
     }
   }
 
+  const [editWeight, setEditWeight] = useState(5)
+  const editContainerRef = useRef<HTMLDivElement>(null)
+
   const handleStartEdit = (image: FoodImage) => {
     setEditValue(image.name || '')
+    setEditWeight(image.weight ?? 5)
     onStartEdit(image.id)
     setTimeout(() => inputRef.current?.focus(), 0)
   }
 
   const handleSaveLabel = (imageId: string) => {
-    onUpdateLabel(imageId, editValue.trim())
+    const currentImage = images.find(img => img.id === imageId)
+    const originalWeight = currentImage?.weight ?? 5
+    const weightChanged = editWeight !== originalWeight
+    onUpdateLabel(imageId, editValue.trim(), weightChanged ? editWeight : undefined)
     onEndEdit()
+  }
+
+  const handleEditBlur = (e: React.FocusEvent, imageId: string) => {
+    // Don't close if focus is moving to another element within the edit container
+    if (editContainerRef.current?.contains(e.relatedTarget as Node)) return
+    handleSaveLabel(imageId)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent, imageId: string) => {
@@ -134,6 +161,15 @@ function CategorySection({
                   <Pencil className="w-4 h-4 text-white" />
                 </div>
               )}
+              {/* Weight indicator bar */}
+              {!isGenerateMode && editingImageId !== image.id && (
+                <div className="absolute bottom-0 left-0 right-0 h-1">
+                  <div
+                    className="h-full bg-green-400/80"
+                    style={{ width: `${((image.weight ?? 5) / 10) * 100}%` }}
+                  />
+                </div>
+              )}
               {!isGenerateMode && (
                 <button
                   onClick={(e) => {
@@ -146,18 +182,36 @@ function CategorySection({
                 </button>
               )}
             </div>
-            {/* Inline edit input */}
+            {/* Inline edit: label + weight stepper */}
             {editingImageId === image.id && (
-              <input
-                ref={inputRef}
-                type="text"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onBlur={() => handleSaveLabel(image.id)}
-                onKeyDown={(e) => handleKeyDown(e, image.id)}
-                placeholder="Add label..."
-                className="w-20 mt-1 px-1 py-0.5 text-[10px] text-center text-gray-900 dark:text-slate-100 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 placeholder:text-gray-400 dark:placeholder:text-slate-500"
-              />
+              <div ref={editContainerRef} className="w-20 mt-1 space-y-1" onBlur={(e) => handleEditBlur(e, image.id)}>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, image.id)}
+                  placeholder="Add label..."
+                  className="w-full px-1 py-0.5 text-[10px] text-center text-gray-900 dark:text-slate-100 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 placeholder:text-gray-400 dark:placeholder:text-slate-500"
+                />
+                <div className="flex items-center justify-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditWeight(Math.max(0, editWeight - 1))}
+                    className="w-4 h-4 flex items-center justify-center rounded bg-gray-200 dark:bg-slate-600 text-gray-600 dark:text-slate-300 text-[10px] font-bold hover:bg-gray-300 dark:hover:bg-slate-500"
+                  >
+                    −
+                  </button>
+                  <span className="text-[10px] text-gray-600 dark:text-slate-300 w-4 text-center font-medium">{editWeight}</span>
+                  <button
+                    type="button"
+                    onClick={() => setEditWeight(Math.min(10, editWeight + 1))}
+                    className="w-4 h-4 flex items-center justify-center rounded bg-gray-200 dark:bg-slate-600 text-gray-600 dark:text-slate-300 text-[10px] font-bold hover:bg-gray-300 dark:hover:bg-slate-500"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         ))}
@@ -236,8 +290,8 @@ export function HealthyFoodsCard() {
   })
 
   const updateLabelMutation = useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) =>
-      foodImagesService.updateFoodImage(id, user!.id, { name: name || null }),
+    mutationFn: ({ id, name, weight }: { id: string; name: string; weight?: number }) =>
+      foodImagesService.updateFoodImage(id, user!.id, { name: name || null, ...(weight !== undefined && { weight }) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['food-images', user?.id] })
     },
@@ -291,7 +345,7 @@ export function HealthyFoodsCard() {
 
     for (const category of CATEGORIES) {
       const categoryImages = imagesByCategory[category.key]
-      newSelection[category.key] = shuffleArray(categoryImages).slice(0, 3)
+      newSelection[category.key] = weightedSelect(categoryImages, 3)
     }
 
     setGeneratedSelection(newSelection)
@@ -310,7 +364,7 @@ export function HealthyFoodsCard() {
       const categoryImages = imagesByCategory[category.key]
       // Only include images that have labels
       const labeledImages = categoryImages.filter((img) => img.name)
-      const selected = shuffleArray(labeledImages).slice(0, 3)
+      const selected = weightedSelect(labeledImages, 3)
 
       for (const img of selected) {
         if (img.name) {
@@ -468,7 +522,7 @@ export function HealthyFoodsCard() {
           onBlur={() => setFocusedCategory(null)}
           onUpload={(file) => uploadMutation.mutate({ category: category.key, file })}
           onDelete={(id) => deleteMutation.mutate(id)}
-          onUpdateLabel={(id, name) => updateLabelMutation.mutate({ id, name })}
+          onUpdateLabel={(id, name, weight) => updateLabelMutation.mutate({ id, name, weight })}
           isUploading={uploadingCategory === category.key}
           editingImageId={editingImageId}
           onStartEdit={(id) => setEditingImageId(id)}

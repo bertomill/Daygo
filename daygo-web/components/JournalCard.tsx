@@ -43,7 +43,7 @@ export function JournalCard({ prompt, onSave, onEdit }: JournalCardProps) {
       </div>
 
       {isEditing ? (
-        <div className="relative ml-10">
+        <div className="relative -mx-5 -mb-5 px-3 pb-3 pt-1">
           <RichTextEditor
             content={entry}
             onChange={setEntry}

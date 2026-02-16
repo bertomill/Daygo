@@ -51,7 +51,7 @@ export const foodImagesService = {
   async updateFoodImage(
     id: string,
     userId: string,
-    updates: { name?: string | null; category?: FoodCategory }
+    updates: { name?: string | null; category?: FoodCategory; weight?: number }
   ): Promise<FoodImage> {
     console.log('Updating food image:', { id, userId, updates })
     const { data, error } = await (supabase
