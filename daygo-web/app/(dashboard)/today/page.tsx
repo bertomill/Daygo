@@ -36,9 +36,6 @@ import {
   Smile,
   Pen,
   Check,
-  Youtube,
-  Users,
-  Calendar,
   type LucideIcon
 } from 'lucide-react'
 import Link from 'next/link'
@@ -78,6 +75,9 @@ import { dailyNotesService } from '@/lib/services/dailyNotes'
 import { scheduleTemplatesService } from '@/lib/services/scheduleTemplates'
 import { aiJournalsService } from '@/lib/services/aiJournals'
 import { profilesService } from '@/lib/services/profiles'
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { expensesService } from '@/lib/services/expenses'
+import { giftIdeasService } from '@/lib/services/giftIdeas'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { SortableMantraCard } from '@/components/SortableMantraCard'
 import { MantraCard } from '@/components/MantraCard'
@@ -96,7 +96,7 @@ import { ScoreRing } from '@/components/ScoreRing'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { PepTalkAudioPlayer } from '@/components/PepTalkAudioPlayer'
 import { HealthyFoodsCard } from '@/components/HealthyFoodsCard'
-import type { HabitWithLog, Mantra, Todo, Vision, Identity, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal, Book, Value } from '@/lib/types/database'
+import type { HabitWithLog, Mantra, Todo, Vision, Identity, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal, Book, Value, Expense, ExpenseCategory } from '@/lib/types/database'
 import { calculateMissionScore } from '@/lib/services/missionScore'
 import confetti from 'canvas-confetti'
 
@@ -164,6 +164,7 @@ export default function TodayPage() {
   const [isEditingIdentity, setIsEditingIdentity] = useState(false)
   const [editIdentityText, setEditIdentityText] = useState('')
   const [selectedBook, setSelectedBook] = useState<Book | null>(null)
+  const [newLearning, setNewLearning] = useState('')
   const [newBookAuthor, setNewBookAuthor] = useState('')
   const [selectedJournal, setSelectedJournal] = useState<JournalPromptWithEntry | null>(null)
   const [isEditingJournal, setIsEditingJournal] = useState(false)
@@ -252,6 +253,15 @@ export default function TodayPage() {
     return 1.0
   })
 
+  // Expense state
+  const [newExpenseAmount, setNewExpenseAmount] = useState('')
+  const [newExpenseCategory, setNewExpenseCategory] = useState<ExpenseCategory>('Food')
+  const [newExpenseDescription, setNewExpenseDescription] = useState('')
+  const [showExpenseList, setShowExpenseList] = useState(false)
+  const [expandedGoal, setExpandedGoal] = useState<number | null>(null)
+  const [newGiftIdea, setNewGiftIdea] = useState('')
+  const [showGiftIdeas, setShowGiftIdeas] = useState(false)
+
   // Section collapse/expand state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
     if (typeof window !== 'undefined') {
@@ -274,6 +284,7 @@ export default function TodayPage() {
       schedule: true,
       aiJournals: true,
       books: true,
+      expenses: true,
     }
   })
 
@@ -646,44 +657,47 @@ export default function TodayPage() {
     enabled: !!user,
   })
 
-  // YouTube stats query
-  const { data: youtubeStats } = useQuery({
-    queryKey: ['youtube-stats'],
-    queryFn: async () => {
-      const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
-      const headers: Record<string, string> = {}
-      if (session?.access_token) {
-        headers.Authorization = `Bearer ${session.access_token}`
-      }
-      const response = await fetch('/api/youtube-stats', { headers })
-      if (!response.ok) throw new Error('Failed to fetch YouTube stats')
-      return response.json()
-    },
+  // Expenses
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses', user?.id, dateStr],
+    queryFn: () => expensesService.getExpenses(user!.id, dateStr),
     enabled: !!user,
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
   })
 
-  // Makerslounge stats query
-  const { data: makersloungeStats } = useQuery({
-    queryKey: ['makerslounge-stats'],
-    queryFn: async () => {
-      const response = await fetch('/api/makerslounge-stats')
-      if (!response.ok) throw new Error('Failed to fetch Makerslounge stats')
-      return response.json()
-    },
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+  const { data: monthlyTotals = [] } = useQuery({
+    queryKey: ['expenses-monthly', user?.id],
+    queryFn: () => expensesService.getMonthlyTotals(user!.id),
+    enabled: !!user,
   })
 
-  // Lighten AI stats query (intro calls from Calendly)
-  const { data: lightenStats } = useQuery({
-    queryKey: ['lighten-stats'],
-    queryFn: async () => {
-      const response = await fetch('/api/lighten-stats')
-      if (!response.ok) return null
-      return response.json()
-    },
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+  // Gift Ideas
+  const { data: giftIdeas = [] } = useQuery({
+    queryKey: ['gift-ideas', user?.id],
+    queryFn: () => giftIdeasService.getGiftIdeas(user!.id),
+    enabled: !!user,
   })
+
+  const createExpenseMutation = useMutation({
+    mutationFn: ({ amount, category, description }: { amount: number; category: ExpenseCategory; description: string | null }) =>
+      expensesService.createExpense(user!.id, amount, category, description, dateStr),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', user?.id, dateStr] })
+      queryClient.invalidateQueries({ queryKey: ['expenses-monthly', user?.id] })
+      setNewExpenseAmount('')
+      setNewExpenseDescription('')
+      setNewExpenseCategory('Food')
+    },
+  })
+
+  const deleteExpenseMutation = useMutation({
+    mutationFn: (id: string) => expensesService.deleteExpense(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', user?.id, dateStr] })
+      queryClient.invalidateQueries({ queryKey: ['expenses-monthly', user?.id] })
+    },
+  })
+
+  const dailyExpenseTotal = expenses.reduce((sum: number, e: Expense) => sum + Number(e.amount), 0)
 
   const pepTalkMutation = useMutation({
     mutationFn: async () => {
@@ -993,6 +1007,27 @@ export default function TodayPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
       setSelectedBook(null)
+    },
+  })
+
+  const bookLearningsQuery = useQuery({
+    queryKey: ['book_learnings', selectedBook?.id],
+    queryFn: () => booksService.getLearnings(selectedBook!.id),
+    enabled: !!selectedBook,
+  })
+
+  const addLearningMutation = useMutation({
+    mutationFn: (content: string) => booksService.addLearning(selectedBook!.id, user!.id, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['book_learnings', selectedBook?.id] })
+      setNewLearning('')
+    },
+  })
+
+  const deleteLearningMutation = useMutation({
+    mutationFn: (learningId: string) => booksService.deleteLearning(learningId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['book_learnings', selectedBook?.id] })
     },
   })
 
@@ -1601,9 +1636,12 @@ export default function TodayPage() {
     setVisionVoice(voice)
     localStorage.setItem('daygo-vision-voice', voice)
     // Clear cached audio so it regenerates with new voice
-    if (visionAudioRef.current) {
-      URL.revokeObjectURL(visionAudioRef.current.src)
-      visionAudioRef.current = null
+    if (visionAudioRef.current && visionAudioRef.current.src) {
+      const oldSrc = visionAudioRef.current.src
+      visionAudioRef.current.pause()
+      visionAudioRef.current.removeAttribute('src')
+      visionAudioRef.current.load()
+      URL.revokeObjectURL(oldSrc)
     }
   }
 
@@ -1611,23 +1649,29 @@ export default function TodayPage() {
     setVisionSpeed(speed)
     localStorage.setItem('daygo-vision-speed', speed.toString())
     // Clear cached audio so it regenerates with new speed
-    if (visionAudioRef.current) {
-      URL.revokeObjectURL(visionAudioRef.current.src)
-      visionAudioRef.current = null
+    if (visionAudioRef.current && visionAudioRef.current.src) {
+      const oldSrc = visionAudioRef.current.src
+      visionAudioRef.current.pause()
+      visionAudioRef.current.removeAttribute('src')
+      visionAudioRef.current.load()
+      URL.revokeObjectURL(oldSrc)
     }
   }
 
   const handlePlayVisionAffirmations = async () => {
+    const audio = visionAudioRef.current
+    if (!audio) return
+
     // If already playing, pause
-    if (isPlayingVisionAudio && visionAudioRef.current) {
-      visionAudioRef.current.pause()
+    if (isPlayingVisionAudio) {
+      audio.pause()
       setIsPlayingVisionAudio(false)
       return
     }
 
     // If we have audio loaded and it's paused, resume
-    if (visionAudioRef.current && visionAudioRef.current.src && !isPlayingVisionAudio) {
-      visionAudioRef.current.play()
+    if (audio.src && audio.src !== window.location.href) {
+      audio.play()
       setIsPlayingVisionAudio(true)
       return
     }
@@ -1654,14 +1698,12 @@ export default function TodayPage() {
       const audioBlob = await response.blob()
       const audioUrl = URL.createObjectURL(audioBlob)
 
-      // Clean up previous audio
-      if (visionAudioRef.current) {
-        URL.revokeObjectURL(visionAudioRef.current.src)
+      // Clean up previous audio URL
+      if (audio.src && audio.src !== window.location.href) {
+        URL.revokeObjectURL(audio.src)
       }
 
-      const audio = new Audio(audioUrl)
-      visionAudioRef.current = audio
-
+      audio.src = audioUrl
       audio.onended = () => {
         setIsPlayingVisionAudio(false)
       }
@@ -1679,9 +1721,12 @@ export default function TodayPage() {
     setMantraVoice(voice)
     localStorage.setItem('daygo-mantra-voice', voice)
     // Clear cached audio so it regenerates with new voice
-    if (mantraAudioRef.current) {
-      URL.revokeObjectURL(mantraAudioRef.current.src)
-      mantraAudioRef.current = null
+    if (mantraAudioRef.current && mantraAudioRef.current.src) {
+      const oldSrc = mantraAudioRef.current.src
+      mantraAudioRef.current.pause()
+      mantraAudioRef.current.removeAttribute('src')
+      mantraAudioRef.current.load()
+      URL.revokeObjectURL(oldSrc)
     }
   }
 
@@ -1689,25 +1734,30 @@ export default function TodayPage() {
     setMantraSpeed(speed)
     localStorage.setItem('daygo-mantra-speed', speed.toString())
     // Clear cached audio so it regenerates with new speed
-    if (mantraAudioRef.current) {
-      URL.revokeObjectURL(mantraAudioRef.current.src)
-      mantraAudioRef.current = null
+    if (mantraAudioRef.current && mantraAudioRef.current.src) {
+      const oldSrc = mantraAudioRef.current.src
+      mantraAudioRef.current.pause()
+      mantraAudioRef.current.removeAttribute('src')
+      mantraAudioRef.current.load()
+      URL.revokeObjectURL(oldSrc)
     }
   }
 
   const handlePlayMantraAffirmations = async () => {
     if (dailyMantras.length === 0) return
+    const audio = mantraAudioRef.current
+    if (!audio) return
 
     // If already playing, pause
-    if (isPlayingMantraAudio && mantraAudioRef.current) {
-      mantraAudioRef.current.pause()
+    if (isPlayingMantraAudio) {
+      audio.pause()
       setIsPlayingMantraAudio(false)
       return
     }
 
     // If we have audio loaded and it's paused, resume
-    if (mantraAudioRef.current && mantraAudioRef.current.src && !isPlayingMantraAudio) {
-      mantraAudioRef.current.play()
+    if (audio.src && audio.src !== window.location.href) {
+      audio.play()
       setIsPlayingMantraAudio(true)
       return
     }
@@ -1734,14 +1784,12 @@ export default function TodayPage() {
       const audioBlob = await response.blob()
       const audioUrl = URL.createObjectURL(audioBlob)
 
-      // Clean up previous audio
-      if (mantraAudioRef.current) {
-        URL.revokeObjectURL(mantraAudioRef.current.src)
+      // Clean up previous audio URL
+      if (audio.src && audio.src !== window.location.href) {
+        URL.revokeObjectURL(audio.src)
       }
 
-      const audio = new Audio(audioUrl)
-      mantraAudioRef.current = audio
-
+      audio.src = audioUrl
       audio.onended = () => {
         setIsPlayingMantraAudio(false)
       }
@@ -1758,32 +1806,40 @@ export default function TodayPage() {
   const handleIdentityVoiceChange = (voice: typeof identityVoice) => {
     setIdentityVoice(voice)
     localStorage.setItem('daygo-identity-voice', voice)
-    if (identityAudioRef.current) {
-      URL.revokeObjectURL(identityAudioRef.current.src)
-      identityAudioRef.current = null
+    if (identityAudioRef.current && identityAudioRef.current.src) {
+      const oldSrc = identityAudioRef.current.src
+      identityAudioRef.current.pause()
+      identityAudioRef.current.removeAttribute('src')
+      identityAudioRef.current.load()
+      URL.revokeObjectURL(oldSrc)
     }
   }
 
   const handleIdentitySpeedChange = (speed: number) => {
     setIdentitySpeed(speed)
     localStorage.setItem('daygo-identity-speed', speed.toString())
-    if (identityAudioRef.current) {
-      URL.revokeObjectURL(identityAudioRef.current.src)
-      identityAudioRef.current = null
+    if (identityAudioRef.current && identityAudioRef.current.src) {
+      const oldSrc = identityAudioRef.current.src
+      identityAudioRef.current.pause()
+      identityAudioRef.current.removeAttribute('src')
+      identityAudioRef.current.load()
+      URL.revokeObjectURL(oldSrc)
     }
   }
 
   const handlePlayIdentityAffirmations = async () => {
     if (identities.length === 0) return
+    const audio = identityAudioRef.current
+    if (!audio) return
 
-    if (isPlayingIdentityAudio && identityAudioRef.current) {
-      identityAudioRef.current.pause()
+    if (isPlayingIdentityAudio) {
+      audio.pause()
       setIsPlayingIdentityAudio(false)
       return
     }
 
-    if (identityAudioRef.current && identityAudioRef.current.src && !isPlayingIdentityAudio) {
-      identityAudioRef.current.play()
+    if (audio.src && audio.src !== window.location.href) {
+      audio.play()
       setIsPlayingIdentityAudio(true)
       return
     }
@@ -1809,13 +1865,11 @@ export default function TodayPage() {
       const audioBlob = await response.blob()
       const audioUrl = URL.createObjectURL(audioBlob)
 
-      if (identityAudioRef.current) {
-        URL.revokeObjectURL(identityAudioRef.current.src)
+      if (audio.src && audio.src !== window.location.href) {
+        URL.revokeObjectURL(audio.src)
       }
 
-      const audio = new Audio(audioUrl)
-      identityAudioRef.current = audio
-
+      audio.src = audioUrl
       audio.onended = () => {
         setIsPlayingIdentityAudio(false)
       }
@@ -1912,7 +1966,7 @@ export default function TodayPage() {
     } else if (addType === 'vision') {
       createVisionMutation.mutate(newItemText)
     } else if (addType === 'identity') {
-      createIdentityMutation.mutate(newItemText)
+      createIdentityMutation.mutate(newItemText.replace(/\n/g, '<br>'))
     } else if (addType === 'book') {
       createBookMutation.mutate({ title: newItemText, author: newBookAuthor || undefined })
     } else {
@@ -1924,6 +1978,10 @@ export default function TodayPage() {
 
   return (
     <div {...swipeHandlers} className="max-w-lg mx-auto px-5 py-8 pb-32 min-h-screen bg-gradient-to-b from-bevel-bg to-white dark:from-slate-900 dark:to-slate-950">
+      {/* Hidden audio elements for iOS PWA compatibility */}
+      <audio ref={visionAudioRef} playsInline preload="none" style={{ display: 'none' }} />
+      <audio ref={mantraAudioRef} playsInline preload="none" style={{ display: 'none' }} />
+      <audio ref={identityAudioRef} playsInline preload="none" style={{ display: 'none' }} />
       {/* Google Calendar notification toast */}
       {gcalNotification && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 bg-green-500 text-white rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
@@ -1965,6 +2023,34 @@ export default function TodayPage() {
         </button>
       </div>
 
+      {/* Quick Jump Chips */}
+      <div className="flex items-center gap-2 mb-6 -mt-2">
+        <button
+          onClick={() => document.getElementById('section-meal-plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors active:scale-95"
+        >
+          Meal Plan
+        </button>
+        <button
+          onClick={() => document.getElementById('section-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="px-3 py-1.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors active:scale-95"
+        >
+          Schedule
+        </button>
+        <button
+          onClick={() => document.getElementById('section-journal')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="px-3 py-1.5 text-xs font-medium rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors active:scale-95"
+        >
+          Journal
+        </button>
+        <button
+          onClick={() => document.getElementById('section-expenses')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="px-3 py-1.5 text-xs font-medium rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors active:scale-95"
+        >
+          Expenses
+        </button>
+      </div>
+
       {/* Bold Goals & Values - bertmill19 */}
       {user?.email === 'bertmill19@gmail.com' && (
         <div className="mb-10 space-y-4">
@@ -1972,44 +2058,482 @@ export default function TodayPage() {
             <div className="rounded-2xl bg-white dark:bg-slate-900 p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Flame className="w-5 h-5 text-orange-500" />
-                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">My Non-Negotiables</h2>
+                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Highest Priorities</h2>
               </div>
-              <div className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
-                  <div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                      I run a successful AI Consulting Company called Lighten AI that earns me more than $7K/month
+              <div className="space-y-3">
+                {/* Priority 1 - Investments */}
+                <div className="rounded-xl border border-amber-200/60 dark:border-amber-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedGoal(expandedGoal === 1 ? null : 1)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
+                      $100,000 in investments by end of 2026
                     </p>
-                    <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-1 italic">
-                      Because I&apos;m extremely passionate about following one&apos;s gifts and serving the world that way.
-                    </p>
-                  </div>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 1 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedGoal === 1 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">KPMG — $6,500/month ($78,000/year)</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Lighten AI — 10 AI assessments &times; $2,000 each ($20,000)</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">PromisePiece (Katie&apos;s app) — 10,000 users &times; $2/user ($20,000)</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">AI workshop — $50 &times; 40 people &times; 6 months ($12,000)</p>
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-amber-200/40 dark:border-amber-500/10 space-y-1">
+                        <p className="text-sm font-bold text-bevel-text dark:text-white">Income: $130,000</p>
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide">Living Expenses</p>
+                        <div className="flex items-start gap-2">
+                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Rent — $2,000/month ($24,000)</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Food — $500/month ($6,000)</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Phone — $140/month ($1,680)</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Other (internet, transit, subscriptions) — ~$360/month ($4,320)</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-amber-200/40 dark:border-amber-500/10">
+                        <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Expenses: -$36,000/year</p>
+                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-1">Net to invest: $94,000</p>
+                      </div>
+
+                      {/* Daily Habits for this priority */}
+                      <div className="mt-3 pt-3 border-t border-amber-200/40 dark:border-amber-500/10">
+                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
+                        {(() => {
+                          const priorityHabits = [
+                            { name: 'AI Agent Quiz', match: /ai.*agent.*quiz|quiz.*ai.*agent/i },
+                            { name: 'Daily AI Content', match: /daily.*ai.*content|ai.*content.*daily/i },
+                            { name: 'Attend AI Event & Share Lighten AI', match: /attend.*event|ai.*event|share.*lighten/i },
+                            { name: 'Build an AI Agent', match: /build.*ai.*agent|ai.*agent.*build/i },
+                          ]
+                          const matched = priorityHabits.map(ph => {
+                            const habit = habits.find(h => ph.match.test(h.name))
+                            return { ...ph, habit }
+                          })
+                          const completedCount = matched.filter(m => m.habit?.completed).length
+                          return (
+                            <div className="space-y-2">
+                              {matched.map((m, i) => (
+                                <button
+                                  key={i}
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    if (m.habit && user) {
+                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
+                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
+                                    }
+                                  }}
+                                  className="w-full flex items-center gap-2.5 group"
+                                >
+                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                    m.habit?.completed
+                                      ? 'bg-emerald-500 border-emerald-500'
+                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
+                                  }`}>
+                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <p className={`text-sm text-left ${
+                                    m.habit?.completed
+                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
+                                      : 'text-bevel-text dark:text-slate-300'
+                                  }`}>
+                                    {m.habit?.name || m.name}
+                                    {!m.habit && <span className="text-xs text-amber-500 ml-1">(add to habits)</span>}
+                                  </p>
+                                </button>
+                              ))}
+                              <div className="flex items-center gap-2 mt-2">
+                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-500 transition-all"
+                                    style={{ width: `${priorityHabits.length > 0 ? (completedCount / priorityHabits.length) * 100 : 0}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{priorityHabits.length}</span>
+                              </div>
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-3">
-                  <div className="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
-                  <div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                      I am an elite 15 Hyrox athlete
+
+                {/* Priority 2 - Hyrox */}
+                <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedGoal(expandedGoal === 2 ? null : 2)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
+                      Compete at Hyrox World Championships by June 2026
                     </p>
-                    <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-1 italic">
-                      Because I&apos;m extremely passionate about spreading fitness as a way to a better life.
-                    </p>
-                  </div>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 2 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedGoal === 2 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">8 treadmill runs &times; 1 km each under 4:30</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">100 wall balls unbroken</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Sled push at Unity Gym — 2 laps, 8 plates unbroken</p>
+                      </div>
+
+                      {/* Daily Habits for Hyrox */}
+                      <div className="mt-3 pt-3 border-t border-emerald-200/40 dark:border-emerald-500/10">
+                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
+                        {(() => {
+                          const hyroxHabits = [
+                            { name: '7.5+ Hours of Sleep', match: /7\.5.*sleep|sleep.*7\.5/i },
+                            { name: 'No Food 2 Hours Before Bed', match: /no.*food.*bed|eat.*before.*bed/i },
+                            { name: 'Train Like It\'s Competition', match: /competition|train.*like/i },
+                            { name: 'Stretch Before & After Workout', match: /stretch.*workout|stretch.*before/i },
+                            { name: 'High Protein, High Fiber Foods', match: /high.*protein|protein.*fiber/i },
+                            { name: 'Recovery Is the Workout', match: /recovery|treat.*recovery/i },
+                          ]
+                          const matched = hyroxHabits.map(ph => {
+                            const habit = habits.find(h => ph.match.test(h.name))
+                            return { ...ph, habit }
+                          })
+                          const completedCount = matched.filter(m => m.habit?.completed).length
+                          return (
+                            <div className="space-y-2">
+                              {matched.map((m, i) => (
+                                <button
+                                  key={i}
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    if (m.habit && user) {
+                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
+                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
+                                    }
+                                  }}
+                                  className="w-full flex items-center gap-2.5 group"
+                                >
+                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                    m.habit?.completed
+                                      ? 'bg-emerald-500 border-emerald-500'
+                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'
+                                  }`}>
+                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <p className={`text-sm text-left ${
+                                    m.habit?.completed
+                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
+                                      : 'text-bevel-text dark:text-slate-300'
+                                  }`}>
+                                    {m.habit?.name || m.name}
+                                    {!m.habit && <span className="text-xs text-emerald-500 ml-1">(add to habits)</span>}
+                                  </p>
+                                </button>
+                              ))}
+                              <div className="flex items-center gap-2 mt-2">
+                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all"
+                                    style={{ width: `${hyroxHabits.length > 0 ? (completedCount / hyroxHabits.length) * 100 : 0}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{hyroxHabits.length}</span>
+                              </div>
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-3">
-                  <div className="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
-                  <div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                      I have a Makerslounge community of 10,000 builders that all pay an annual membership fee
+
+                {/* Priority 3 - Makers Lounge */}
+                <div className="rounded-xl border border-violet-200/60 dark:border-violet-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedGoal(expandedGoal === 3 ? null : 3)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-violet-50/50 dark:hover:bg-violet-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
+                      Grow Makers Lounge to 10,000 people by December 2026
                     </p>
-                    <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mt-1 italic">
-                      Because I&apos;m extremely passionate about supporting those with a vision to make something great.
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 3 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedGoal === 3 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Host an in-person event every month</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Host an online event every week</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Gain partnerships with at least 3 major brands</p>
+                      </div>
+
+                      {/* Daily Habits for Makers Lounge */}
+                      <div className="mt-3 pt-3 border-t border-violet-200/40 dark:border-violet-500/10">
+                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
+                        {(() => {
+                          const mlHabits = [
+                            { name: 'Post Makers Lounge Content', match: /post.*content|makers.*content|lounge.*content/i },
+                            { name: 'Provide Value to the Network', match: /provide.*value|value.*network/i },
+                            { name: 'Improve the Event Every Day', match: /improve.*event|event.*improve/i },
+                          ]
+                          const matched = mlHabits.map(ph => {
+                            const habit = habits.find(h => ph.match.test(h.name))
+                            return { ...ph, habit }
+                          })
+                          const completedCount = matched.filter(m => m.habit?.completed).length
+                          return (
+                            <div className="space-y-2">
+                              {matched.map((m, i) => (
+                                <button
+                                  key={i}
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    if (m.habit && user) {
+                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
+                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
+                                    }
+                                  }}
+                                  className="w-full flex items-center gap-2.5 group"
+                                >
+                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                    m.habit?.completed
+                                      ? 'bg-emerald-500 border-emerald-500'
+                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-violet-400'
+                                  }`}>
+                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <p className={`text-sm text-left ${
+                                    m.habit?.completed
+                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
+                                      : 'text-bevel-text dark:text-slate-300'
+                                  }`}>
+                                    {m.habit?.name || m.name}
+                                    {!m.habit && <span className="text-xs text-violet-500 ml-1">(add to habits)</span>}
+                                  </p>
+                                </button>
+                              ))}
+                              <div className="flex items-center gap-2 mt-2">
+                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-violet-400 to-purple-500 transition-all"
+                                    style={{ width: `${mlHabits.length > 0 ? (completedCount / mlHabits.length) * 100 : 0}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{mlHabits.length}</span>
+                              </div>
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Priority 4 - Relationship */}
+                <div className="rounded-xl border border-pink-200/60 dark:border-pink-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedGoal(expandedGoal === 4 ? null : 4)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-pink-50/50 dark:hover:bg-pink-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-black text-sm shadow-lg">4</div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
+                      Our love is stronger by December 2026 than it was at the start
                     </p>
-                  </div>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 4 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedGoal === 4 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">One gift per month for Katy</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Take a class together every week — yoga, cooking, something to grow in</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Celebrate every special moment with a candle, dessert, and a note</p>
+                      </div>
+
+                      {/* Daily Habits for Relationship */}
+                      <div className="mt-3 pt-3 border-t border-pink-200/40 dark:border-pink-500/10">
+                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
+                        {(() => {
+                          const relationshipHabits = [
+                            { name: 'Send a Loving Text', match: /loving.*text|text.*love|best.*text/i },
+                            { name: 'Pray for Them & Their Family', match: /pray.*family|pray.*them|pray.*partner/i },
+                            { name: 'Express Gratitude Before Bed', match: /gratitude.*bed|express.*gratitude.*partner|gratitude.*them/i },
+                          ]
+                          const matched = relationshipHabits.map(ph => {
+                            const habit = habits.find(h => ph.match.test(h.name))
+                            return { ...ph, habit }
+                          })
+                          const completedCount = matched.filter(m => m.habit?.completed).length
+                          return (
+                            <div className="space-y-2">
+                              {matched.map((m, i) => (
+                                <button
+                                  key={i}
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    if (m.habit && user) {
+                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
+                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
+                                    }
+                                  }}
+                                  className="w-full flex items-center gap-2.5 group"
+                                >
+                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                    m.habit?.completed
+                                      ? 'bg-emerald-500 border-emerald-500'
+                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-pink-400'
+                                  }`}>
+                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <p className={`text-sm text-left ${
+                                    m.habit?.completed
+                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
+                                      : 'text-bevel-text dark:text-slate-300'
+                                  }`}>
+                                    {m.habit?.name || m.name}
+                                    {!m.habit && <span className="text-xs text-pink-500 ml-1">(add to habits)</span>}
+                                  </p>
+                                </button>
+                              ))}
+                              <div className="flex items-center gap-2 mt-2">
+                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-pink-400 to-rose-500 transition-all"
+                                    style={{ width: `${relationshipHabits.length > 0 ? (completedCount / relationshipHabits.length) * 100 : 0}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{relationshipHabits.length}</span>
+                              </div>
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gift Ideas for Katy - bertmill19 */}
+      {user?.email === 'bertmill19@gmail.com' && (
+        <div className="mb-8">
+          <div className="rounded-2xl bg-white dark:bg-slate-800/50 shadow-card border border-pink-100 dark:border-pink-500/10 overflow-hidden">
+            <button
+              onClick={() => setShowGiftIdeas(!showGiftIdeas)}
+              className="w-full flex items-center justify-between p-4 hover:bg-pink-50/30 dark:hover:bg-pink-500/5 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-pink-500" />
+                <h2 className="font-bold text-bevel-text dark:text-white">Gift Ideas for Katy</h2>
+                <span className="text-xs text-bevel-text-secondary dark:text-slate-400">({giftIdeas.length})</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${showGiftIdeas ? 'rotate-180' : ''}`} />
+            </button>
+            {showGiftIdeas && (
+              <div className="px-4 pb-4 space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newGiftIdea}
+                    onChange={(e) => setNewGiftIdea(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter' && newGiftIdea.trim() && user) {
+                        await giftIdeasService.addGiftIdea(user.id, newGiftIdea.trim())
+                        queryClient.invalidateQueries({ queryKey: ['gift-ideas', user.id] })
+                        setNewGiftIdea('')
+                      }
+                    }}
+                    placeholder="Add a gift idea..."
+                    className="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-bevel-text dark:text-white placeholder-bevel-text-secondary focus:outline-none focus:ring-2 focus:ring-pink-300 dark:focus:ring-pink-500/30"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (newGiftIdea.trim() && user) {
+                        await giftIdeasService.addGiftIdea(user.id, newGiftIdea.trim())
+                        queryClient.invalidateQueries({ queryKey: ['gift-ideas', user.id] })
+                        setNewGiftIdea('')
+                      }
+                    }}
+                    className="px-3 py-2 rounded-lg bg-pink-500 text-white text-sm font-medium hover:bg-pink-600 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                {giftIdeas.length === 0 ? (
+                  <p className="text-sm text-bevel-text-secondary dark:text-slate-400 italic">No ideas yet — add one whenever inspiration strikes!</p>
+                ) : (
+                  <div className="space-y-2">
+                    {giftIdeas.map((idea) => (
+                      <div key={idea.id} className="flex items-center gap-2 p-2 rounded-lg bg-pink-50/50 dark:bg-pink-500/5">
+                        <button
+                          onClick={async () => {
+                            await giftIdeasService.toggleUsed(idea.id, !idea.used)
+                            queryClient.invalidateQueries({ queryKey: ['gift-ideas', user?.id] })
+                          }}
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            idea.used ? 'bg-pink-500 border-pink-500' : 'border-pink-300 dark:border-pink-600 hover:border-pink-400'
+                          }`}
+                        >
+                          {idea.used && <Check className="w-3 h-3 text-white" />}
+                        </button>
+                        <p className={`text-sm flex-1 ${idea.used ? 'text-bevel-text-secondary line-through' : 'text-bevel-text dark:text-slate-300'}`}>{idea.idea}</p>
+                        <button
+                          onClick={async () => {
+                            await giftIdeasService.deleteGiftIdea(idea.id)
+                            queryClient.invalidateQueries({ queryKey: ['gift-ideas', user?.id] })
+                          }}
+                          className="text-bevel-text-secondary hover:text-red-500 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2024,67 +2548,6 @@ export default function TodayPage() {
             /{yesterdayScheduleEvents.length} yesterday&apos;s items completed
           </p>
         )}
-      </div>
-
-      {/* Metrics Dashboard */}
-      <div className="grid grid-cols-3 gap-3 mb-10">
-        <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 shadow-card border border-gray-100/80 dark:border-slate-700/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
-              <Youtube className="w-4 h-4 text-red-500" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-bevel-text dark:text-white tracking-tight">
-            {youtubeStats?.subscriberCount?.toLocaleString() ?? '—'}
-          </p>
-          <div className="flex items-center gap-1.5 mt-1">
-            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">YT Subs</p>
-            {youtubeStats?.momChange !== null && youtubeStats?.momChange !== undefined && (
-              <span className={`text-xs font-semibold ${youtubeStats.momChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                {youtubeStats.momChange >= 0 ? '+' : ''}{youtubeStats.momChange}%
-              </span>
-            )}
-          </div>
-          <p className="text-[10px] text-bevel-text-secondary/60 dark:text-slate-500 mt-2 italic">Post a video</p>
-        </div>
-        <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 shadow-card border border-gray-100/80 dark:border-slate-700/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-xl bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
-              <Users className="w-4 h-4 text-brand-500" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-bevel-text dark:text-white tracking-tight">
-            {makersloungeStats?.memberCount?.toLocaleString() ?? '—'}
-          </p>
-          <div className="flex items-center gap-1.5 mt-1">
-            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">Maklo App Subscribers</p>
-            {makersloungeStats?.momChange !== null && makersloungeStats?.momChange !== undefined && (
-              <span className={`text-xs font-semibold ${makersloungeStats.momChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                {makersloungeStats.momChange >= 0 ? '+' : ''}{makersloungeStats.momChange}%
-              </span>
-            )}
-          </div>
-          <p className="text-[10px] text-bevel-text-secondary/60 dark:text-slate-500 mt-2 italic">Commit an improvement</p>
-        </div>
-        <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-4 shadow-card border border-gray-100/80 dark:border-slate-700/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-              <Calendar className="w-4 h-4 text-emerald-500" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-bevel-text dark:text-white tracking-tight">
-            {lightenStats?.totalCalls?.toLocaleString() ?? '—'}
-          </p>
-          <div className="flex items-center gap-1.5 mt-1">
-            <p className="text-xs text-bevel-text-secondary dark:text-slate-400">Lighten AI Client Calls</p>
-            {lightenStats?.momChange !== null && lightenStats?.momChange !== undefined && (
-              <span className={`text-xs font-semibold ${lightenStats.momChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                {lightenStats.momChange >= 0 ? '+' : ''}{lightenStats.momChange}%
-              </span>
-            )}
-          </div>
-          <p className="text-[10px] text-bevel-text-secondary/60 dark:text-slate-500 mt-2 italic">Build an agent</p>
-        </div>
       </div>
 
       {/* My Values */}
@@ -2665,7 +3128,7 @@ export default function TodayPage() {
 
           {/* Journal Prompts */}
           {prompts.length > 0 && (
-            <section className="section-gradient-journal rounded-2xl p-4 -mx-4">
+            <section id="section-journal" className="section-gradient-journal rounded-2xl p-4 -mx-4">
               <button
                 onClick={() => toggleSection('journal')}
                 className="w-full flex items-center justify-between mb-4 group cursor-pointer"
@@ -2802,7 +3265,7 @@ export default function TodayPage() {
           )}
 
           {/* Healthy Foods */}
-          <section className="bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-2xl p-4 -mx-4">
+          <section id="section-meal-plan" className="bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-2xl p-4 -mx-4">
             <button
               onClick={() => toggleSection('healthyFoods')}
               className="w-full flex items-center justify-between mb-4 group cursor-pointer"
@@ -2818,6 +3281,203 @@ export default function TodayPage() {
             </button>
             {expandedSections.healthyFoods && (
               <HealthyFoodsCard />
+            )}
+          </section>
+
+          {/* Expenses */}
+          <section id="section-expenses" className="section-gradient-expense rounded-2xl p-4 -mx-4">
+            <button
+              onClick={() => toggleSection('expenses')}
+              className="w-full flex items-center justify-between mb-4 group cursor-pointer"
+            >
+              <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
+                Expenses {dailyExpenseTotal > 0 && <span className="text-expense">(${dailyExpenseTotal.toFixed(2)})</span>}
+              </h2>
+              <div className="flex items-center gap-3">
+                {expenses.length > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                    {expenses.length} item{expenses.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+                {expandedSections.expenses ? (
+                  <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
+                )}
+              </div>
+            </button>
+            {expandedSections.expenses && (
+              <div className="space-y-4">
+                {/* Add Expense Form */}
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-shrink-0 w-24">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={newExpenseAmount}
+                      onChange={(e) => setNewExpenseAmount(e.target.value)}
+                      className="w-full pl-7 pr-2 py-2 text-sm bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                    />
+                  </div>
+                  <select
+                    value={newExpenseCategory}
+                    onChange={(e) => setNewExpenseCategory(e.target.value as ExpenseCategory)}
+                    className="flex-shrink-0 px-2 py-2 text-sm bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                  >
+                    {(['Food', 'Transport', 'Entertainment', 'Shopping', 'Bills', 'Health', 'Other'] as ExpenseCategory[]).map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Note (optional)"
+                    value={newExpenseDescription}
+                    onChange={(e) => setNewExpenseDescription(e.target.value)}
+                    className="flex-1 min-w-0 px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newExpenseAmount) {
+                        createExpenseMutation.mutate({
+                          amount: parseFloat(newExpenseAmount),
+                          category: newExpenseCategory,
+                          description: newExpenseDescription || null,
+                        })
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newExpenseAmount) return
+                      createExpenseMutation.mutate({
+                        amount: parseFloat(newExpenseAmount),
+                        category: newExpenseCategory,
+                        description: newExpenseDescription || null,
+                      })
+                    }}
+                    disabled={!newExpenseAmount || createExpenseMutation.isPending}
+                    className="flex-shrink-0 p-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Expense List (Collapsible) */}
+                {expenses.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => setShowExpenseList(!showExpenseList)}
+                      className="flex items-center justify-between w-full px-3 py-2 bg-white dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-700/50 text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <span>View {expenses.length} expense{expenses.length !== 1 ? 's' : ''}</span>
+                      {showExpenseList ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    {showExpenseList && (
+                      <div className="space-y-2 mt-2">
+                        {expenses.map((expense: Expense) => (
+                          <div
+                            key={expense.id}
+                            className="flex items-center justify-between bg-white dark:bg-slate-800/50 rounded-xl p-3 border border-gray-100 dark:border-slate-700/50"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="font-semibold text-bevel-text dark:text-white">
+                                ${Number(expense.amount).toFixed(2)}
+                              </span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                                {expense.category}
+                              </span>
+                              {expense.description && (
+                                <span className="text-sm text-gray-500 dark:text-slate-400 truncate">
+                                  {expense.description}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => deleteExpenseMutation.mutate(expense.id)}
+                              className="p-1.5 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Monthly Spending Chart */}
+                {monthlyTotals.some(m => m.total > 0) && (() => {
+                  const chartData = monthlyTotals.map((m, i) => ({
+                    month: new Date(m.month + '-01').toLocaleDateString('en-US', { month: 'short' }),
+                    total: m.total,
+                    isCurrent: i === monthlyTotals.length - 1,
+                  }))
+                  const current = monthlyTotals.length >= 1 ? monthlyTotals[monthlyTotals.length - 1] : null
+                  const previous = monthlyTotals.length >= 2 ? monthlyTotals[monthlyTotals.length - 2] : null
+                  const delta = current && previous ? current.total - previous.total : null
+                  const pctChange = delta !== null && previous && previous.total > 0
+                    ? ((delta / previous.total) * 100)
+                    : null
+
+                  return (
+                    <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-gray-100 dark:border-slate-700/50">
+                      <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                        Monthly Spending
+                      </h3>
+                      <div className="h-40">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                            <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" tickFormatter={(v) => `$${v}`} />
+                            <Tooltip
+                              formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']}
+                              contentStyle={{
+                                backgroundColor: 'var(--color-bg, #fff)',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                fontSize: '12px',
+                              }}
+                            />
+                            <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                              {chartData.map((entry, index) => (
+                                <Cell key={index} fill={entry.isCurrent ? '#f97316' : '#fdba74'} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Comparison Card */}
+                      {current && previous && delta !== null && !(previous.total === 0 && current.total === 0) && (
+                        <div className="mt-3 p-3 bg-gray-50 dark:bg-slate-700/30 rounded-lg">
+                          <div className="flex items-baseline justify-between mb-1">
+                            <div>
+                              <span className="text-lg font-bold text-bevel-text dark:text-white">
+                                ${current.total.toFixed(2)}
+                              </span>
+                              <span className="text-xs text-gray-500 dark:text-slate-400 ml-1.5">
+                                {new Date(current.month + '-01').toLocaleDateString('en-US', { month: 'long' })}
+                              </span>
+                            </div>
+                            <div className={`flex items-center gap-1 text-sm font-semibold ${delta > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                              {delta > 0 ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                              <span>${Math.abs(delta).toFixed(2)}</span>
+                              {pctChange !== null && (
+                                <span className="text-xs">({Math.abs(pctChange).toFixed(0)}%)</span>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-400 dark:text-slate-500">
+                            vs {new Date(previous.month + '-01').toLocaleDateString('en-US', { month: 'long' })} — ${previous.total.toFixed(2)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
             )}
           </section>
 
@@ -2927,7 +3587,7 @@ export default function TodayPage() {
           )}
 
           {/* Schedule */}
-          <section className="section-gradient-schedule rounded-2xl p-4 -mx-4">
+          <section id="section-schedule" className="section-gradient-schedule rounded-2xl p-4 -mx-4">
             <button
               onClick={() => toggleSection('schedule')}
               className="w-full flex items-center justify-between mb-4 group cursor-pointer"
@@ -3954,7 +4614,7 @@ export default function TodayPage() {
                   <button
                     onClick={() => {
                       if (editIdentityText.trim()) {
-                        updateIdentityMutation.mutate({ id: selectedIdentity.id, text: editIdentityText })
+                        updateIdentityMutation.mutate({ id: selectedIdentity.id, text: editIdentityText.replace(/\n/g, '<br>') })
                       }
                     }}
                     disabled={!editIdentityText.trim() || updateIdentityMutation.isPending}
@@ -3976,7 +4636,7 @@ export default function TodayPage() {
                 <div className="space-y-3">
                   <button
                     onClick={() => {
-                      setEditIdentityText(selectedIdentity.text)
+                      setEditIdentityText(selectedIdentity.text.replace(/<br\s*\/?>/g, '\n'))
                       setIsEditingIdentity(true)
                     }}
                     className="w-full py-3 bg-pink-50 dark:bg-pink-500/10 hover:bg-pink-100 dark:hover:bg-pink-500/20 text-pink-600 dark:text-pink-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
@@ -4039,6 +4699,58 @@ export default function TodayPage() {
                 <p className="text-sm text-gray-500 dark:text-slate-400">
                   Started reading on {new Date(selectedBook.started_at).toLocaleDateString()}
                 </p>
+              )}
+            </div>
+
+            {/* Learnings Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-400 mb-3">
+                Learnings {bookLearningsQuery.data?.length ? `(${bookLearningsQuery.data.length})` : ''}
+              </h3>
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={newLearning}
+                  onChange={(e) => setNewLearning(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newLearning.trim()) {
+                      addLearningMutation.mutate(newLearning.trim())
+                    }
+                  }}
+                  placeholder="Add a learning..."
+                  className="flex-1 px-3 py-2 text-sm bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200/50 dark:border-amber-500/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                />
+                <button
+                  onClick={() => {
+                    if (newLearning.trim()) addLearningMutation.mutate(newLearning.trim())
+                  }}
+                  disabled={!newLearning.trim() || addLearningMutation.isPending}
+                  className="px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-50 text-amber-600 dark:text-amber-400 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              {bookLearningsQuery.isLoading && (
+                <p className="text-xs text-gray-400 dark:text-slate-500">Loading...</p>
+              )}
+              {bookLearningsQuery.data && bookLearningsQuery.data.length > 0 && (
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {bookLearningsQuery.data.map((learning) => (
+                    <div
+                      key={learning.id}
+                      className="flex items-start gap-2 p-2 bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200/30 dark:border-amber-500/10 rounded-lg group"
+                    >
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-gray-700 dark:text-slate-300 flex-1">{learning.content}</p>
+                      <button
+                        onClick={() => deleteLearningMutation.mutate(learning.id)}
+                        className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-all"
+                      >
+                        <X className="w-3.5 h-3.5 text-red-400" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 

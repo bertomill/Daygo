@@ -783,6 +783,7 @@ export interface Database {
           image_url: string;
           name: string | null;
           sort_order: number;
+          weight: number;
           created_at: string;
         };
         Insert: {
@@ -792,6 +793,7 @@ export interface Database {
           image_url: string;
           name?: string | null;
           sort_order?: number;
+          weight?: number;
           created_at?: string;
         };
         Update: {
@@ -801,6 +803,7 @@ export interface Database {
           image_url?: string;
           name?: string | null;
           sort_order?: number;
+          weight?: number;
           created_at?: string;
         };
       };
@@ -894,6 +897,29 @@ export interface Database {
           created_at?: string;
         };
       };
+      book_learnings: {
+        Row: {
+          id: string;
+          book_id: string;
+          user_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          book_id: string;
+          user_id: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          book_id?: string;
+          user_id?: string;
+          content?: string;
+          created_at?: string;
+        };
+      };
       crystal_day_logs: {
         Row: {
           id: string;
@@ -920,6 +946,64 @@ export interface Database {
           item_key?: string;
           completed?: boolean;
           note?: string | null;
+          created_at?: string;
+        };
+      };
+      expenses: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          category: 'Food' | 'Transport' | 'Entertainment' | 'Shopping' | 'Bills' | 'Health' | 'Other';
+          description: string | null;
+          date: string;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount: number;
+          category: 'Food' | 'Transport' | 'Entertainment' | 'Shopping' | 'Bills' | 'Health' | 'Other';
+          description?: string | null;
+          date: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          amount?: number;
+          category?: 'Food' | 'Transport' | 'Entertainment' | 'Shopping' | 'Bills' | 'Health' | 'Other';
+          description?: string | null;
+          date?: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+      };
+      gift_ideas: {
+        Row: {
+          id: string;
+          user_id: string;
+          recipient: string;
+          idea: string;
+          used: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          recipient?: string;
+          idea: string;
+          used?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          recipient?: string;
+          idea?: string;
+          used?: boolean;
           created_at?: string;
         };
       };
@@ -959,11 +1043,6 @@ export type GoogleCalendarToken = Database['public']['Tables']['google_calendar_
 export type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
 export type DailyNote = Database['public']['Tables']['daily_notes']['Row'];
 export type DailyScore = Database['public']['Views']['daily_scores']['Row'];
-export type KanbanColumn = Database['public']['Tables']['kanban_columns']['Row'];
-export type KanbanCard = Database['public']['Tables']['kanban_cards']['Row'];
-export type KanbanSubtask = Database['public']['Tables']['kanban_subtasks']['Row'];
-export type KanbanGoalLink = Database['public']['Tables']['kanban_goal_links']['Row'];
-export type KanbanTimeEntry = Database['public']['Tables']['kanban_time_entries']['Row'];
 export type ScheduleTemplate = Database['public']['Tables']['schedule_templates']['Row'];
 export type AIJournal = Database['public']['Tables']['ai_journals']['Row'];
 export type Inspiration = Database['public']['Tables']['inspirations']['Row'];
@@ -972,7 +1051,11 @@ export type FoodCategory = 'plants' | 'meats' | 'fish' | 'carbs' | 'fruit' | 'su
 export type Identity = Database['public']['Tables']['identities']['Row'];
 export type Book = Database['public']['Tables']['books']['Row'];
 export type Value = Database['public']['Tables']['values']['Row'];
+export type BookLearning = Database['public']['Tables']['book_learnings']['Row'];
 export type CrystalDayLog = Database['public']['Tables']['crystal_day_logs']['Row'];
+export type Expense = Database['public']['Tables']['expenses']['Row'];
+export type ExpenseCategory = Expense['category'];
+export type GiftIdea = Database['public']['Tables']['gift_ideas']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {
@@ -998,18 +1081,3 @@ export type TodayItem =
   | { type: 'vision'; data: Vision }
   | { type: 'identity'; data: Identity };
 
-// Extended types for Kanban UI
-export type KanbanCardWithDetails = KanbanCard & {
-  subtasks: KanbanSubtask[];
-  goal: Goal | null;
-  column: KanbanColumn;
-  timeEntries?: KanbanTimeEntry[];
-  activeTimer?: KanbanTimeEntry | null;
-  totalTimeSpent?: number; // in milliseconds
-};
-
-export type KanbanColumnWithCards = KanbanColumn & {
-  todoCards: KanbanCardWithDetails[];
-  inProgressCards: KanbanCardWithDetails[];
-  doneCards: KanbanCardWithDetails[];
-};
