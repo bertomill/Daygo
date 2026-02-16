@@ -2127,6 +2127,7 @@ export default function TodayPage() {
                             { name: 'Daily AI Content', match: /daily.*ai.*content|ai.*content.*daily/i },
                             { name: 'Attend AI Event & Share Lighten AI', match: /attend.*event|ai.*event|share.*lighten/i },
                             { name: 'Build an AI Agent', match: /build.*ai.*agent|ai.*agent.*build/i },
+                            { name: 'Forego & Invest — skip non-goal spending, invest it immediately', match: /forego.*invest|skip.*spend|invest.*immediately/i },
                           ]
                           const matched = priorityHabits.map(ph => {
                             const habit = habits.find(h => ph.match.test(h.name))
