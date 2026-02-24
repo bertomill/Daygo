@@ -36,6 +36,8 @@ import {
   Smile,
   Pen,
   Check,
+  Wrench,
+  Users,
   type LucideIcon
 } from 'lucide-react'
 import Link from 'next/link'
@@ -75,8 +77,9 @@ import { dailyNotesService } from '@/lib/services/dailyNotes'
 import { scheduleTemplatesService } from '@/lib/services/scheduleTemplates'
 import { aiJournalsService } from '@/lib/services/aiJournals'
 import { profilesService } from '@/lib/services/profiles'
-import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts'
 import { expensesService } from '@/lib/services/expenses'
+import { pushupsService } from '@/lib/services/pushups'
 import { giftIdeasService } from '@/lib/services/giftIdeas'
 import { SortableHabitCard } from '@/components/SortableHabitCard'
 import { SortableMantraCard } from '@/components/SortableMantraCard'
@@ -96,7 +99,7 @@ import { ScoreRing } from '@/components/ScoreRing'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { PepTalkAudioPlayer } from '@/components/PepTalkAudioPlayer'
 import { HealthyFoodsCard } from '@/components/HealthyFoodsCard'
-import type { HabitWithLog, Mantra, Todo, Vision, Identity, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal, Book, Value, Expense, ExpenseCategory } from '@/lib/types/database'
+import type { HabitWithLog, Mantra, Todo, Vision, Identity, JournalPromptWithEntry, ScheduleEvent, CalendarRule, Goal, ScheduleTemplate, AIJournal, Book, Value, Expense, ExpenseCategory, PushupLog } from '@/lib/types/database'
 import { calculateMissionScore } from '@/lib/services/missionScore'
 import confetti from 'canvas-confetti'
 
@@ -254,11 +257,13 @@ export default function TodayPage() {
   })
 
   // Expense state
+  const [pushupCount, setPushupCount] = useState('')
   const [newExpenseAmount, setNewExpenseAmount] = useState('')
   const [newExpenseCategory, setNewExpenseCategory] = useState<ExpenseCategory>('Food')
   const [newExpenseDescription, setNewExpenseDescription] = useState('')
   const [showExpenseList, setShowExpenseList] = useState(false)
   const [expandedGoal, setExpandedGoal] = useState<number | null>(null)
+  const [expandedKeyFocus, setExpandedKeyFocus] = useState<number | null>(null)
   const [newGiftIdea, setNewGiftIdea] = useState('')
   const [showGiftIdeas, setShowGiftIdeas] = useState(false)
 
@@ -285,6 +290,7 @@ export default function TodayPage() {
       aiJournals: true,
       books: true,
       expenses: true,
+      pushups: true,
     }
   })
 
@@ -669,6 +675,34 @@ export default function TodayPage() {
     queryFn: () => expensesService.getMonthlyTotals(user!.id),
     enabled: !!user,
   })
+
+  // Push-ups
+  const { data: todayPushup } = useQuery({
+    queryKey: ['pushup-log', user?.id, dateStr],
+    queryFn: () => pushupsService.getLog(user!.id, dateStr),
+    enabled: !!user,
+  })
+
+  const { data: pushupLogs = [] } = useQuery({
+    queryKey: ['pushup-logs', user?.id],
+    queryFn: () => pushupsService.getLogs(user!.id, 30),
+    enabled: !!user,
+  })
+
+  const upsertPushupMutation = useMutation({
+    mutationFn: (count: number) => pushupsService.upsertLog(user!.id, dateStr, count),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pushup-log', user?.id, dateStr] })
+      queryClient.invalidateQueries({ queryKey: ['pushup-logs', user?.id] })
+    },
+  })
+
+  // Pre-fill pushup input when data loads
+  useEffect(() => {
+    if (todayPushup) {
+      setPushupCount(String(todayPushup.count))
+    }
+  }, [todayPushup])
 
   // Gift Ideas
   const { data: giftIdeas = [] } = useQuery({
@@ -2077,22 +2111,18 @@ export default function TodayPage() {
                     <div className="px-3 pb-3 pl-14 space-y-2">
                       <div className="flex items-start gap-2">
                         <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">KPMG — $6,500/month ($78,000/year)</p>
+                        <p className="text-sm text-bevel-text dark:text-slate-300">KPMG (client, not 9-to-5) — $6,500/month ($78,000/year)</p>
                       </div>
                       <div className="flex items-start gap-2">
                         <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Lighten AI — 10 AI assessments &times; $2,000 each ($20,000)</p>
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Lighten AI — 3 clients &times; $5,000/month ($180,000)</p>
                       </div>
                       <div className="flex items-start gap-2">
                         <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
                         <p className="text-sm text-bevel-text dark:text-slate-300">PromisePiece (Katie&apos;s app) — 10,000 users &times; $2/user ($20,000)</p>
                       </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">AI workshop — $50 &times; 40 people &times; 6 months ($12,000)</p>
-                      </div>
                       <div className="mt-3 pt-2 border-t border-amber-200/40 dark:border-amber-500/10 space-y-1">
-                        <p className="text-sm font-bold text-bevel-text dark:text-white">Income: $130,000</p>
+                        <p className="text-sm font-bold text-bevel-text dark:text-white">Income: $278,000</p>
                       </div>
                       <div className="mt-2 space-y-1">
                         <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide">Living Expenses</p>
@@ -2115,7 +2145,7 @@ export default function TodayPage() {
                       </div>
                       <div className="mt-2 pt-2 border-t border-amber-200/40 dark:border-amber-500/10">
                         <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Expenses: -$36,000/year</p>
-                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-1">Net to invest: $94,000</p>
+                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-1">Net to invest: $242,000</p>
                       </div>
 
                       {/* Daily Habits for this priority */}
@@ -2447,6 +2477,115 @@ export default function TodayPage() {
                             </div>
                           )
                         })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Most Important Things - bertmill19 */}
+      {user?.email === 'bertmill19@gmail.com' && (
+        <div className="mb-10 -mt-6">
+          <div className="rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 p-[2px]">
+            <div className="rounded-2xl bg-white dark:bg-slate-900 p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="w-5 h-5 text-indigo-500" />
+                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Most Important Things</h2>
+              </div>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">What must I do to achieve my priorities? Relentlessly attack these three things.</p>
+              <div className="space-y-3">
+                {/* Focus 1 - Best AI Agent Builder */}
+                <div className="rounded-xl border border-indigo-200/60 dark:border-indigo-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedKeyFocus(expandedKeyFocus === 1 ? null : 1)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white shadow-lg"><Wrench className="w-4 h-4" /></div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
+                      Become the absolute best AI agent builder in the world
+                    </p>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 1 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedKeyFocus === 1 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">Commit to 10 hours a day. Simple.</p>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Follow the morning AI training plan</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Build AI agents all day — 10 hours of deep work</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Study the best — learn from top builders daily</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Focus 2 - Highest Energy & Positivity */}
+                <div className="rounded-xl border border-amber-200/60 dark:border-amber-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedKeyFocus(expandedKeyFocus === 2 ? null : 2)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg"><Zap className="w-4 h-4" /></div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
+                      Be the absolute highest energy, highest positivity person possible
+                    </p>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 2 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedKeyFocus === 2 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Energy is everything. Protect it relentlessly.</p>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Fast every day — one meal a day</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Eat mostly vegan, all natural — little meat, mostly fish</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Excellent sleep every single night</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Focus 3 - Extremely Well-Connected */}
+                <div className="rounded-xl border border-purple-200/60 dark:border-purple-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedKeyFocus(expandedKeyFocus === 3 ? null : 3)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-purple-50/50 dark:hover:bg-purple-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white shadow-lg"><Users className="w-4 h-4" /></div>
+                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
+                      Be extremely well-connected
+                    </p>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 3 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedKeyFocus === 3 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">People remember how you made them feel.</p>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Go to an event every day</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Learn about people every day — be obsessed with their needs and interests</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
+                        <p className="text-sm text-bevel-text dark:text-slate-300">Make people feel valued — that&apos;s what they remember</p>
                       </div>
                     </div>
                   )}
@@ -3282,6 +3421,87 @@ export default function TodayPage() {
             </button>
             {expandedSections.healthyFoods && (
               <HealthyFoodsCard />
+            )}
+          </section>
+
+          {/* Push-Ups */}
+          <section className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-4 -mx-4">
+            <button
+              onClick={() => toggleSection('pushups')}
+              className="w-full flex items-center justify-between mb-4 group cursor-pointer"
+            >
+              <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
+                Morning Push-Ups {todayPushup && <span className="text-blue-500">({todayPushup.count})</span>}
+              </h2>
+              {expandedSections.pushups ? (
+                <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
+              )}
+            </button>
+            {expandedSections.pushups && (
+              <div className="space-y-4">
+                {/* Log Input */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Count"
+                    value={pushupCount}
+                    onChange={(e) => setPushupCount(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && pushupCount) {
+                        upsertPushupMutation.mutate(parseInt(pushupCount))
+                      }
+                    }}
+                    className="w-24 px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!pushupCount) return
+                      upsertPushupMutation.mutate(parseInt(pushupCount))
+                    }}
+                    disabled={!pushupCount || upsertPushupMutation.isPending}
+                    className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-xl transition-colors font-medium"
+                  >
+                    {todayPushup ? 'Update' : 'Save'}
+                  </button>
+                  {todayPushup && (
+                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">Logged today</span>
+                  )}
+                </div>
+
+                {/* Line Chart */}
+                {pushupLogs.length > 1 && (
+                  <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-gray-100 dark:border-slate-700/50">
+                    <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                      Recent Progress
+                    </h3>
+                    <div className="h-40">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={pushupLogs.map((l: PushupLog) => ({
+                          date: new Date(l.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                          count: l.count,
+                        }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                          <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" allowDecimals={false} />
+                          <Tooltip
+                            formatter={(value) => [value, 'Push-ups']}
+                            contentStyle={{
+                              backgroundColor: 'var(--color-bg, #fff)',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                            }}
+                          />
+                          <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 3 }} activeDot={{ r: 5 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </section>
 
