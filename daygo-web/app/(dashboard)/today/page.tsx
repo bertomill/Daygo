@@ -2011,7 +2011,7 @@ export default function TodayPage() {
   const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || identitiesLoading || scheduleLoading
 
   return (
-    <div {...swipeHandlers} className="max-w-lg mx-auto px-5 py-8 pb-32 min-h-screen bg-gradient-to-b from-bevel-bg to-white dark:from-slate-900 dark:to-slate-950">
+    <div {...swipeHandlers} className="max-w-lg mx-auto px-5 py-8 pb-32 min-h-screen bg-gradient-to-b from-bevel-bg to-white dark:from-slate-900 dark:to-slate-950 overflow-x-hidden">
       {/* Hidden audio elements for iOS PWA compatibility */}
       <audio ref={visionAudioRef} playsInline preload="none" style={{ display: 'none' }} />
       <audio ref={mantraAudioRef} playsInline preload="none" style={{ display: 'none' }} />
@@ -2058,7 +2058,7 @@ export default function TodayPage() {
       </div>
 
       {/* Quick Jump Chips */}
-      <div className="flex items-center gap-2 mb-6 -mt-2">
+      <div className="flex items-center gap-2 mb-6 -mt-2 flex-wrap">
         <button
           onClick={() => document.getElementById('section-meal-plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors active:scale-95"
