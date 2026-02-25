@@ -2514,9 +2514,12 @@ export default function TodayPage() {
                     className="w-full flex items-center gap-3 p-3 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5 transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white shadow-lg"><Wrench className="w-4 h-4" /></div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Become the absolute best AI agent builder in the world
-                    </p>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-0.5">Knowledge</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Become the absolute best AI agent builder in the world
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 1 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedKeyFocus === 1 && (
@@ -2545,9 +2548,12 @@ export default function TodayPage() {
                     className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg"><Zap className="w-4 h-4" /></div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Be the absolute highest energy, highest positivity person possible
-                    </p>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-0.5">Energy</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Be the absolute highest energy, highest positivity person possible
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 2 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedKeyFocus === 2 && (
@@ -2576,9 +2582,12 @@ export default function TodayPage() {
                     className="w-full flex items-center gap-3 p-3 hover:bg-purple-50/50 dark:hover:bg-purple-500/5 transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white shadow-lg"><Users className="w-4 h-4" /></div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Be extremely well-connected
-                    </p>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">Network</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Be extremely well-connected
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 3 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedKeyFocus === 3 && (
