@@ -556,6 +556,15 @@ export default function TodayPage() {
     enabled: !!user,
   })
 
+  const { data: completedBooksByYear = {} } = useQuery({
+    queryKey: ['books', user?.id, 'completed-by-year'],
+    queryFn: () => booksService.getCompletedBooksByYear(user!.id),
+    enabled: !!user,
+  })
+
+  const currentYearBooksRead = (completedBooksByYear[new Date().getFullYear()] || []).length
+  const BOOKS_GOAL = 100
+
   const { data: userProfile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: () => profilesService.getProfile(user!.id),
@@ -3710,7 +3719,7 @@ export default function TodayPage() {
                 className="flex items-center gap-2 group cursor-pointer"
               >
                 <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
-                  Currently Reading {currentlyReadingBooks.length > 0 && <span className="text-amber-500">({currentlyReadingBooks.length})</span>}
+                  Books <span className="text-amber-500">({currentYearBooksRead}/{BOOKS_GOAL} this year)</span>
                 </h2>
                 {expandedSections.books ? (
                   <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
@@ -3721,6 +3730,33 @@ export default function TodayPage() {
             </div>
             {expandedSections.books && (
               <>
+                {/* Books Read This Year */}
+                <Link
+                  href="/books"
+                  className="block mb-4 bg-bevel-card dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 border border-amber-200/50 dark:border-amber-500/10 hover:shadow-bevel transition-all"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      <span className="font-semibold text-bevel-text dark:text-white">Books Read in {new Date().getFullYear()}</span>
+                    </div>
+                    <span className="text-2xl font-black text-amber-600 dark:text-amber-400">{currentYearBooksRead}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all"
+                        style={{ width: `${Math.min((currentYearBooksRead / BOOKS_GOAL) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{BOOKS_GOAL} goal</span>
+                  </div>
+                </Link>
+
+                {/* Currently Reading */}
+                {currentlyReadingBooks.length > 0 && (
+                  <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-3">Currently Reading</p>
+                )}
                 {currentlyReadingBooks.length === 0 ? (
                   <button
                     onClick={() => {
