@@ -266,6 +266,7 @@ export default function TodayPage() {
   const [expandedKeyFocus, setExpandedKeyFocus] = useState<number | null>(null)
   const [newGiftIdea, setNewGiftIdea] = useState('')
   const [showGiftIdeas, setShowGiftIdeas] = useState(false)
+  const [celebratingHabitKeys, setCelebratingHabitKeys] = useState<Set<string>>(new Set())
 
   // Section collapse/expand state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
@@ -2175,14 +2176,26 @@ export default function TodayPage() {
                           const completedCount = matched.filter(m => m.habit?.completed).length
                           return (
                             <div className="space-y-2">
-                              {matched.map((m, i) => (
+                              {matched.map((m, i) => {
+                                const habitKey = `p1-${i}`
+                                const isCelebrating = celebratingHabitKeys.has(habitKey)
+                                return (
                                 <button
                                   key={i}
                                   onClick={async (e) => {
                                     e.stopPropagation()
                                     if (m.habit && user) {
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
+                                      const willComplete = !m.habit.completed
+                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, willComplete)
                                       queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
+                                      if (willComplete) {
+                                        const rect = e.currentTarget.getBoundingClientRect()
+                                        const x = (rect.left + 10) / window.innerWidth
+                                        const y = (rect.top + 10) / window.innerHeight
+                                        confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: ['#f59e0b', '#10b981', '#fbbf24', '#34d399'] })
+                                        setCelebratingHabitKeys(prev => new Set(prev).add(habitKey))
+                                        setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(habitKey); return next }), 600)
+                                      }
                                     }
                                   }}
                                   className="w-full flex items-center gap-2.5 group"
@@ -2191,19 +2204,20 @@ export default function TodayPage() {
                                     m.habit?.completed
                                       ? 'bg-emerald-500 border-emerald-500'
                                       : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
-                                  }`}>
+                                  } ${isCelebrating ? 'animate-habit-celebrate' : ''}`}>
                                     {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
                                   </div>
                                   <p className={`text-sm text-left ${
                                     m.habit?.completed
                                       ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
                                       : 'text-bevel-text dark:text-slate-300'
-                                  }`}>
+                                  } ${isCelebrating ? 'animate-habit-text-flash' : ''}`}>
                                     {m.habit?.name || m.name}
                                     {!m.habit && <span className="text-xs text-amber-500 ml-1">(add to habits)</span>}
                                   </p>
                                 </button>
-                              ))}
+                                )
+                              })}
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                   <div
@@ -2267,14 +2281,26 @@ export default function TodayPage() {
                           const completedCount = matched.filter(m => m.habit?.completed).length
                           return (
                             <div className="space-y-2">
-                              {matched.map((m, i) => (
+                              {matched.map((m, i) => {
+                                const habitKey = `p2-${i}`
+                                const isCelebrating = celebratingHabitKeys.has(habitKey)
+                                return (
                                 <button
                                   key={i}
                                   onClick={async (e) => {
                                     e.stopPropagation()
                                     if (m.habit && user) {
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
+                                      const willComplete = !m.habit.completed
+                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, willComplete)
                                       queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
+                                      if (willComplete) {
+                                        const rect = e.currentTarget.getBoundingClientRect()
+                                        const x = (rect.left + 10) / window.innerWidth
+                                        const y = (rect.top + 10) / window.innerHeight
+                                        confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: ['#10b981', '#34d399', '#14b8a6', '#6ee7b7'] })
+                                        setCelebratingHabitKeys(prev => new Set(prev).add(habitKey))
+                                        setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(habitKey); return next }), 600)
+                                      }
                                     }
                                   }}
                                   className="w-full flex items-center gap-2.5 group"
@@ -2283,19 +2309,20 @@ export default function TodayPage() {
                                     m.habit?.completed
                                       ? 'bg-emerald-500 border-emerald-500'
                                       : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'
-                                  }`}>
+                                  } ${isCelebrating ? 'animate-habit-celebrate' : ''}`}>
                                     {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
                                   </div>
                                   <p className={`text-sm text-left ${
                                     m.habit?.completed
                                       ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
                                       : 'text-bevel-text dark:text-slate-300'
-                                  }`}>
+                                  } ${isCelebrating ? 'animate-habit-text-flash' : ''}`}>
                                     {m.habit?.name || m.name}
                                     {!m.habit && <span className="text-xs text-emerald-500 ml-1">(add to habits)</span>}
                                   </p>
                                 </button>
-                              ))}
+                                )
+                              })}
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                   <div
@@ -2356,14 +2383,26 @@ export default function TodayPage() {
                           const completedCount = matched.filter(m => m.habit?.completed).length
                           return (
                             <div className="space-y-2">
-                              {matched.map((m, i) => (
+                              {matched.map((m, i) => {
+                                const habitKey = `p3-${i}`
+                                const isCelebrating = celebratingHabitKeys.has(habitKey)
+                                return (
                                 <button
                                   key={i}
                                   onClick={async (e) => {
                                     e.stopPropagation()
                                     if (m.habit && user) {
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
+                                      const willComplete = !m.habit.completed
+                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, willComplete)
                                       queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
+                                      if (willComplete) {
+                                        const rect = e.currentTarget.getBoundingClientRect()
+                                        const x = (rect.left + 10) / window.innerWidth
+                                        const y = (rect.top + 10) / window.innerHeight
+                                        confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: ['#8b5cf6', '#a78bfa', '#7c3aed', '#c4b5fd'] })
+                                        setCelebratingHabitKeys(prev => new Set(prev).add(habitKey))
+                                        setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(habitKey); return next }), 600)
+                                      }
                                     }
                                   }}
                                   className="w-full flex items-center gap-2.5 group"
@@ -2372,19 +2411,20 @@ export default function TodayPage() {
                                     m.habit?.completed
                                       ? 'bg-emerald-500 border-emerald-500'
                                       : 'border-slate-300 dark:border-slate-600 group-hover:border-violet-400'
-                                  }`}>
+                                  } ${isCelebrating ? 'animate-habit-celebrate' : ''}`}>
                                     {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
                                   </div>
                                   <p className={`text-sm text-left ${
                                     m.habit?.completed
                                       ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
                                       : 'text-bevel-text dark:text-slate-300'
-                                  }`}>
+                                  } ${isCelebrating ? 'animate-habit-text-flash' : ''}`}>
                                     {m.habit?.name || m.name}
                                     {!m.habit && <span className="text-xs text-violet-500 ml-1">(add to habits)</span>}
                                   </p>
                                 </button>
-                              ))}
+                                )
+                              })}
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                   <div
@@ -2445,14 +2485,26 @@ export default function TodayPage() {
                           const completedCount = matched.filter(m => m.habit?.completed).length
                           return (
                             <div className="space-y-2">
-                              {matched.map((m, i) => (
+                              {matched.map((m, i) => {
+                                const habitKey = `p4-${i}`
+                                const isCelebrating = celebratingHabitKeys.has(habitKey)
+                                return (
                                 <button
                                   key={i}
                                   onClick={async (e) => {
                                     e.stopPropagation()
                                     if (m.habit && user) {
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
+                                      const willComplete = !m.habit.completed
+                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, willComplete)
                                       queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
+                                      if (willComplete) {
+                                        const rect = e.currentTarget.getBoundingClientRect()
+                                        const x = (rect.left + 10) / window.innerWidth
+                                        const y = (rect.top + 10) / window.innerHeight
+                                        confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: ['#ec4899', '#f472b6', '#e11d48', '#fda4af'] })
+                                        setCelebratingHabitKeys(prev => new Set(prev).add(habitKey))
+                                        setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(habitKey); return next }), 600)
+                                      }
                                     }
                                   }}
                                   className="w-full flex items-center gap-2.5 group"
@@ -2461,19 +2513,20 @@ export default function TodayPage() {
                                     m.habit?.completed
                                       ? 'bg-emerald-500 border-emerald-500'
                                       : 'border-slate-300 dark:border-slate-600 group-hover:border-pink-400'
-                                  }`}>
+                                  } ${isCelebrating ? 'animate-habit-celebrate' : ''}`}>
                                     {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
                                   </div>
                                   <p className={`text-sm text-left ${
                                     m.habit?.completed
                                       ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
                                       : 'text-bevel-text dark:text-slate-300'
-                                  }`}>
+                                  } ${isCelebrating ? 'animate-habit-text-flash' : ''}`}>
                                     {m.habit?.name || m.name}
                                     {!m.habit && <span className="text-xs text-pink-500 ml-1">(add to habits)</span>}
                                   </p>
                                 </button>
-                              ))}
+                                )
+                              })}
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                   <div
