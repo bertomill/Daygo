@@ -267,6 +267,42 @@ export default function TodayPage() {
   const [newGiftIdea, setNewGiftIdea] = useState('')
   const [showGiftIdeas, setShowGiftIdeas] = useState(false)
   const [celebratingHabitKeys, setCelebratingHabitKeys] = useState<Set<string>>(new Set())
+  const [mitChecked, setMitChecked] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return JSON.parse(localStorage.getItem(`daygo-mit-${formatDate(selectedDate)}`) || '{}')
+      } catch { return {} }
+    }
+    return {}
+  })
+  // Sync mitChecked to localStorage and reset on date change
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(`daygo-mit-${dateStr}`) || '{}')
+      setMitChecked(stored)
+    } catch { setMitChecked({}) }
+  }, [dateStr])
+  useEffect(() => {
+    localStorage.setItem(`daygo-mit-${dateStr}`, JSON.stringify(mitChecked))
+  }, [mitChecked, dateStr])
+  const toggleMit = (key: string, e: React.MouseEvent) => {
+    const willCheck = !mitChecked[key]
+    setMitChecked(prev => ({ ...prev, [key]: willCheck }))
+    if (willCheck) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+      const x = (rect.left + 10) / window.innerWidth
+      const y = (rect.top + 10) / window.innerHeight
+      const colorSets: Record<string, string[]> = {
+        k: ['#6366f1', '#818cf8', '#3b82f6', '#93c5fd'],
+        e: ['#f59e0b', '#fbbf24', '#f97316', '#fdba74'],
+        n: ['#a855f7', '#c084fc', '#7c3aed', '#d8b4fe'],
+      }
+      const prefix = key.split('-')[0]
+      confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: colorSets[prefix] || colorSets.k })
+      setCelebratingHabitKeys(prev => new Set(prev).add(key))
+      setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(key); return next }), 600)
+    }
+  }
 
   // Section collapse/expand state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
@@ -2578,18 +2614,24 @@ export default function TodayPage() {
                   {expandedKeyFocus === 1 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
                       <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">Commit to 10 hours a day. Simple.</p>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Follow the morning AI training plan</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Build AI agents all day — 10 hours of deep work</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Study the best — learn from top builders daily</p>
-                      </div>
+                      {[
+                        { key: 'k-0', label: 'Follow the morning AI training plan' },
+                        { key: 'k-1', label: 'Build AI agents all day — 10 hours of deep work' },
+                        { key: 'k-2', label: 'Study the best — learn from top builders daily' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-indigo-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -2612,18 +2654,24 @@ export default function TodayPage() {
                   {expandedKeyFocus === 2 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
                       <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Energy is everything. Protect it relentlessly.</p>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Fast every day — one meal a day</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Eat mostly vegan, all natural — little meat, mostly fish</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Excellent sleep every single night</p>
-                      </div>
+                      {[
+                        { key: 'e-0', label: 'Fast every day — one meal a day' },
+                        { key: 'e-1', label: 'Eat mostly vegan, all natural — little meat, mostly fish' },
+                        { key: 'e-2', label: 'Excellent sleep every single night' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -2646,18 +2694,24 @@ export default function TodayPage() {
                   {expandedKeyFocus === 3 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
                       <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">People remember how you made them feel.</p>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Go to an event every day</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Learn about people every day — be obsessed with their needs and interests</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Make people feel valued — that&apos;s what they remember</p>
-                      </div>
+                      {[
+                        { key: 'n-0', label: 'Go to an event every day' },
+                        { key: 'n-1', label: 'Learn about people every day — be obsessed with their needs and interests' },
+                        { key: 'n-2', label: 'Make people feel valued — that\u0027s what they remember' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-purple-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
