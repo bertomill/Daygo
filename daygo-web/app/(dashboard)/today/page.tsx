@@ -2505,7 +2505,7 @@ export default function TodayPage() {
                 <Target className="w-5 h-5 text-indigo-500" />
                 <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Most Important Things</h2>
               </div>
-              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">What must I do to achieve my priorities? Relentlessly attack these three things.</p>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">What must I do to achieve my priorities? Relentlessly attack these three things. These are incredible pursuits because they compound, they are extremely high leverage, and they are a positive sum game.</p>
               <div className="space-y-3">
                 {/* Focus 1 - Best AI Agent Builder */}
                 <div className="rounded-xl border border-indigo-200/60 dark:border-indigo-500/20 overflow-hidden">
