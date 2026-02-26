@@ -556,6 +556,15 @@ export default function TodayPage() {
     enabled: !!user,
   })
 
+  const { data: completedBooksByYear = {} } = useQuery({
+    queryKey: ['books', user?.id, 'completed-by-year'],
+    queryFn: () => booksService.getCompletedBooksByYear(user!.id),
+    enabled: !!user,
+  })
+
+  const currentYearBooksRead = (completedBooksByYear[new Date().getFullYear()] || []).length
+  const BOOKS_GOAL = 100
+
   const { data: userProfile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: () => profilesService.getProfile(user!.id),
@@ -2011,7 +2020,7 @@ export default function TodayPage() {
   const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || identitiesLoading || scheduleLoading
 
   return (
-    <div {...swipeHandlers} className="max-w-lg mx-auto px-5 py-8 pb-32 min-h-screen bg-gradient-to-b from-bevel-bg to-white dark:from-slate-900 dark:to-slate-950">
+    <div {...swipeHandlers} className="max-w-lg mx-auto px-5 py-8 pb-32 min-h-screen bg-gradient-to-b from-bevel-bg to-white dark:from-slate-900 dark:to-slate-950 overflow-x-hidden">
       {/* Hidden audio elements for iOS PWA compatibility */}
       <audio ref={visionAudioRef} playsInline preload="none" style={{ display: 'none' }} />
       <audio ref={mantraAudioRef} playsInline preload="none" style={{ display: 'none' }} />
@@ -2058,7 +2067,7 @@ export default function TodayPage() {
       </div>
 
       {/* Quick Jump Chips */}
-      <div className="flex items-center gap-2 mb-6 -mt-2">
+      <div className="flex items-center gap-2 mb-6 -mt-2 flex-wrap">
         <button
           onClick={() => document.getElementById('section-meal-plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors active:scale-95"
@@ -2496,7 +2505,7 @@ export default function TodayPage() {
                 <Target className="w-5 h-5 text-indigo-500" />
                 <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Most Important Things</h2>
               </div>
-              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">What must I do to achieve my priorities? Relentlessly attack these three things.</p>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">What must I do to achieve my priorities? Relentlessly attack these three things. These are incredible pursuits because they compound, they are extremely high leverage, and they are a positive sum game.</p>
               <div className="space-y-3">
                 {/* Focus 1 - Best AI Agent Builder */}
                 <div className="rounded-xl border border-indigo-200/60 dark:border-indigo-500/20 overflow-hidden">
@@ -2505,9 +2514,12 @@ export default function TodayPage() {
                     className="w-full flex items-center gap-3 p-3 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5 transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white shadow-lg"><Wrench className="w-4 h-4" /></div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Become the absolute best AI agent builder in the world
-                    </p>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-0.5">Knowledge</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Become the absolute best AI agent builder in the world
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 1 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedKeyFocus === 1 && (
@@ -2536,9 +2548,12 @@ export default function TodayPage() {
                     className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg"><Zap className="w-4 h-4" /></div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Be the absolute highest energy, highest positivity person possible
-                    </p>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-0.5">Energy</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Be the absolute highest energy, highest positivity person possible
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 2 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedKeyFocus === 2 && (
@@ -2567,9 +2582,12 @@ export default function TodayPage() {
                     className="w-full flex items-center gap-3 p-3 hover:bg-purple-50/50 dark:hover:bg-purple-500/5 transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white shadow-lg"><Users className="w-4 h-4" /></div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Be extremely well-connected
-                    </p>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">Network</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Be extremely well-connected
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 3 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedKeyFocus === 3 && (
@@ -3710,7 +3728,7 @@ export default function TodayPage() {
                 className="flex items-center gap-2 group cursor-pointer"
               >
                 <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
-                  Currently Reading {currentlyReadingBooks.length > 0 && <span className="text-amber-500">({currentlyReadingBooks.length})</span>}
+                  Books <span className="text-amber-500">({currentYearBooksRead}/{BOOKS_GOAL} this year)</span>
                 </h2>
                 {expandedSections.books ? (
                   <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
@@ -3721,6 +3739,33 @@ export default function TodayPage() {
             </div>
             {expandedSections.books && (
               <>
+                {/* Books Read This Year */}
+                <Link
+                  href="/books"
+                  className="block mb-4 bg-bevel-card dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 border border-amber-200/50 dark:border-amber-500/10 hover:shadow-bevel transition-all"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      <span className="font-semibold text-bevel-text dark:text-white">Books Read in {new Date().getFullYear()}</span>
+                    </div>
+                    <span className="text-2xl font-black text-amber-600 dark:text-amber-400">{currentYearBooksRead}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all"
+                        style={{ width: `${Math.min((currentYearBooksRead / BOOKS_GOAL) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{BOOKS_GOAL} goal</span>
+                  </div>
+                </Link>
+
+                {/* Currently Reading */}
+                {currentlyReadingBooks.length > 0 && (
+                  <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-3">Currently Reading</p>
+                )}
                 {currentlyReadingBooks.length === 0 ? (
                   <button
                     onClick={() => {

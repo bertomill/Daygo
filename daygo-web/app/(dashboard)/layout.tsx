@@ -74,7 +74,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex overflow-x-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex fixed top-0 left-0 h-screen w-56 flex-col bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-700/50 z-40">
         {/* Logo */}
@@ -134,7 +134,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 pb-20 md:pb-0 md:ml-56">
+      <main className="flex-1 pb-20 md:pb-0 md:ml-56 overflow-x-hidden">
         {children}
       </main>
 
