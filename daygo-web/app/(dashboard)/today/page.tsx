@@ -2141,71 +2141,51 @@ export default function TodayPage() {
                 <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Highest Priorities</h2>
               </div>
               <div className="space-y-3">
-                {/* Priority 1 - Investments */}
+                {/* Priority 1 - KPMG AI Engineer */}
                 <div className="rounded-xl border border-amber-200/60 dark:border-amber-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedGoal(expandedGoal === 1 ? null : 1)}
                     className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      $100,000 in investments by end of 2026
-                    </p>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-0.5">Get Paid Now</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Become the absolute best AI engineer at KPMG — $110K &rarr; $200K
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 1 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedGoal === 1 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">KPMG (client, not 9-to-5) — $6,500/month ($78,000/year)</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Lighten AI — 3 clients &times; $5,000/month ($180,000)</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">PromisePiece (Katie&apos;s app) — 10,000 users &times; $2/user ($20,000)</p>
-                      </div>
-                      <div className="mt-3 pt-2 border-t border-amber-200/40 dark:border-amber-500/10 space-y-1">
-                        <p className="text-sm font-bold text-bevel-text dark:text-white">Income: $278,000</p>
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide">Living Expenses</p>
-                        <div className="flex items-start gap-2">
-                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Rent — $2,000/month ($24,000)</p>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Food — $500/month ($6,000)</p>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Phone — $140/month ($1,680)</p>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Other (internet, transit, subscriptions) — ~$360/month ($4,320)</p>
-                        </div>
-                      </div>
-                      <div className="mt-2 pt-2 border-t border-amber-200/40 dark:border-amber-500/10">
-                        <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Expenses: -$36,000/year</p>
-                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-1">Net to invest: $242,000</p>
-                      </div>
+                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Create agents that shock people. You can do this.</p>
+                      {[
+                        { key: 'hp-1-0', label: 'Build AI agents that make partners say "wow"' },
+                        { key: 'hp-1-1', label: 'Become friends with every partner — they\u0027re good people' },
+                        { key: 'hp-1-2', label: 'Make huge, undeniable impact — no joke' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
 
-                      {/* Daily Habits for this priority */}
+                      {/* Daily Habits for KPMG */}
                       <div className="mt-3 pt-3 border-t border-amber-200/40 dark:border-amber-500/10">
                         <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
                         {(() => {
-                          const priorityHabits = [
-                            { name: 'AI Agent Quiz', match: /ai.*agent.*quiz|quiz.*ai.*agent/i },
-                            { name: 'Daily AI Content', match: /daily.*ai.*content|ai.*content.*daily/i },
-                            { name: 'Attend AI Event & Share Lighten AI', match: /attend.*event|ai.*event|share.*lighten/i },
-                            { name: 'Build an AI Agent', match: /build.*ai.*agent|ai.*agent.*build/i },
-                            { name: 'Forego & Invest — skip non-goal spending, invest it immediately', match: /forego.*invest|skip.*spend|invest.*immediately/i },
+                          const kpmgHabits = [
+                            { name: 'Build for KPMG', match: /kpmg|build.*kpmg|kpmg.*build|kpmg.*agent/i },
                           ]
-                          const matched = priorityHabits.map(ph => {
+                          const matched = kpmgHabits.map(ph => {
                             const habit = habits.find(h => ph.match.test(h.name))
                             return { ...ph, habit }
                           })
@@ -2258,10 +2238,10 @@ export default function TodayPage() {
                                 <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                   <div
                                     className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-500 transition-all"
-                                    style={{ width: `${priorityHabits.length > 0 ? (completedCount / priorityHabits.length) * 100 : 0}%` }}
+                                    style={{ width: `${kpmgHabits.length > 0 ? (completedCount / kpmgHabits.length) * 100 : 0}%` }}
                                   />
                                 </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{priorityHabits.length}</span>
+                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{kpmgHabits.length}</span>
                               </div>
                             </div>
                           )
@@ -2271,46 +2251,51 @@ export default function TodayPage() {
                   )}
                 </div>
 
-                {/* Priority 2 - Hyrox */}
+                {/* Priority 2 - Mason AI Engineer */}
                 <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedGoal(expandedGoal === 2 ? null : 2)}
                     className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Compete at Hyrox World Championships by June 2026
-                    </p>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 mb-0.5">Risk &amp; Reward</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Dominate your position as AI engineer for Mason
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 2 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedGoal === 2 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">8 treadmill runs &times; 1 km each under 4:30</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">100 wall balls unbroken</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Sled push at Unity Gym — 2 laps, 8 plates unbroken</p>
-                      </div>
+                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">You&apos;re with the best in the world. Perform and join a rocketship.</p>
+                      {[
+                        { key: 'hp-2-0', label: 'Work alongside the best — it makes you world-class' },
+                        { key: 'hp-2-1', label: 'Perform so well they can\u0027t ignore you' },
+                        { key: 'hp-2-2', label: 'Ride the rocketship — this startup is growing extremely fast' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
 
-                      {/* Daily Habits for Hyrox */}
+                      {/* Daily Habits for Mason */}
                       <div className="mt-3 pt-3 border-t border-emerald-200/40 dark:border-emerald-500/10">
                         <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
                         {(() => {
-                          const hyroxHabits = [
-                            { name: '7.5+ Hours of Sleep', match: /7\.5.*sleep|sleep.*7\.5/i },
-                            { name: 'No Food 2 Hours Before Bed', match: /no.*food.*bed|eat.*before.*bed/i },
-                            { name: 'Train Like It\'s Competition', match: /competition|train.*like/i },
-                            { name: 'Stretch Before & After Workout', match: /stretch.*workout|stretch.*before/i },
-                            { name: 'High Protein, High Fiber Foods', match: /high.*protein|protein.*fiber/i },
-                            { name: 'Recovery Is the Workout', match: /recovery|treat.*recovery/i },
+                          const masonHabits = [
+                            { name: 'Build for Mason', match: /mason|build.*mason|mason.*build|mason.*ai/i },
                           ]
-                          const matched = hyroxHabits.map(ph => {
+                          const matched = masonHabits.map(ph => {
                             const habit = habits.find(h => ph.match.test(h.name))
                             return { ...ph, habit }
                           })
@@ -2363,10 +2348,10 @@ export default function TodayPage() {
                                 <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                   <div
                                     className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all"
-                                    style={{ width: `${hyroxHabits.length > 0 ? (completedCount / hyroxHabits.length) * 100 : 0}%` }}
+                                    style={{ width: `${masonHabits.length > 0 ? (completedCount / masonHabits.length) * 100 : 0}%` }}
                                   />
                                 </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{hyroxHabits.length}</span>
+                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{masonHabits.length}</span>
                               </div>
                             </div>
                           )
@@ -2376,208 +2361,20 @@ export default function TodayPage() {
                   )}
                 </div>
 
-                {/* Priority 3 - Makers Lounge */}
-                <div className="rounded-xl border border-violet-200/60 dark:border-violet-500/20 overflow-hidden">
-                  <button
-                    onClick={() => setExpandedGoal(expandedGoal === 3 ? null : 3)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-violet-50/50 dark:hover:bg-violet-500/5 transition-colors"
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Grow Makers Lounge to 10,000 people by December 2026
-                    </p>
-                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 3 ? 'rotate-180' : ''}`} />
-                  </button>
-                  {expandedGoal === 3 && (
-                    <div className="px-3 pb-3 pl-14 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Host an in-person event every month</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Host an online event every week</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Gain partnerships with at least 3 major brands</p>
-                      </div>
-
-                      {/* Daily Habits for Makers Lounge */}
-                      <div className="mt-3 pt-3 border-t border-violet-200/40 dark:border-violet-500/10">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
-                        {(() => {
-                          const mlHabits = [
-                            { name: 'Post Makers Lounge Content', match: /post.*content|makers.*content|lounge.*content/i },
-                            { name: 'Provide Value to the Network', match: /provide.*value|value.*network/i },
-                            { name: 'Improve the Event Every Day', match: /improve.*event|event.*improve/i },
-                          ]
-                          const matched = mlHabits.map(ph => {
-                            const habit = habits.find(h => ph.match.test(h.name))
-                            return { ...ph, habit }
-                          })
-                          const completedCount = matched.filter(m => m.habit?.completed).length
-                          return (
-                            <div className="space-y-2">
-                              {matched.map((m, i) => {
-                                const habitKey = `p3-${i}`
-                                const isCelebrating = celebratingHabitKeys.has(habitKey)
-                                return (
-                                <button
-                                  key={i}
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    if (m.habit && user) {
-                                      const willComplete = !m.habit.completed
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, willComplete)
-                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
-                                      if (willComplete) {
-                                        const rect = e.currentTarget.getBoundingClientRect()
-                                        const x = (rect.left + 10) / window.innerWidth
-                                        const y = (rect.top + 10) / window.innerHeight
-                                        confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: ['#8b5cf6', '#a78bfa', '#7c3aed', '#c4b5fd'] })
-                                        setCelebratingHabitKeys(prev => new Set(prev).add(habitKey))
-                                        setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(habitKey); return next }), 600)
-                                      }
-                                    }
-                                  }}
-                                  className="w-full flex items-center gap-2.5 group"
-                                >
-                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    m.habit?.completed
-                                      ? 'bg-emerald-500 border-emerald-500'
-                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-violet-400'
-                                  } ${isCelebrating ? 'animate-habit-celebrate' : ''}`}>
-                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <p className={`text-sm text-left ${
-                                    m.habit?.completed
-                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
-                                      : 'text-bevel-text dark:text-slate-300'
-                                  } ${isCelebrating ? 'animate-habit-text-flash' : ''}`}>
-                                    {m.habit?.name || m.name}
-                                    {!m.habit && <span className="text-xs text-violet-500 ml-1">(add to habits)</span>}
-                                  </p>
-                                </button>
-                                )
-                              })}
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-violet-400 to-purple-500 transition-all"
-                                    style={{ width: `${mlHabits.length > 0 ? (completedCount / mlHabits.length) * 100 : 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{mlHabits.length}</span>
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
+                {/* Priority 3 - Focus */}
+                <div className="rounded-xl border border-red-200/60 dark:border-red-500/20 overflow-hidden bg-red-50/30 dark:bg-red-500/5">
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-red-500 dark:text-red-400 mb-0.5">The Rule</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Relentlessly cut out everything else
+                      </p>
                     </div>
-                  )}
-                </div>
-
-                {/* Priority 4 - Relationship */}
-                <div className="rounded-xl border border-pink-200/60 dark:border-pink-500/20 overflow-hidden">
-                  <button
-                    onClick={() => setExpandedGoal(expandedGoal === 4 ? null : 4)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-pink-50/50 dark:hover:bg-pink-500/5 transition-colors"
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-black text-sm shadow-lg">4</div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Our love is stronger by December 2026 than it was at the start
-                    </p>
-                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 4 ? 'rotate-180' : ''}`} />
-                  </button>
-                  {expandedGoal === 4 && (
-                    <div className="px-3 pb-3 pl-14 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">One gift per month for Katy</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Take a class together every week — yoga, cooking, something to grow in</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Celebrate every special moment with a candle, dessert, and a note</p>
-                      </div>
-
-                      {/* Daily Habits for Relationship */}
-                      <div className="mt-3 pt-3 border-t border-pink-200/40 dark:border-pink-500/10">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
-                        {(() => {
-                          const relationshipHabits = [
-                            { name: 'Send a Loving Text', match: /loving.*text|text.*love|best.*text/i },
-                            { name: 'Pray for Them & Their Family', match: /pray.*family|pray.*them|pray.*partner/i },
-                            { name: 'Express Gratitude Before Bed', match: /gratitude.*bed|express.*gratitude.*partner|gratitude.*them/i },
-                          ]
-                          const matched = relationshipHabits.map(ph => {
-                            const habit = habits.find(h => ph.match.test(h.name))
-                            return { ...ph, habit }
-                          })
-                          const completedCount = matched.filter(m => m.habit?.completed).length
-                          return (
-                            <div className="space-y-2">
-                              {matched.map((m, i) => {
-                                const habitKey = `p4-${i}`
-                                const isCelebrating = celebratingHabitKeys.has(habitKey)
-                                return (
-                                <button
-                                  key={i}
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    if (m.habit && user) {
-                                      const willComplete = !m.habit.completed
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, willComplete)
-                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
-                                      if (willComplete) {
-                                        const rect = e.currentTarget.getBoundingClientRect()
-                                        const x = (rect.left + 10) / window.innerWidth
-                                        const y = (rect.top + 10) / window.innerHeight
-                                        confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: ['#ec4899', '#f472b6', '#e11d48', '#fda4af'] })
-                                        setCelebratingHabitKeys(prev => new Set(prev).add(habitKey))
-                                        setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(habitKey); return next }), 600)
-                                      }
-                                    }
-                                  }}
-                                  className="w-full flex items-center gap-2.5 group"
-                                >
-                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    m.habit?.completed
-                                      ? 'bg-emerald-500 border-emerald-500'
-                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-pink-400'
-                                  } ${isCelebrating ? 'animate-habit-celebrate' : ''}`}>
-                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <p className={`text-sm text-left ${
-                                    m.habit?.completed
-                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
-                                      : 'text-bevel-text dark:text-slate-300'
-                                  } ${isCelebrating ? 'animate-habit-text-flash' : ''}`}>
-                                    {m.habit?.name || m.name}
-                                    {!m.habit && <span className="text-xs text-pink-500 ml-1">(add to habits)</span>}
-                                  </p>
-                                </button>
-                                )
-                              })}
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-pink-400 to-rose-500 transition-all"
-                                    style={{ width: `${relationshipHabits.length > 0 ? (completedCount / relationshipHabits.length) * 100 : 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{relationshipHabits.length}</span>
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
-                    </div>
-                  )}
+                  </div>
+                  <div className="px-3 pb-3 pl-14">
+                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">These two are all you need to explode. KPMG is your get-paid-now path. Mason is your rocketship. They&apos;re self-reinforcing — both make you the best AI engineer alive. Nothing else matters.</p>
+                  </div>
                 </div>
               </div>
             </div>
