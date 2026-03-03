@@ -278,13 +278,13 @@ export default function TodayPage() {
   // Sync mitChecked to localStorage and reset on date change
   useEffect(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem(`daygo-mit-${dateStr}`) || '{}')
+      const stored = JSON.parse(localStorage.getItem(`daygo-mit-${formatDate(selectedDate)}`) || '{}')
       setMitChecked(stored)
     } catch { setMitChecked({}) }
-  }, [dateStr])
+  }, [selectedDate])
   useEffect(() => {
-    localStorage.setItem(`daygo-mit-${dateStr}`, JSON.stringify(mitChecked))
-  }, [mitChecked, dateStr])
+    localStorage.setItem(`daygo-mit-${formatDate(selectedDate)}`, JSON.stringify(mitChecked))
+  }, [mitChecked, selectedDate])
   const toggleMit = (key: string, e: React.MouseEvent) => {
     const willCheck = !mitChecked[key]
     setMitChecked(prev => ({ ...prev, [key]: willCheck }))
