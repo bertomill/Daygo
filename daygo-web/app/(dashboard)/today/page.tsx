@@ -2094,6 +2094,53 @@ export default function TodayPage() {
         </button>
       </div>
 
+      {/* What I'm Becoming - bertmill19 */}
+      {user?.email === 'bertmill19@gmail.com' && (
+        <div className="mb-10 space-y-4">
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-[2px]">
+            <div className="rounded-2xl bg-white dark:bg-slate-900 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-emerald-500" />
+                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">What I&apos;m Becoming</h2>
+              </div>
+              <div className="space-y-3">
+                {/* 1 - Community Leader */}
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-emerald-200/60 dark:border-emerald-500/20">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
+                  <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                    The greatest community leader in my country
+                  </p>
+                </div>
+
+                {/* 2 - AI Entrepreneur */}
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-cyan-200/60 dark:border-cyan-500/20">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
+                  <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                    An extremely rich AI entrepreneur
+                  </p>
+                </div>
+
+                {/* 3 - Olympic Athlete */}
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-200/60 dark:border-amber-500/20">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
+                  <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                    An Olympic athlete
+                  </p>
+                </div>
+
+                {/* 4 - Family Member */}
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-pink-200/60 dark:border-pink-500/20">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-black text-sm shadow-lg">4</div>
+                  <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                    A greater and greater family member
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bold Goals & Values - bertmill19 */}
       {user?.email === 'bertmill19@gmail.com' && (
         <div className="mb-10 space-y-4">
