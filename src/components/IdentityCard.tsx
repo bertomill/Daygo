@@ -52,7 +52,7 @@ export function IdentityCard({ identity, onPress }: IdentityCardProps) {
           <Ionicons name="person-outline" size={16} color="#ec4899" />
         </View>
         <View className="flex-1">
-          <Text className="text-xs text-pink-600 font-medium mb-1">IDENTITY</Text>
+          <Text className="text-xs text-pink-600 font-medium mb-1">THE LIFESTYLE</Text>
           <Text className="text-base text-gray-800 leading-relaxed">{identity.text}</Text>
         </View>
       </View>

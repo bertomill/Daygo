@@ -85,6 +85,30 @@ body {
   animation: fade-in 0.3s ease-out;
 }
 
+/* Habit check celebration */
+@keyframes habit-celebrate {
+  0% { transform: scale(1); }
+  20% { transform: scale(1.4); }
+  40% { transform: scale(0.9); }
+  60% { transform: scale(1.15); }
+  80% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes habit-text-flash {
+  0% { opacity: 1; }
+  30% { opacity: 0.5; color: #10b981; }
+  100% { opacity: 1; }
+}
+
+.animate-habit-celebrate {
+  animation: habit-celebrate 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.animate-habit-text-flash {
+  animation: habit-text-flash 0.5s ease-out;
+}
+
 /* Section header styles */
 .section-header {
   @apply text-xs font-semibold uppercase tracking-wider;

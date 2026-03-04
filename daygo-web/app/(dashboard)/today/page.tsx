@@ -266,6 +266,43 @@ export default function TodayPage() {
   const [expandedKeyFocus, setExpandedKeyFocus] = useState<number | null>(null)
   const [newGiftIdea, setNewGiftIdea] = useState('')
   const [showGiftIdeas, setShowGiftIdeas] = useState(false)
+  const [celebratingHabitKeys, setCelebratingHabitKeys] = useState<Set<string>>(new Set())
+  const [mitChecked, setMitChecked] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return JSON.parse(localStorage.getItem(`daygo-mit-${formatDate(selectedDate)}`) || '{}')
+      } catch { return {} }
+    }
+    return {}
+  })
+  // Sync mitChecked to localStorage and reset on date change
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(`daygo-mit-${formatDate(selectedDate)}`) || '{}')
+      setMitChecked(stored)
+    } catch { setMitChecked({}) }
+  }, [selectedDate])
+  useEffect(() => {
+    localStorage.setItem(`daygo-mit-${formatDate(selectedDate)}`, JSON.stringify(mitChecked))
+  }, [mitChecked, selectedDate])
+  const toggleMit = (key: string, e: React.MouseEvent) => {
+    const willCheck = !mitChecked[key]
+    setMitChecked(prev => ({ ...prev, [key]: willCheck }))
+    if (willCheck) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+      const x = (rect.left + 10) / window.innerWidth
+      const y = (rect.top + 10) / window.innerHeight
+      const colorSets: Record<string, string[]> = {
+        k: ['#6366f1', '#818cf8', '#3b82f6', '#93c5fd'],
+        e: ['#f59e0b', '#fbbf24', '#f97316', '#fdba74'],
+        n: ['#a855f7', '#c084fc', '#7c3aed', '#d8b4fe'],
+      }
+      const prefix = key.split('-')[0]
+      confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: colorSets[prefix] || colorSets.k })
+      setCelebratingHabitKeys(prev => new Set(prev).add(key))
+      setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(key); return next }), 600)
+    }
+  }
 
   // Section collapse/expand state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
@@ -2087,448 +2124,190 @@ export default function TodayPage() {
         </button>
       </div>
 
-      {/* What I'm Becoming - bertmill19 */}
-      {user?.email === 'bertmill19@gmail.com' && (
-        <div className="mb-10 space-y-4">
-          <div className="rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-[2px]">
-            <div className="rounded-2xl bg-white dark:bg-slate-900 p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-emerald-500" />
-                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">What I&apos;m Becoming</h2>
-              </div>
-              <div className="space-y-3">
-                {/* 1 - Community Leader */}
-                <div className="flex items-center gap-3 p-3 rounded-xl border border-emerald-200/60 dark:border-emerald-500/20">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
-                  <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                    The greatest community leader in my country
-                  </p>
-                </div>
-
-                {/* 2 - AI Entrepreneur */}
-                <div className="flex items-center gap-3 p-3 rounded-xl border border-cyan-200/60 dark:border-cyan-500/20">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
-                  <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                    An extremely rich AI entrepreneur
-                  </p>
-                </div>
-
-                {/* 3 - Olympic Athlete */}
-                <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-200/60 dark:border-amber-500/20">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
-                  <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                    An Olympic athlete
-                  </p>
-                </div>
-
-                {/* 4 - Family Member */}
-                <div className="flex items-center gap-3 p-3 rounded-xl border border-pink-200/60 dark:border-pink-500/20">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-black text-sm shadow-lg">4</div>
-                  <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                    A greater and greater family member
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bold Goals & Values - bertmill19 */}
+      {/* 2026 Roadmap - bertmill19 */}
       {user?.email === 'bertmill19@gmail.com' && (
         <div className="mb-10 space-y-4">
           <div className="rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-[2px]">
             <div className="rounded-2xl bg-white dark:bg-slate-900 p-5">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-2">
                 <Flame className="w-5 h-5 text-orange-500" />
-                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Highest Priorities</h2>
+                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">2026 Roadmap</h2>
               </div>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">By September 2026. These are the only four pillars. Everything else gets cut.</p>
               <div className="space-y-3">
-                {/* Priority 1 - Investments */}
-                <div className="rounded-xl border border-amber-200/60 dark:border-amber-500/20 overflow-hidden">
+                {/* Pillar 1 - Mason AI */}
+                <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedGoal(expandedGoal === 1 ? null : 1)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-colors"
                   >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      $100,000 in investments by end of 2026
-                    </p>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 mb-0.5">Mason AI</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Working with a team I love of guys I highly respect &mdash; $200K/year
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 1 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedGoal === 1 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">KPMG (client, not 9-to-5) — $6,500/month ($78,000/year)</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Lighten AI — 3 clients &times; $5,000/month ($180,000)</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">PromisePiece (Katie&apos;s app) — 10,000 users &times; $2/user ($20,000)</p>
-                      </div>
-                      <div className="mt-3 pt-2 border-t border-amber-200/40 dark:border-amber-500/10 space-y-1">
-                        <p className="text-sm font-bold text-bevel-text dark:text-white">Income: $278,000</p>
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide">Living Expenses</p>
-                        <div className="flex items-start gap-2">
-                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Rent — $2,000/month ($24,000)</p>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Food — $500/month ($6,000)</p>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Phone — $140/month ($1,680)</p>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                          <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Other (internet, transit, subscriptions) — ~$360/month ($4,320)</p>
-                        </div>
-                      </div>
-                      <div className="mt-2 pt-2 border-t border-amber-200/40 dark:border-amber-500/10">
-                        <p className="text-sm text-bevel-text-secondary dark:text-slate-400">Expenses: -$36,000/year</p>
-                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-1">Net to invest: $242,000</p>
-                      </div>
-
-                      {/* Daily Habits for this priority */}
-                      <div className="mt-3 pt-3 border-t border-amber-200/40 dark:border-amber-500/10">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
-                        {(() => {
-                          const priorityHabits = [
-                            { name: 'AI Agent Quiz', match: /ai.*agent.*quiz|quiz.*ai.*agent/i },
-                            { name: 'Daily AI Content', match: /daily.*ai.*content|ai.*content.*daily/i },
-                            { name: 'Attend AI Event & Share Lighten AI', match: /attend.*event|ai.*event|share.*lighten/i },
-                            { name: 'Build an AI Agent', match: /build.*ai.*agent|ai.*agent.*build/i },
-                            { name: 'Forego & Invest — skip non-goal spending, invest it immediately', match: /forego.*invest|skip.*spend|invest.*immediately/i },
-                          ]
-                          const matched = priorityHabits.map(ph => {
-                            const habit = habits.find(h => ph.match.test(h.name))
-                            return { ...ph, habit }
-                          })
-                          const completedCount = matched.filter(m => m.habit?.completed).length
-                          return (
-                            <div className="space-y-2">
-                              {matched.map((m, i) => (
-                                <button
-                                  key={i}
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    if (m.habit && user) {
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
-                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
-                                    }
-                                  }}
-                                  className="w-full flex items-center gap-2.5 group"
-                                >
-                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    m.habit?.completed
-                                      ? 'bg-emerald-500 border-emerald-500'
-                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
-                                  }`}>
-                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <p className={`text-sm text-left ${
-                                    m.habit?.completed
-                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
-                                      : 'text-bevel-text dark:text-slate-300'
-                                  }`}>
-                                    {m.habit?.name || m.name}
-                                    {!m.habit && <span className="text-xs text-amber-500 ml-1">(add to habits)</span>}
-                                  </p>
-                                </button>
-                              ))}
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-500 transition-all"
-                                    style={{ width: `${priorityHabits.length > 0 ? (completedCount / priorityHabits.length) * 100 : 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{priorityHabits.length}</span>
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
+                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Be so good they can&apos;t ignore you. This is the rocketship.</p>
+                      {[
+                        { key: 'hp-1-0', label: 'Perform at the highest level every single day' },
+                        { key: 'hp-1-1', label: 'Build deep trust with the team' },
+                        { key: 'hp-1-2', label: 'Ship AI features that move the needle' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {/* Priority 2 - Hyrox */}
-                <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
+                {/* Pillar 2 - David's Company */}
+                <div className="rounded-xl border border-amber-200/60 dark:border-amber-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedGoal(expandedGoal === 2 ? null : 2)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
                   >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Compete at Hyrox World Championships by June 2026
-                    </p>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-0.5">David&apos;s Company</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Consulting my brother David&apos;s company &mdash; $5K/month
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 2 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedGoal === 2 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">8 treadmill runs &times; 1 km each under 4:30</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">100 wall balls unbroken</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Sled push at Unity Gym — 2 laps, 8 plates unbroken</p>
-                      </div>
-
-                      {/* Daily Habits for Hyrox */}
-                      <div className="mt-3 pt-3 border-t border-emerald-200/40 dark:border-emerald-500/10">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
-                        {(() => {
-                          const hyroxHabits = [
-                            { name: '7.5+ Hours of Sleep', match: /7\.5.*sleep|sleep.*7\.5/i },
-                            { name: 'No Food 2 Hours Before Bed', match: /no.*food.*bed|eat.*before.*bed/i },
-                            { name: 'Train Like It\'s Competition', match: /competition|train.*like/i },
-                            { name: 'Stretch Before & After Workout', match: /stretch.*workout|stretch.*before/i },
-                            { name: 'High Protein, High Fiber Foods', match: /high.*protein|protein.*fiber/i },
-                            { name: 'Recovery Is the Workout', match: /recovery|treat.*recovery/i },
-                          ]
-                          const matched = hyroxHabits.map(ph => {
-                            const habit = habits.find(h => ph.match.test(h.name))
-                            return { ...ph, habit }
-                          })
-                          const completedCount = matched.filter(m => m.habit?.completed).length
-                          return (
-                            <div className="space-y-2">
-                              {matched.map((m, i) => (
-                                <button
-                                  key={i}
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    if (m.habit && user) {
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
-                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
-                                    }
-                                  }}
-                                  className="w-full flex items-center gap-2.5 group"
-                                >
-                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    m.habit?.completed
-                                      ? 'bg-emerald-500 border-emerald-500'
-                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'
-                                  }`}>
-                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <p className={`text-sm text-left ${
-                                    m.habit?.completed
-                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
-                                      : 'text-bevel-text dark:text-slate-300'
-                                  }`}>
-                                    {m.habit?.name || m.name}
-                                    {!m.habit && <span className="text-xs text-emerald-500 ml-1">(add to habits)</span>}
-                                  </p>
-                                </button>
-                              ))}
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all"
-                                    style={{ width: `${hyroxHabits.length > 0 ? (completedCount / hyroxHabits.length) * 100 : 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{hyroxHabits.length}</span>
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
+                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Family &amp; business. Help David win.</p>
+                      {[
+                        { key: 'hp-2-0', label: 'Deliver massive value on the side' },
+                        { key: 'hp-2-1', label: 'Build AI tools that 10x his business' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {/* Priority 3 - Makers Lounge */}
-                <div className="rounded-xl border border-violet-200/60 dark:border-violet-500/20 overflow-hidden">
+                {/* Pillar 3 - MakersLounge */}
+                <div className="rounded-xl border border-purple-200/60 dark:border-purple-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedGoal(expandedGoal === 3 ? null : 3)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-violet-50/50 dark:hover:bg-violet-500/5 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 hover:bg-purple-50/50 dark:hover:bg-purple-500/5 transition-colors"
                   >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Grow Makers Lounge to 10,000 people by December 2026
-                    </p>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">MakersLounge</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        1,000 paying members on the MakersLounge platform
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 3 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedGoal === 3 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Host an in-person event every month</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Host an online event every week</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Gain partnerships with at least 3 major brands</p>
-                      </div>
-
-                      {/* Daily Habits for Makers Lounge */}
-                      <div className="mt-3 pt-3 border-t border-violet-200/40 dark:border-violet-500/10">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
-                        {(() => {
-                          const mlHabits = [
-                            { name: 'Post Makers Lounge Content', match: /post.*content|makers.*content|lounge.*content/i },
-                            { name: 'Provide Value to the Network', match: /provide.*value|value.*network/i },
-                            { name: 'Improve the Event Every Day', match: /improve.*event|event.*improve/i },
-                          ]
-                          const matched = mlHabits.map(ph => {
-                            const habit = habits.find(h => ph.match.test(h.name))
-                            return { ...ph, habit }
-                          })
-                          const completedCount = matched.filter(m => m.habit?.completed).length
-                          return (
-                            <div className="space-y-2">
-                              {matched.map((m, i) => (
-                                <button
-                                  key={i}
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    if (m.habit && user) {
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
-                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
-                                    }
-                                  }}
-                                  className="w-full flex items-center gap-2.5 group"
-                                >
-                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    m.habit?.completed
-                                      ? 'bg-emerald-500 border-emerald-500'
-                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-violet-400'
-                                  }`}>
-                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <p className={`text-sm text-left ${
-                                    m.habit?.completed
-                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
-                                      : 'text-bevel-text dark:text-slate-300'
-                                  }`}>
-                                    {m.habit?.name || m.name}
-                                    {!m.habit && <span className="text-xs text-violet-500 ml-1">(add to habits)</span>}
-                                  </p>
-                                </button>
-                              ))}
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-violet-400 to-purple-500 transition-all"
-                                    style={{ width: `${mlHabits.length > 0 ? (completedCount / mlHabits.length) * 100 : 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{mlHabits.length}</span>
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
+                      <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Build the community you wish existed.</p>
+                      {[
+                        { key: 'hp-3-0', label: 'Grow membership to 1,000 paying members' },
+                        { key: 'hp-3-1', label: 'Host incredible events that people talk about' },
+                        { key: 'hp-3-2', label: 'Build a platform people love' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-purple-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {/* Priority 4 - Relationship */}
+                {/* Pillar 4 - Promise Piece */}
                 <div className="rounded-xl border border-pink-200/60 dark:border-pink-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedGoal(expandedGoal === 4 ? null : 4)}
                     className="w-full flex items-center gap-3 p-3 hover:bg-pink-50/50 dark:hover:bg-pink-500/5 transition-colors"
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-black text-sm shadow-lg">4</div>
-                    <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug text-left flex-1">
-                      Our love is stronger by December 2026 than it was at the start
-                    </p>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-pink-500 dark:text-pink-400 mb-0.5">Promise Piece</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        10,000 members at $5/month for Katy
+                      </p>
+                    </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 4 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedGoal === 4 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">One gift per month for Katy</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Take a class together every week — yoga, cooking, something to grow in</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Celebrate every special moment with a candle, dessert, and a note</p>
-                      </div>
-
-                      {/* Daily Habits for Relationship */}
-                      <div className="mt-3 pt-3 border-t border-pink-200/40 dark:border-pink-500/10">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
-                        {(() => {
-                          const relationshipHabits = [
-                            { name: 'Send a Loving Text', match: /loving.*text|text.*love|best.*text/i },
-                            { name: 'Pray for Them & Their Family', match: /pray.*family|pray.*them|pray.*partner/i },
-                            { name: 'Express Gratitude Before Bed', match: /gratitude.*bed|express.*gratitude.*partner|gratitude.*them/i },
-                          ]
-                          const matched = relationshipHabits.map(ph => {
-                            const habit = habits.find(h => ph.match.test(h.name))
-                            return { ...ph, habit }
-                          })
-                          const completedCount = matched.filter(m => m.habit?.completed).length
-                          return (
-                            <div className="space-y-2">
-                              {matched.map((m, i) => (
-                                <button
-                                  key={i}
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    if (m.habit && user) {
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, !m.habit.completed)
-                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
-                                    }
-                                  }}
-                                  className="w-full flex items-center gap-2.5 group"
-                                >
-                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    m.habit?.completed
-                                      ? 'bg-emerald-500 border-emerald-500'
-                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-pink-400'
-                                  }`}>
-                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <p className={`text-sm text-left ${
-                                    m.habit?.completed
-                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
-                                      : 'text-bevel-text dark:text-slate-300'
-                                  }`}>
-                                    {m.habit?.name || m.name}
-                                    {!m.habit && <span className="text-xs text-pink-500 ml-1">(add to habits)</span>}
-                                  </p>
-                                </button>
-                              ))}
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-pink-400 to-rose-500 transition-all"
-                                    style={{ width: `${relationshipHabits.length > 0 ? (completedCount / relationshipHabits.length) * 100 : 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{relationshipHabits.length}</span>
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
+                      <p className="text-sm font-semibold text-pink-600 dark:text-pink-400">Build something beautiful for the person you love.</p>
+                      {[
+                        { key: 'hp-4-0', label: 'Ship the app and get first paying users' },
+                        { key: 'hp-4-1', label: 'Grow to 10,000 members' },
+                        { key: 'hp-4-2', label: 'Make it a product people genuinely love' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-pink-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
+                </div>
+
+                {/* Pillar 5 - The Rule: Cut Everything Else */}
+                <div className="rounded-xl border border-red-200/60 dark:border-red-500/20 overflow-hidden bg-red-50/30 dark:bg-red-500/5">
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white shadow-lg"><X className="w-4 h-4" /></div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-red-500 dark:text-red-400 mb-0.5">The Rule</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Actively block out everything else
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-3 pb-3 pl-14">
+                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">If it&apos;s not one of those four pillars, cut it. This is its own discipline &mdash; actively saying no to everything else is one of the hardest and most important things you can do. Get laser, laser focused.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2565,18 +2344,24 @@ export default function TodayPage() {
                   {expandedKeyFocus === 1 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
                       <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">Commit to 10 hours a day. Simple.</p>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Follow the morning AI training plan</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Build AI agents all day — 10 hours of deep work</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Study the best — learn from top builders daily</p>
-                      </div>
+                      {[
+                        { key: 'k-0', label: 'Follow the morning AI training plan' },
+                        { key: 'k-1', label: 'Build AI agents all day — 10 hours of deep work' },
+                        { key: 'k-2', label: 'Study the best — learn from top builders daily' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-indigo-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -2599,18 +2384,24 @@ export default function TodayPage() {
                   {expandedKeyFocus === 2 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
                       <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Energy is everything. Protect it relentlessly.</p>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Fast every day — one meal a day</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Eat mostly vegan, all natural — little meat, mostly fish</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Excellent sleep every single night</p>
-                      </div>
+                      {[
+                        { key: 'e-0', label: 'Fast every day — one meal a day' },
+                        { key: 'e-1', label: 'Eat mostly vegan, all natural — little meat, mostly fish' },
+                        { key: 'e-2', label: 'Excellent sleep every single night' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -2633,18 +2424,24 @@ export default function TodayPage() {
                   {expandedKeyFocus === 3 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
                       <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">People remember how you made them feel.</p>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Go to an event every day</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Learn about people every day — be obsessed with their needs and interests</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
-                        <p className="text-sm text-bevel-text dark:text-slate-300">Make people feel valued — that&apos;s what they remember</p>
-                      </div>
+                      {[
+                        { key: 'n-0', label: 'Go to an event every day' },
+                        { key: 'n-1', label: 'Learn about people every day — be obsessed with their needs and interests' },
+                        { key: 'n-2', label: 'Make people feel valued — that\u0027s what they remember' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-purple-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -2834,7 +2631,7 @@ export default function TodayPage() {
                 className="flex items-center gap-2 group cursor-pointer"
               >
                 <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
-                  Identity {identities.length > 0 && <span className="text-identity">({identities.length})</span>}
+                  The Lifestyle {identities.length > 0 && <span className="text-identity">({identities.length})</span>}
                 </h2>
                 {expandedSections.identities ? (
                   <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
@@ -2932,7 +2729,7 @@ export default function TodayPage() {
                     className="w-full py-4 px-4 bg-pink-500/10 hover:bg-pink-500/20 border border-dashed border-pink-500/30 rounded-xl text-pink-500 font-medium flex items-center justify-center gap-2 transition-colors"
                   >
                     <Plus className="w-5 h-5" />
-                    Add Identity
+                    Add Lifestyle
                   </button>
                 ) : (
                   <DndContext
@@ -3831,7 +3628,7 @@ export default function TodayPage() {
                 Start your journey
               </h3>
               <p className="text-bevel-text-secondary dark:text-slate-400 mb-8 leading-relaxed max-w-xs mx-auto">
-                Add your first habit, mantra, vision, identity, journal prompt, or to-do to begin tracking your day!
+                Add your first habit, mantra, vision, lifestyle, journal prompt, or to-do to begin tracking your day!
               </p>
               <button
                 onClick={() => setShowAddModal(true)}
@@ -3920,7 +3717,7 @@ export default function TodayPage() {
                     { type: 'journal' as const, label: 'Journal', key: 'J', color: 'bg-journal hover:bg-journal/90' },
                     { type: 'todo' as const, label: 'To-Do', key: 'T', color: 'bg-blue-500 hover:bg-blue-600' },
                     { type: 'vision' as const, label: 'Vision', key: 'V', color: 'bg-blue-600 hover:bg-blue-700' },
-                    { type: 'identity' as const, label: 'Identity', key: 'I', color: 'bg-pink-500 hover:bg-pink-600' },
+                    { type: 'identity' as const, label: 'Lifestyle', key: 'I', color: 'bg-pink-500 hover:bg-pink-600' },
                     { type: 'book' as const, label: 'Book', key: 'B', color: 'bg-amber-500 hover:bg-amber-600' },
                     { type: 'pep-talk' as const, label: 'Pep Talk', key: 'P', color: 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' },
                     { type: 'ai-journal' as const, label: 'AI Journal', key: 'A', color: 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600' },
@@ -4094,7 +3891,7 @@ export default function TodayPage() {
                   </div>
                 ) : addType === 'identity' ? (
                   <div className="mb-3">
-                    <p className="text-sm text-pink-500 font-medium mb-2">I am...</p>
+                    <p className="text-sm text-pink-500 font-medium mb-2">I live the lifestyle of...</p>
                     <textarea
                       value={newItemText}
                       onChange={(e) => setNewItemText(e.target.value)}
@@ -4104,7 +3901,7 @@ export default function TodayPage() {
                         }
                       }}
                       className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-                      placeholder="someone who prioritizes my health..."
+                      placeholder="a community organizer..."
                       rows={3}
                       autoFocus
                     />
@@ -4636,7 +4433,7 @@ export default function TodayPage() {
           >
             <div className="flex items-start justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {isEditingIdentity ? 'Edit Identity' : 'Identity'}
+                {isEditingIdentity ? 'Edit Lifestyle' : 'The Lifestyle'}
               </h2>
               <button
                 onClick={() => {
@@ -4653,12 +4450,12 @@ export default function TodayPage() {
             {isEditingIdentity ? (
               <>
                 <div className="mb-4">
-                  <p className="text-sm text-pink-500 font-medium mb-2">I am...</p>
+                  <p className="text-sm text-pink-500 font-medium mb-2">I live the lifestyle of...</p>
                   <textarea
                     value={editIdentityText}
                     onChange={(e) => setEditIdentityText(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-                    placeholder="someone who prioritizes my health..."
+                    placeholder="a community organizer..."
                     rows={3}
                     autoFocus
                   />
@@ -4689,7 +4486,7 @@ export default function TodayPage() {
             ) : (
               <>
                 <div className="mb-6">
-                  <p className="text-sm text-pink-500 font-medium mb-1">I am...</p>
+                  <p className="text-sm text-pink-500 font-medium mb-1">I live the lifestyle of...</p>
                   <div
                     className="text-gray-600 dark:text-slate-300 prose prose-sm dark:prose-invert max-w-none [&_p]:m-0"
                     dangerouslySetInnerHTML={{ __html: selectedIdentity.text }}
@@ -4704,7 +4501,7 @@ export default function TodayPage() {
                     className="w-full py-3 bg-pink-50 dark:bg-pink-500/10 hover:bg-pink-100 dark:hover:bg-pink-500/20 text-pink-600 dark:text-pink-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                   >
                     <Pencil className="w-5 h-5" />
-                    Edit Identity
+                    Edit Lifestyle
                   </button>
                   <button
                     onClick={() => deleteIdentityMutation.mutate(selectedIdentity.id)}
@@ -4712,7 +4509,7 @@ export default function TodayPage() {
                     className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                   >
                     <Trash2 className="w-5 h-5" />
-                    {deleteIdentityMutation.isPending ? 'Deleting...' : 'Delete Identity'}
+                    {deleteIdentityMutation.isPending ? 'Deleting...' : 'Delete Lifestyle'}
                   </button>
                 </div>
               </>
