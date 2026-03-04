@@ -732,8 +732,8 @@ export default function TodayScreen() {
                 <Ionicons name="person-outline" size={24} color="#ec4899" />
               </View>
               <View className="flex-1">
-                <Text className="text-lg font-semibold text-gray-800">Identity</Text>
-                <Text className="text-gray-500">Who you are becoming</Text>
+                <Text className="text-lg font-semibold text-gray-800">Lifestyle</Text>
+                <Text className="text-gray-500">The lifestyle you live</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -1007,15 +1007,15 @@ export default function TodayScreen() {
             <TouchableWithoutFeedback onPress={() => {}}>
               <View className="bg-white rounded-t-3xl p-6">
             <Text className="text-xl font-bold text-gray-800 mb-4">
-              Add Identity
+              Add Lifestyle
             </Text>
 
             <Text className="text-sm font-medium text-gray-700 mb-2">
-              I am...
+              I live the lifestyle of...
             </Text>
             <TextInput
               className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 mb-4"
-              placeholder="e.g., someone who prioritizes my health"
+              placeholder="e.g., a community organizer"
               value={newIdentityText}
               onChangeText={setNewIdentityText}
               multiline
@@ -1044,7 +1044,7 @@ export default function TodayScreen() {
                 disabled={createIdentity.isPending}
               >
                 <Text className="text-white text-center font-semibold">
-                  {createIdentity.isPending ? 'Adding...' : 'Add Identity'}
+                  {createIdentity.isPending ? 'Adding...' : 'Add Lifestyle'}
                 </Text>
               </TouchableOpacity>
             </View>

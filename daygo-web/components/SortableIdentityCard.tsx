@@ -67,7 +67,7 @@ export function SortableIdentityCard({ identity, onEdit }: SortableIdentityCardP
           <User className="w-6 h-6 text-pink-500" />
         </div>
         <div className="flex-1">
-          <span className="text-xs font-semibold text-pink-500 uppercase tracking-wide">I am</span>
+          <span className="text-xs font-semibold text-pink-500 uppercase tracking-wide">I live the lifestyle of</span>
           <div
             className="text-bevel-text dark:text-white prose prose-sm dark:prose-invert max-w-none [&_p]:m-0 font-medium leading-relaxed mt-1"
             dangerouslySetInnerHTML={{ __html: identity.text }}
@@ -76,7 +76,7 @@ export function SortableIdentityCard({ identity, onEdit }: SortableIdentityCardP
         <button
           onClick={handleOptionsClick}
           className="p-2 -m-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors flex-shrink-0"
-          aria-label="Identity options"
+          aria-label="Lifestyle options"
         >
           <MoreHorizontal className="w-5 h-5 text-bevel-text-secondary dark:text-slate-400" />
         </button>

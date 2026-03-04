@@ -2771,7 +2771,7 @@ export default function TodayPage() {
                 className="flex items-center gap-2 group cursor-pointer"
               >
                 <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
-                  Identity {identities.length > 0 && <span className="text-identity">({identities.length})</span>}
+                  The Lifestyle {identities.length > 0 && <span className="text-identity">({identities.length})</span>}
                 </h2>
                 {expandedSections.identities ? (
                   <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300 transition-colors" />
@@ -2869,7 +2869,7 @@ export default function TodayPage() {
                     className="w-full py-4 px-4 bg-pink-500/10 hover:bg-pink-500/20 border border-dashed border-pink-500/30 rounded-xl text-pink-500 font-medium flex items-center justify-center gap-2 transition-colors"
                   >
                     <Plus className="w-5 h-5" />
-                    Add Identity
+                    Add Lifestyle
                   </button>
                 ) : (
                   <DndContext
@@ -3860,7 +3860,7 @@ export default function TodayPage() {
                 Start your journey
               </h3>
               <p className="text-bevel-text-secondary dark:text-slate-400 mb-8 leading-relaxed max-w-xs mx-auto">
-                Add your first habit, mantra, vision, identity, journal prompt, or to-do to begin tracking your day!
+                Add your first habit, mantra, vision, lifestyle, journal prompt, or to-do to begin tracking your day!
               </p>
               <button
                 onClick={() => setShowAddModal(true)}
@@ -3949,7 +3949,7 @@ export default function TodayPage() {
                     { type: 'journal' as const, label: 'Journal', key: 'J', color: 'bg-journal hover:bg-journal/90' },
                     { type: 'todo' as const, label: 'To-Do', key: 'T', color: 'bg-blue-500 hover:bg-blue-600' },
                     { type: 'vision' as const, label: 'Vision', key: 'V', color: 'bg-blue-600 hover:bg-blue-700' },
-                    { type: 'identity' as const, label: 'Identity', key: 'I', color: 'bg-pink-500 hover:bg-pink-600' },
+                    { type: 'identity' as const, label: 'Lifestyle', key: 'I', color: 'bg-pink-500 hover:bg-pink-600' },
                     { type: 'book' as const, label: 'Book', key: 'B', color: 'bg-amber-500 hover:bg-amber-600' },
                     { type: 'schedule' as const, label: 'Schedule', key: 'S', color: 'bg-schedule hover:bg-schedule/90' },
                     { type: 'pep-talk' as const, label: 'Pep Talk', key: 'P', color: 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' },
@@ -4202,7 +4202,7 @@ export default function TodayPage() {
                   </div>
                 ) : addType === 'identity' ? (
                   <div className="mb-3">
-                    <p className="text-sm text-pink-500 font-medium mb-2">I am...</p>
+                    <p className="text-sm text-pink-500 font-medium mb-2">I live the lifestyle of...</p>
                     <textarea
                       value={newItemText}
                       onChange={(e) => setNewItemText(e.target.value)}
@@ -4212,7 +4212,7 @@ export default function TodayPage() {
                         }
                       }}
                       className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-                      placeholder="someone who prioritizes my health..."
+                      placeholder="a community organizer..."
                       rows={3}
                       autoFocus
                     />
@@ -4744,7 +4744,7 @@ export default function TodayPage() {
           >
             <div className="flex items-start justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {isEditingIdentity ? 'Edit Identity' : 'Identity'}
+                {isEditingIdentity ? 'Edit Lifestyle' : 'The Lifestyle'}
               </h2>
               <button
                 onClick={() => {
@@ -4761,12 +4761,12 @@ export default function TodayPage() {
             {isEditingIdentity ? (
               <>
                 <div className="mb-4">
-                  <p className="text-sm text-pink-500 font-medium mb-2">I am...</p>
+                  <p className="text-sm text-pink-500 font-medium mb-2">I live the lifestyle of...</p>
                   <textarea
                     value={editIdentityText}
                     onChange={(e) => setEditIdentityText(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-                    placeholder="someone who prioritizes my health..."
+                    placeholder="a community organizer..."
                     rows={3}
                     autoFocus
                   />
@@ -4797,7 +4797,7 @@ export default function TodayPage() {
             ) : (
               <>
                 <div className="mb-6">
-                  <p className="text-sm text-pink-500 font-medium mb-1">I am...</p>
+                  <p className="text-sm text-pink-500 font-medium mb-1">I live the lifestyle of...</p>
                   <div
                     className="text-gray-600 dark:text-slate-300 prose prose-sm dark:prose-invert max-w-none [&_p]:m-0"
                     dangerouslySetInnerHTML={{ __html: selectedIdentity.text }}
@@ -4812,7 +4812,7 @@ export default function TodayPage() {
                     className="w-full py-3 bg-pink-50 dark:bg-pink-500/10 hover:bg-pink-100 dark:hover:bg-pink-500/20 text-pink-600 dark:text-pink-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                   >
                     <Pencil className="w-5 h-5" />
-                    Edit Identity
+                    Edit Lifestyle
                   </button>
                   <button
                     onClick={() => deleteIdentityMutation.mutate(selectedIdentity.id)}
@@ -4820,7 +4820,7 @@ export default function TodayPage() {
                     className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                   >
                     <Trash2 className="w-5 h-5" />
-                    {deleteIdentityMutation.isPending ? 'Deleting...' : 'Delete Identity'}
+                    {deleteIdentityMutation.isPending ? 'Deleting...' : 'Delete Lifestyle'}
                   </button>
                 </div>
               </>
