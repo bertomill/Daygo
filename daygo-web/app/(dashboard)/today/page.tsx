@@ -2131,148 +2131,39 @@ export default function TodayPage() {
         </button>
       </div>
 
-      {/* Bold Goals & Values - bertmill19 */}
+      {/* 2026 Roadmap - bertmill19 */}
       {user?.email === 'bertmill19@gmail.com' && (
         <div className="mb-10 space-y-4">
           <div className="rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-[2px]">
             <div className="rounded-2xl bg-white dark:bg-slate-900 p-5">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-2">
                 <Flame className="w-5 h-5 text-orange-500" />
-                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Highest Priorities</h2>
+                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">2026 Roadmap</h2>
               </div>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">By September 2026. These are the only four pillars. Everything else gets cut.</p>
               <div className="space-y-3">
-                {/* Priority 1 - KPMG AI Engineer */}
-                <div className="rounded-xl border border-amber-200/60 dark:border-amber-500/20 overflow-hidden">
+                {/* Pillar 1 - Mason AI */}
+                <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedGoal(expandedGoal === 1 ? null : 1)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-colors"
                   >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
                     <div className="flex-1 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-0.5">Get Paid Now</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 mb-0.5">Mason AI</p>
                       <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        Become the absolute best AI engineer at KPMG — $110K &rarr; $200K
+                        Working with a team I love of guys I highly respect &mdash; $200K/year
                       </p>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 1 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedGoal === 1 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Create agents that shock people. You can do this.</p>
+                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Be so good they can&apos;t ignore you. This is the rocketship.</p>
                       {[
-                        { key: 'hp-1-0', label: 'Build AI agents that make partners say "wow"' },
-                        { key: 'hp-1-1', label: 'Become friends with every partner — they\u0027re good people' },
-                        { key: 'hp-1-2', label: 'Make huge, undeniable impact — no joke' },
-                      ].map(item => (
-                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
-                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
-                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
-                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <p className={`text-sm text-left ${
-                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
-                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
-                            {item.label}
-                          </p>
-                        </button>
-                      ))}
-
-                      {/* Daily Habits for KPMG */}
-                      <div className="mt-3 pt-3 border-t border-amber-200/40 dark:border-amber-500/10">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
-                        {(() => {
-                          const kpmgHabits = [
-                            { name: 'Build for KPMG', match: /kpmg|build.*kpmg|kpmg.*build|kpmg.*agent/i },
-                          ]
-                          const matched = kpmgHabits.map(ph => {
-                            const habit = habits.find(h => ph.match.test(h.name))
-                            return { ...ph, habit }
-                          })
-                          const completedCount = matched.filter(m => m.habit?.completed).length
-                          return (
-                            <div className="space-y-2">
-                              {matched.map((m, i) => {
-                                const habitKey = `p1-${i}`
-                                const isCelebrating = celebratingHabitKeys.has(habitKey)
-                                return (
-                                <button
-                                  key={i}
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    if (m.habit && user) {
-                                      const willComplete = !m.habit.completed
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, willComplete)
-                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
-                                      if (willComplete) {
-                                        const rect = e.currentTarget.getBoundingClientRect()
-                                        const x = (rect.left + 10) / window.innerWidth
-                                        const y = (rect.top + 10) / window.innerHeight
-                                        confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: ['#f59e0b', '#10b981', '#fbbf24', '#34d399'] })
-                                        setCelebratingHabitKeys(prev => new Set(prev).add(habitKey))
-                                        setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(habitKey); return next }), 600)
-                                      }
-                                    }
-                                  }}
-                                  className="w-full flex items-center gap-2.5 group"
-                                >
-                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    m.habit?.completed
-                                      ? 'bg-emerald-500 border-emerald-500'
-                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
-                                  } ${isCelebrating ? 'animate-habit-celebrate' : ''}`}>
-                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <p className={`text-sm text-left ${
-                                    m.habit?.completed
-                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
-                                      : 'text-bevel-text dark:text-slate-300'
-                                  } ${isCelebrating ? 'animate-habit-text-flash' : ''}`}>
-                                    {m.habit?.name || m.name}
-                                    {!m.habit && <span className="text-xs text-amber-500 ml-1">(add to habits)</span>}
-                                  </p>
-                                </button>
-                                )
-                              })}
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-500 transition-all"
-                                    style={{ width: `${kpmgHabits.length > 0 ? (completedCount / kpmgHabits.length) * 100 : 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{kpmgHabits.length}</span>
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Priority 2 - Mason AI Engineer */}
-                <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
-                  <button
-                    onClick={() => setExpandedGoal(expandedGoal === 2 ? null : 2)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-colors"
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
-                    <div className="flex-1 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 mb-0.5">Risk &amp; Reward</p>
-                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        Dominate your position as AI engineer for Mason
-                      </p>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 2 ? 'rotate-180' : ''}`} />
-                  </button>
-                  {expandedGoal === 2 && (
-                    <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">You&apos;re with the best in the world. Perform and join a rocketship.</p>
-                      {[
-                        { key: 'hp-2-0', label: 'Work alongside the best — it makes you world-class' },
-                        { key: 'hp-2-1', label: 'Perform so well they can\u0027t ignore you' },
-                        { key: 'hp-2-2', label: 'Ride the rocketship — this startup is growing extremely fast' },
+                        { key: 'hp-1-0', label: 'Perform at the highest level every single day' },
+                        { key: 'hp-1-1', label: 'Build deep trust with the team' },
+                        { key: 'hp-1-2', label: 'Ship AI features that move the needle' },
                       ].map(item => (
                         <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
                           <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
@@ -2287,93 +2178,142 @@ export default function TodayPage() {
                           </p>
                         </button>
                       ))}
-
-                      {/* Daily Habits for Mason */}
-                      <div className="mt-3 pt-3 border-t border-emerald-200/40 dark:border-emerald-500/10">
-                        <p className="text-xs font-semibold text-bevel-text-secondary dark:text-slate-400 uppercase tracking-wide mb-2">Daily Habits</p>
-                        {(() => {
-                          const masonHabits = [
-                            { name: 'Build for Mason', match: /mason|build.*mason|mason.*build|mason.*ai/i },
-                          ]
-                          const matched = masonHabits.map(ph => {
-                            const habit = habits.find(h => ph.match.test(h.name))
-                            return { ...ph, habit }
-                          })
-                          const completedCount = matched.filter(m => m.habit?.completed).length
-                          return (
-                            <div className="space-y-2">
-                              {matched.map((m, i) => {
-                                const habitKey = `p2-${i}`
-                                const isCelebrating = celebratingHabitKeys.has(habitKey)
-                                return (
-                                <button
-                                  key={i}
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    if (m.habit && user) {
-                                      const willComplete = !m.habit.completed
-                                      await habitsService.toggleHabitCompletion(user.id, m.habit.id, dateStr, willComplete)
-                                      queryClient.invalidateQueries({ queryKey: ['habits', user.id, dateStr] })
-                                      if (willComplete) {
-                                        const rect = e.currentTarget.getBoundingClientRect()
-                                        const x = (rect.left + 10) / window.innerWidth
-                                        const y = (rect.top + 10) / window.innerHeight
-                                        confetti({ particleCount: 30, spread: 60, origin: { x, y }, startVelocity: 18, gravity: 0.8, scalar: 0.7, ticks: 50, colors: ['#10b981', '#34d399', '#14b8a6', '#6ee7b7'] })
-                                        setCelebratingHabitKeys(prev => new Set(prev).add(habitKey))
-                                        setTimeout(() => setCelebratingHabitKeys(prev => { const next = new Set(prev); next.delete(habitKey); return next }), 600)
-                                      }
-                                    }
-                                  }}
-                                  className="w-full flex items-center gap-2.5 group"
-                                >
-                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    m.habit?.completed
-                                      ? 'bg-emerald-500 border-emerald-500'
-                                      : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'
-                                  } ${isCelebrating ? 'animate-habit-celebrate' : ''}`}>
-                                    {m.habit?.completed && <Check className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <p className={`text-sm text-left ${
-                                    m.habit?.completed
-                                      ? 'text-bevel-text-secondary dark:text-slate-500 line-through'
-                                      : 'text-bevel-text dark:text-slate-300'
-                                  } ${isCelebrating ? 'animate-habit-text-flash' : ''}`}>
-                                    {m.habit?.name || m.name}
-                                    {!m.habit && <span className="text-xs text-emerald-500 ml-1">(add to habits)</span>}
-                                  </p>
-                                </button>
-                                )
-                              })}
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all"
-                                    style={{ width: `${masonHabits.length > 0 ? (completedCount / masonHabits.length) * 100 : 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs font-bold text-bevel-text-secondary dark:text-slate-400">{completedCount}/{masonHabits.length}</span>
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* Priority 3 - Focus */}
+                {/* Pillar 2 - David's Company */}
+                <div className="rounded-xl border border-amber-200/60 dark:border-amber-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedGoal(expandedGoal === 2 ? null : 2)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-0.5">David&apos;s Company</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Consulting my brother David&apos;s company &mdash; $5K/month
+                      </p>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 2 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedGoal === 2 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Family &amp; business. Help David win.</p>
+                      {[
+                        { key: 'hp-2-0', label: 'Deliver massive value on the side' },
+                        { key: 'hp-2-1', label: 'Build AI tools that 10x his business' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pillar 3 - MakersLounge */}
+                <div className="rounded-xl border border-purple-200/60 dark:border-purple-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedGoal(expandedGoal === 3 ? null : 3)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-purple-50/50 dark:hover:bg-purple-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">MakersLounge</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        1,000 paying members on the MakersLounge platform
+                      </p>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 3 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedGoal === 3 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Build the community you wish existed.</p>
+                      {[
+                        { key: 'hp-3-0', label: 'Grow membership to 1,000 paying members' },
+                        { key: 'hp-3-1', label: 'Host incredible events that people talk about' },
+                        { key: 'hp-3-2', label: 'Build a platform people love' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-purple-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pillar 4 - Promise Piece */}
+                <div className="rounded-xl border border-pink-200/60 dark:border-pink-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedGoal(expandedGoal === 4 ? null : 4)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-pink-50/50 dark:hover:bg-pink-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-black text-sm shadow-lg">4</div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-pink-500 dark:text-pink-400 mb-0.5">Promise Piece</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        10,000 members at $5/month for Katy
+                      </p>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 4 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedGoal === 4 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <p className="text-sm font-semibold text-pink-600 dark:text-pink-400">Build something beautiful for the person you love.</p>
+                      {[
+                        { key: 'hp-4-0', label: 'Ship the app and get first paying users' },
+                        { key: 'hp-4-1', label: 'Grow to 10,000 members' },
+                        { key: 'hp-4-2', label: 'Make it a product people genuinely love' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-pink-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pillar 5 - The Rule: Cut Everything Else */}
                 <div className="rounded-xl border border-red-200/60 dark:border-red-500/20 overflow-hidden bg-red-50/30 dark:bg-red-500/5">
                   <div className="flex items-center gap-3 p-3">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white shadow-lg"><X className="w-4 h-4" /></div>
                     <div className="flex-1 text-left">
                       <p className="text-[10px] font-black uppercase tracking-widest text-red-500 dark:text-red-400 mb-0.5">The Rule</p>
                       <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        Relentlessly cut out everything else
+                        Actively block out everything else
                       </p>
                     </div>
                   </div>
                   <div className="px-3 pb-3 pl-14">
-                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">These two are all you need to explode. KPMG is your get-paid-now path. Mason is your rocketship. They&apos;re self-reinforcing — both make you the best AI engineer alive. Nothing else matters.</p>
+                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">If it&apos;s not one of those four pillars, cut it. This is its own discipline &mdash; actively saying no to everything else is one of the hardest and most important things you can do. Get laser, laser focused.</p>
                   </div>
                 </div>
               </div>
