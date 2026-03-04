@@ -2133,7 +2133,7 @@ export default function TodayPage() {
                 <Flame className="w-5 h-5 text-orange-500" />
                 <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">2026 Roadmap</h2>
               </div>
-              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">By September 2026. These are the only four pillars. Everything else gets cut.</p>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">By September 2026. These are the only five pillars. Everything else gets cut.</p>
               <div className="space-y-3">
                 {/* Pillar 1 - Mason AI */}
                 <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
@@ -2294,7 +2294,47 @@ export default function TodayPage() {
                   )}
                 </div>
 
-                {/* Pillar 5 - The Rule: Cut Everything Else */}
+                {/* Pillar 5 - Hyrox Elite 15 */}
+                <div className="rounded-xl border border-sky-200/60 dark:border-sky-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedGoal(expandedGoal === 5 ? null : 5)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-sky-50/50 dark:hover:bg-sky-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow-lg">5</div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-sky-500 dark:text-sky-400 mb-0.5">Hyrox Elite 15</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Travelling the world training with Olympians
+                      </p>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 5 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedGoal === 5 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <p className="text-sm font-semibold text-sky-600 dark:text-sky-400">Elite athlete. World-class fitness. Surround yourself with the best.</p>
+                      {[
+                        { key: 'hp-5-0', label: 'Compete at Hyrox Elite 15 level' },
+                        { key: 'hp-5-1', label: 'Train with Olympians around the world' },
+                        { key: 'hp-5-2', label: 'Push your body to its absolute limit' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-sky-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pillar 6 - The Rule: Cut Everything Else */}
                 <div className="rounded-xl border border-red-200/60 dark:border-red-500/20 overflow-hidden bg-red-50/30 dark:bg-red-500/5">
                   <div className="flex items-center gap-3 p-3">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white shadow-lg"><X className="w-4 h-4" /></div>
@@ -2306,7 +2346,7 @@ export default function TodayPage() {
                     </div>
                   </div>
                   <div className="px-3 pb-3 pl-14">
-                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">If it&apos;s not one of those four pillars, cut it. This is its own discipline &mdash; actively saying no to everything else is one of the hardest and most important things you can do. Get laser, laser focused.</p>
+                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">If it&apos;s not one of those five pillars, cut it. This is its own discipline &mdash; actively saying no to everything else is one of the hardest and most important things you can do. Get laser, laser focused.</p>
                   </div>
                 </div>
               </div>
@@ -2315,18 +2355,18 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Most Important Things - bertmill19 */}
+      {/* Core Values - bertmill19 */}
       {user?.email === 'bertmill19@gmail.com' && (
         <div className="mb-10 -mt-6">
           <div className="rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 p-[2px]">
             <div className="rounded-2xl bg-white dark:bg-slate-900 p-5">
               <div className="flex items-center gap-2 mb-1">
                 <Target className="w-5 h-5 text-indigo-500" />
-                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Most Important Things</h2>
+                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Core Values</h2>
               </div>
-              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">What must I do to achieve my priorities? Relentlessly attack these three things. These are incredible pursuits because they compound, they are extremely high leverage, and they are a positive sum game.</p>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">These are the values that define who I am. They compound, they are extremely high leverage, and they are a positive sum game.</p>
               <div className="space-y-3">
-                {/* Focus 1 - Best AI Agent Builder */}
+                {/* Focus 1 - Learning */}
                 <div className="rounded-xl border border-indigo-200/60 dark:border-indigo-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedKeyFocus(expandedKeyFocus === 1 ? null : 1)}
@@ -2334,20 +2374,20 @@ export default function TodayPage() {
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white shadow-lg"><Wrench className="w-4 h-4" /></div>
                     <div className="flex-1 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-0.5">Knowledge</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-0.5">Learning</p>
                       <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        Become the absolute best AI agent builder in the world
+                        Being a relentless learner is key
                       </p>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 1 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedKeyFocus === 1 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">Commit to 10 hours a day. Simple.</p>
+                      <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">Reading, workshops, testing, building. Never stop learning.</p>
                       {[
-                        { key: 'k-0', label: 'Follow the morning AI training plan' },
-                        { key: 'k-1', label: 'Build AI agents all day — 10 hours of deep work' },
-                        { key: 'k-2', label: 'Study the best — learn from top builders daily' },
+                        { key: 'k-0', label: 'Read and study every single day' },
+                        { key: 'k-1', label: 'Attend workshops and learn from the best' },
+                        { key: 'k-2', label: 'Test, build, and apply what you learn' },
                       ].map(item => (
                         <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
                           <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
@@ -2376,14 +2416,14 @@ export default function TodayPage() {
                     <div className="flex-1 text-left">
                       <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-0.5">Energy</p>
                       <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        Be the absolute highest energy, highest positivity person possible
+                        Positive energy is the key to success &mdash; your state determines your destiny
                       </p>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 2 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedKeyFocus === 2 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Energy is everything. Protect it relentlessly.</p>
+                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">All else is secondary. Protect your energy relentlessly.</p>
                       {[
                         { key: 'e-0', label: 'Fast every day — one meal a day' },
                         { key: 'e-1', label: 'Eat mostly vegan, all natural — little meat, mostly fish' },
@@ -2406,7 +2446,7 @@ export default function TodayPage() {
                   )}
                 </div>
 
-                {/* Focus 3 - Extremely Well-Connected */}
+                {/* Focus 3 - The People Around You */}
                 <div className="rounded-xl border border-purple-200/60 dark:border-purple-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedKeyFocus(expandedKeyFocus === 3 ? null : 3)}
@@ -2414,20 +2454,20 @@ export default function TodayPage() {
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white shadow-lg"><Users className="w-4 h-4" /></div>
                     <div className="flex-1 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">Network</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">The People Around You</p>
                       <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        Be extremely well-connected
+                        They have the single biggest impact on your life
                       </p>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 3 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedKeyFocus === 3 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">People remember how you made them feel.</p>
+                      <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Spend your days with the world&apos;s best athletes, entrepreneurs, community founders, and Katy.</p>
                       {[
-                        { key: 'n-0', label: 'Go to an event every day' },
-                        { key: 'n-1', label: 'Learn about people every day — be obsessed with their needs and interests' },
-                        { key: 'n-2', label: 'Make people feel valued — that\u0027s what they remember' },
+                        { key: 'n-0', label: 'Surround yourself with world-class people' },
+                        { key: 'n-1', label: 'Train and build alongside the best in the world' },
+                        { key: 'n-2', label: 'Be intentional about who you spend your time with' },
                       ].map(item => (
                         <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
                           <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
