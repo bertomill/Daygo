@@ -150,7 +150,7 @@ export default function TodayPage() {
   const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'schedule' | 'ai-journal' | 'book' | null>(null)
+  const [addType, setAddType] = useState<'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'ai-journal' | 'book' | null>(null)
   const [newItemText, setNewItemText] = useState('')
   const [newItemDescription, setNewItemDescription] = useState('')
   const [selectedHabit, setSelectedHabit] = useState<HabitWithLog | null>(null)
@@ -459,7 +459,7 @@ export default function TodayPage() {
       if (!showAddModal || addType !== null) return
 
       const key = e.key.toLowerCase()
-      const shortcuts: Record<string, 'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'schedule' | 'ai-journal' | 'book'> = {
+      const shortcuts: Record<string, 'habit' | 'mantra' | 'journal' | 'todo' | 'pep-talk' | 'vision' | 'identity' | 'ai-journal' | 'book'> = {
         'h': 'habit',
         'm': 'mantra',
         'j': 'journal',
@@ -467,7 +467,6 @@ export default function TodayPage() {
         'v': 'vision',
         'i': 'identity',
         'p': 'pep-talk',
-        's': 'schedule',
         'a': 'ai-journal',
         'b': 'book',
       }
@@ -2054,7 +2053,7 @@ export default function TodayPage() {
     }
   }
 
-  const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || identitiesLoading || scheduleLoading
+  const isLoading = habitsLoading || mantrasLoading || promptsLoading || todosLoading || visionsLoading || identitiesLoading
 
   return (
     <div {...swipeHandlers} className="max-w-lg mx-auto px-5 py-8 pb-32 min-h-screen bg-gradient-to-b from-bevel-bg to-white dark:from-slate-900 dark:to-slate-950 overflow-x-hidden">
@@ -2110,12 +2109,6 @@ export default function TodayPage() {
           className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors active:scale-95"
         >
           Meal Plan
-        </button>
-        <button
-          onClick={() => document.getElementById('section-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          className="px-3 py-1.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors active:scale-95"
-        >
-          Schedule
         </button>
         <button
           onClick={() => document.getElementById('section-journal')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
@@ -2543,13 +2536,6 @@ export default function TodayPage() {
       {/* Score Ring */}
       <div className="flex flex-col items-center mb-8">
         <ScoreRing score={score} />
-        {/* Yesterday's schedule completion breakdown */}
-        {yesterdayScheduleEvents.length > 0 && (
-          <p className="mt-3 text-xs text-gray-500 dark:text-slate-400">
-            <span className="text-schedule font-medium">{yesterdayScheduleEvents.filter(e => e.completed).length}</span>
-            /{yesterdayScheduleEvents.length} yesterday&apos;s items completed
-          </p>
-        )}
       </div>
 
       {/* My Values */}
@@ -2587,72 +2573,6 @@ export default function TodayPage() {
             ''
           }`}
         >
-          {/* Yesterday's Review - First thing to see each day */}
-          {yesterdayScheduleEvents.length > 0 && (
-            <section className="section-gradient-schedule rounded-2xl p-4 -mx-4">
-              <button
-                onClick={() => toggleSection('yesterdayReview')}
-                className="w-full flex items-center justify-between mb-4 group cursor-pointer"
-              >
-                <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
-                  Yesterday&apos;s Review
-                </h2>
-                <div className="flex items-center gap-3">
-                  <span className="badge badge-success">
-                    {yesterdayScheduleEvents.filter(e => e.completed).length}/{yesterdayScheduleEvents.length}
-                  </span>
-                  {expandedSections.yesterdayReview ? (
-                    <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
-                  )}
-                </div>
-              </button>
-              {expandedSections.yesterdayReview && (
-                <div className="space-y-2">
-                  {yesterdayScheduleEvents
-                    .sort((a, b) => a.start_time.localeCompare(b.start_time))
-                    .map((event) => (
-                      <div
-                        key={event.id}
-                        className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                          event.completed
-                            ? 'bg-green-50 dark:bg-green-900/20'
-                            : 'bg-bevel-card dark:bg-slate-800 shadow-bevel-sm'
-                        }`}
-                      >
-                        <button
-                          onClick={() => toggleYesterdayEventMutation.mutate({ eventId: event.id, completed: !event.completed })}
-                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                            event.completed
-                              ? 'bg-green-500 border-green-500 text-white'
-                              : 'border-gray-300 dark:border-slate-600 hover:border-green-400'
-                          }`}
-                        >
-                          {event.completed && (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <p className={`font-medium truncate ${
-                            event.completed
-                              ? 'text-green-700 dark:text-green-400 line-through'
-                              : 'text-bevel-text dark:text-white'
-                          }`}>
-                            {event.title}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-slate-400">
-                            {event.start_time} - {event.end_time}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </section>
-          )}
 
           {/* Today's Pep Talk */}
           {todaysPepTalk && (
@@ -3696,98 +3616,6 @@ export default function TodayPage() {
             </section>
           )}
 
-          {/* Schedule */}
-          <section id="section-schedule" className="section-gradient-schedule rounded-2xl p-4 -mx-4">
-            <button
-              onClick={() => toggleSection('schedule')}
-              className="w-full flex items-center justify-between mb-4 group cursor-pointer"
-            >
-              <h2 className="section-header text-bevel-text-secondary dark:text-slate-400">
-                Schedule
-              </h2>
-              <div className="flex items-center gap-3">
-                {scheduleEvents.length > 0 && (
-                  <span className="badge badge-success">
-                    {scheduleEvents.filter(e => e.completed).length}/{scheduleEvents.length}
-                  </span>
-                )}
-                {expandedSections.schedule ? (
-                  <ChevronUp className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-bevel-text-secondary group-hover:text-bevel-text dark:group-hover:text-slate-300 transition-colors" />
-                )}
-              </div>
-            </button>
-            {expandedSections.schedule && (
-              <>
-                <GoogleCalendarPanel
-              isConnected={isGcalConnected}
-              onConnect={() => connectGcalMutation.mutate()}
-              onDisconnect={() => disconnectGcalMutation.mutate()}
-              onImportEvents={() => importGcalEventsMutation.mutate()}
-              onExportEvents={() => exportGcalEventsMutation.mutate()}
-              isImporting={importGcalEventsMutation.isPending}
-              isExporting={exportGcalEventsMutation.isPending}
-              eventCount={googleCalendarEvents.filter((e: { is_all_day?: boolean }) => !e.is_all_day).length}
-            />
-            <SchedulePreferences
-              wakeTime={userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'}
-              bedTime={userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'}
-              onUpdate={(wake, bed) => updatePreferencesMutation.mutate({ wakeTime: wake, bedTime: bed })}
-              isUpdating={updatePreferencesMutation.isPending}
-            />
-            <DailyNotes
-              note={localDailyNote}
-              onSave={(note) => saveDailyNoteMutation.mutate(note)}
-              isSaving={saveDailyNoteMutation.isPending}
-            />
-            <CalendarRulesPanel
-              rules={calendarRules}
-              onAddRule={(ruleText) => createRuleMutation.mutate(ruleText)}
-              onToggleRule={(ruleId, isActive) => updateRuleMutation.mutate({ ruleId, isActive })}
-              onDeleteRule={(ruleId) => deleteRuleMutation.mutate(ruleId)}
-              onApplyRules={() => applyRulesMutation.mutate()}
-              onClearAiEvents={() => clearAiEventsMutation.mutate()}
-              onSeePrompt={() => setShowPromptModal(true)}
-              isApplying={applyRulesMutation.isPending}
-              hasAiEvents={scheduleEvents.some(e => e.is_ai_generated)}
-              planningStatus={planningStatus}
-            />
-            <ScheduleTemplates
-              templates={scheduleTemplates}
-              currentEvents={scheduleEvents}
-              onSaveTemplate={(name, description) =>
-                saveTemplateMutation.mutate({ name, description })
-              }
-              onApplyTemplate={(template) => applyTemplateMutation.mutate(template)}
-              onDeleteTemplate={(templateId) => deleteTemplateMutation.mutate(templateId)}
-              isSaving={saveTemplateMutation.isPending}
-            />
-            <ScheduleGrid
-              events={scheduleEvents}
-              googleCalendarEvents={googleCalendarEvents}
-              selectedDate={selectedDate}
-              wakeTime={userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'}
-              bedTime={userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'}
-              onAddEvent={(startTime, endTime) => {
-                setNewEventStartTime(startTime)
-                setNewEventEndTime(endTime)
-                setShowScheduleModal(true)
-              }}
-              onEditEvent={(event) => setSelectedEvent(event)}
-              onToggleComplete={(eventId, completed) =>
-                toggleEventCompletionMutation.mutate({ eventId, completed })
-              }
-              onResizeEvent={(eventId, newEndTime) =>
-                resizeEventMutation.mutate({ eventId, endTime: newEndTime })
-              }
-              onMoveEvent={(eventId, newStartTime, newEndTime) =>
-                moveEventMutation.mutate({ eventId, startTime: newStartTime, endTime: newEndTime })
-              }
-            />
-              </>
-            )}
-          </section>
 
           {habits.length === 0 && mantras.length === 0 && prompts.length === 0 && todos.length === 0 && visions.length === 0 && identities.length === 0 && (
             <div className="text-center py-20 px-6">
@@ -3891,7 +3719,6 @@ export default function TodayPage() {
                     { type: 'vision' as const, label: 'Vision', key: 'V', color: 'bg-blue-600 hover:bg-blue-700' },
                     { type: 'identity' as const, label: 'Lifestyle', key: 'I', color: 'bg-pink-500 hover:bg-pink-600' },
                     { type: 'book' as const, label: 'Book', key: 'B', color: 'bg-amber-500 hover:bg-amber-600' },
-                    { type: 'schedule' as const, label: 'Schedule', key: 'S', color: 'bg-schedule hover:bg-schedule/90' },
                     { type: 'pep-talk' as const, label: 'Pep Talk', key: 'P', color: 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' },
                     { type: 'ai-journal' as const, label: 'AI Journal', key: 'A', color: 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600' },
                   ].map(({ type, label, key, color }) => (
@@ -4050,84 +3877,6 @@ export default function TodayPage() {
                       Save Prompt
                     </button>
                   )}
-                </div>
-              </div>
-            ) : addType === 'schedule' ? (
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  value={newEventTitle}
-                  onChange={(e) => setNewEventTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newEventTitle.trim() && !createEventMutation.isPending) {
-                      e.preventDefault()
-                      createEventMutation.mutate()
-                    }
-                  }}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
-                  placeholder="Event title..."
-                  autoFocus
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <TimePicker
-                    label="Start Time"
-                    value={newEventStartTime}
-                    onChange={(time) => {
-                      setNewEventStartTime(time)
-                      if (time >= newEventEndTime) {
-                        const [h, m] = time.split(':').map(Number)
-                        const newEndMinutes = (h * 60 + m + 30) % (24 * 60)
-                        const newEndHours = Math.floor(newEndMinutes / 60)
-                        const newEndMins = newEndMinutes % 60
-                        setNewEventEndTime(
-                          `${newEndHours.toString().padStart(2, '0')}:${newEndMins.toString().padStart(2, '0')}:00`
-                        )
-                      }
-                    }}
-                  />
-                  <TimePicker
-                    label="End Time"
-                    value={newEventEndTime}
-                    onChange={setNewEventEndTime}
-                    minTime={newEventStartTime}
-                  />
-                </div>
-
-                <input
-                  type="text"
-                  value={newEventDescription}
-                  onChange={(e) => setNewEventDescription(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newEventTitle.trim() && !createEventMutation.isPending) {
-                      e.preventDefault()
-                      createEventMutation.mutate()
-                    }
-                  }}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
-                  placeholder="Description (optional)..."
-                />
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setAddType(null)
-                      setNewEventTitle('')
-                      setNewEventDescription('')
-                      setNewEventStartTime('09:00:00')
-                      setNewEventEndTime('09:30:00')
-                    }}
-                    className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={() => createEventMutation.mutate()}
-                    disabled={!newEventTitle.trim() || createEventMutation.isPending}
-                    className="flex-1 py-3 bg-schedule hover:bg-schedule/90 disabled:bg-schedule/50 text-white rounded-lg font-medium transition-colors"
-                  >
-                    {createEventMutation.isPending ? 'Adding...' : 'Add Event'}
-                  </button>
                 </div>
               </div>
             ) : (
@@ -5116,287 +4865,6 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Schedule Add Modal (when clicking on grid) */}
-      {showScheduleModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-          onClick={() => {
-            setShowScheduleModal(false)
-            setNewEventTitle('')
-            setNewEventDescription('')
-            setNewEventStartTime('09:00:00')
-            setNewEventEndTime('09:30:00')
-          }}
-        >
-          <div
-            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Add Event</h2>
-              <button
-                onClick={() => {
-                  setShowScheduleModal(false)
-                  setNewEventTitle('')
-                  setNewEventDescription('')
-                  setNewEventStartTime('09:00:00')
-                  setNewEventEndTime('09:30:00')
-                }}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={newEventTitle}
-                onChange={(e) => setNewEventTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newEventTitle.trim() && !createEventMutation.isPending) {
-                    e.preventDefault()
-                    createEventMutation.mutate()
-                  }
-                }}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
-                placeholder="Event title..."
-                autoFocus
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <TimePicker
-                  label="Start Time"
-                  value={newEventStartTime}
-                  onChange={(time) => {
-                    setNewEventStartTime(time)
-                    if (time >= newEventEndTime) {
-                      const [h, m] = time.split(':').map(Number)
-                      const newEndMinutes = (h * 60 + m + 30) % (24 * 60)
-                      const newEndHours = Math.floor(newEndMinutes / 60)
-                      const newEndMins = newEndMinutes % 60
-                      setNewEventEndTime(
-                        `${newEndHours.toString().padStart(2, '0')}:${newEndMins.toString().padStart(2, '0')}:00`
-                      )
-                    }
-                  }}
-                />
-                <TimePicker
-                  label="End Time"
-                  value={newEventEndTime}
-                  onChange={setNewEventEndTime}
-                  minTime={newEventStartTime}
-                />
-              </div>
-
-              <input
-                type="text"
-                value={newEventDescription}
-                onChange={(e) => setNewEventDescription(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newEventTitle.trim() && !createEventMutation.isPending) {
-                    e.preventDefault()
-                    createEventMutation.mutate()
-                  }
-                }}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-schedule"
-                placeholder="Description (optional)..."
-              />
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowScheduleModal(false)
-                    setNewEventTitle('')
-                    setNewEventDescription('')
-                    setNewEventStartTime('09:00:00')
-                    setNewEventEndTime('09:30:00')
-                  }}
-                  className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => createEventMutation.mutate()}
-                  disabled={!newEventTitle.trim() || createEventMutation.isPending}
-                  className="flex-1 py-3 bg-schedule hover:bg-schedule/90 disabled:bg-schedule/50 text-white rounded-lg font-medium transition-colors"
-                >
-                  {createEventMutation.isPending ? 'Adding...' : 'Add Event'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Schedule Event Detail Modal */}
-      {selectedEvent && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-          onClick={() => setSelectedEvent(null)}
-        >
-          <div
-            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {selectedEvent.title}
-                </h2>
-                <p className="text-schedule mt-1">
-                  {(() => {
-                    const formatTime = (timeStr: string) => {
-                      const [hours, minutes] = timeStr.split(':').map(Number)
-                      const period = hours >= 12 ? 'PM' : 'AM'
-                      const displayHour = hours % 12 || 12
-                      return `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}`
-                    }
-                    return `${formatTime(selectedEvent.start_time)} - ${formatTime(selectedEvent.end_time)}`
-                  })()}
-                </p>
-                {selectedEvent.description && (
-                  <p className="text-gray-500 dark:text-slate-400 mt-2">
-                    {selectedEvent.description}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => setSelectedEvent(null)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
-              </button>
-            </div>
-
-            <button
-              onClick={() => deleteEventMutation.mutate(selectedEvent.id)}
-              disabled={deleteEventMutation.isPending}
-              className="w-full py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 text-red-600 dark:text-red-400 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <Trash2 className="w-5 h-5" />
-              {deleteEventMutation.isPending ? 'Deleting...' : 'Delete Event'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Prompt Preview Modal */}
-      {showPromptModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]"
-          onClick={() => setShowPromptModal(false)}
-        >
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-3xl max-h-[80vh] shadow-2xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between p-6 pb-4 border-b border-gray-200 dark:border-slate-700">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">AI Scheduling Prompt</h2>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                  This is what we send to the AI to plan your day
-                </p>
-              </div>
-              <button
-                onClick={() => setShowPromptModal(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400 dark:text-slate-400" />
-              </button>
-            </div>
-
-            <div className="p-6 pb-24 overflow-y-auto flex-1">
-            <div className="space-y-4">
-              {/* System Prompt */}
-              <div>
-                <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">System Prompt</h3>
-                <pre className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono overflow-x-auto">
-{`You are a daily planner AI. Create a schedule based on the user's context and their scheduling preferences/rules.
-
-IMPORTANT: ALWAYS create a schedule that fills the ENTIRE day from wake time to bed time. Ignore the current time - schedule ALL time slots even if they appear to be "in the past." The user wants a complete day plan.
-
-CONSTRAINTS:
-1. Only schedule between ${userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'} and ${userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'} (user's wake and bed times)
-2. Fill the entire day from wake time to bed time
-3. NEVER overlap with existing events
-4. Use 30-minute increments ONLY (e.g., 09:00, 09:30, 10:00)
-5. PREFER larger time blocks (1-4 hours) for focused work - use 30-minute blocks only for short tasks like meals, breaks, or quick activities
-6. DO NOT create "Break" events - gaps between events ARE the breaks
-7. Follow the user's SCHEDULING PREFERENCES/RULES closely - they define how the day should be structured
-
-RESPONSE FORMAT:
-Respond with ONLY a valid JSON array. No explanation, no markdown, no code blocks.
-Each event:
-- "title": string (clear, action-oriented name)
-- "start_time": "HH:MM:00" (24-hour format, 30-min increments only)
-- "end_time": "HH:MM:00" (24-hour format, 30-min increments only)
-- "description": string (optional, brief context)
-
-Example: [{"title": "Deep Work", "start_time": "09:00:00", "end_time": "10:30:00"}]
-
-NEVER return an empty array unless ALL time slots are filled.`}
-                </pre>
-              </div>
-
-              {/* User Prompt */}
-              <div>
-                <h3 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">User Prompt (Context)</h3>
-                <pre className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono overflow-x-auto">
-{`Today's date: ${dateStr}
-Wake time: ${userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'} | Bed time: ${userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'}
-
-=== SCHEDULING PREFERENCES/RULES (FOLLOW THESE CLOSELY) ===
-${calendarRules.filter(r => r.is_active).length > 0
-  ? calendarRules
-      .filter(r => r.is_active)
-      .sort((a, b) => a.priority - b.priority)
-      .map((r, i) => `${i + 1}. ${r.rule_text}`)
-      .join('\n')
-  : 'No specific rules - plan the day intelligently based on context'}
-
-=== EXISTING EVENTS (DO NOT OVERLAP) ===
-${scheduleEvents.length > 0
-  ? scheduleEvents.map(e => `- ${e.title}: ${e.start_time} - ${e.end_time}`).join('\n')
-  : 'No existing events - the day is open'}
-
-=== TODAY'S NOTES (IMPORTANT CONTEXT - schedule around these) ===
-${localDailyNote || 'No specific notes for today'}
-
-=== TODAY'S TODOS ===
-${todos.length > 0
-  ? todos.filter(t => !t.completed).map(t => `- ${t.text}`).join('\n')
-  : 'No pending todos'}
-${todos.filter(t => t.completed).length > 0 ? `(${todos.filter(t => t.completed).length} already completed today)` : ''}
-
-=== HABITS ===
-${habits.length > 0
-  ? habits.map(h => `- ${h.name}${h.description ? `: ${h.description}` : ''}`).join('\n')
-  : 'No habits defined'}
-
-=== GOALS ===
-${goals.length > 0
-  ? goals.map(g => `- ${g.title}${g.description ? `: ${g.description}` : ''}`).join('\n')
-  : 'No goals defined'}
-
-=== VISION ===
-${visions.length > 0
-  ? visions.map(v => `- ${v.text}`).join('\n')
-  : 'No visions defined'}
-
-=== MANTRAS ===
-${mantras.length > 0
-  ? mantras.map(m => `- "${m.text}"`).join('\n')
-  : 'No mantras defined'}
-
-Create a schedule from ${userPreferences?.wake_time ? userPreferencesService.formatTimeForDisplay(userPreferences.wake_time) : '07:00'} to ${userPreferences?.bed_time ? userPreferencesService.formatTimeForDisplay(userPreferences.bed_time) : '22:00'} following the user's rules. Respond with only a JSON array.`}
-                </pre>
-              </div>
-            </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
