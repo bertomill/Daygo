@@ -2133,7 +2133,7 @@ export default function TodayPage() {
                 <Flame className="w-5 h-5 text-orange-500" />
                 <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">2026 Roadmap</h2>
               </div>
-              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">By September 2026. These are the only four pillars. Everything else gets cut.</p>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">By September 2026. These are the only five pillars. Everything else gets cut.</p>
               <div className="space-y-3">
                 {/* Pillar 1 - Mason AI */}
                 <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
@@ -2294,7 +2294,47 @@ export default function TodayPage() {
                   )}
                 </div>
 
-                {/* Pillar 5 - The Rule: Cut Everything Else */}
+                {/* Pillar 5 - Hyrox Elite 15 */}
+                <div className="rounded-xl border border-sky-200/60 dark:border-sky-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedGoal(expandedGoal === 5 ? null : 5)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-sky-50/50 dark:hover:bg-sky-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow-lg">5</div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-sky-500 dark:text-sky-400 mb-0.5">Hyrox Elite 15</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        Travelling the world training with Olympians
+                      </p>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 5 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedGoal === 5 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <p className="text-sm font-semibold text-sky-600 dark:text-sky-400">Elite athlete. World-class fitness. Surround yourself with the best.</p>
+                      {[
+                        { key: 'hp-5-0', label: 'Compete at Hyrox Elite 15 level' },
+                        { key: 'hp-5-1', label: 'Train with Olympians around the world' },
+                        { key: 'hp-5-2', label: 'Push your body to its absolute limit' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-sky-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pillar 6 - The Rule: Cut Everything Else */}
                 <div className="rounded-xl border border-red-200/60 dark:border-red-500/20 overflow-hidden bg-red-50/30 dark:bg-red-500/5">
                   <div className="flex items-center gap-3 p-3">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white shadow-lg"><X className="w-4 h-4" /></div>
@@ -2306,7 +2346,7 @@ export default function TodayPage() {
                     </div>
                   </div>
                   <div className="px-3 pb-3 pl-14">
-                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">If it&apos;s not one of those four pillars, cut it. This is its own discipline &mdash; actively saying no to everything else is one of the hardest and most important things you can do. Get laser, laser focused.</p>
+                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">If it&apos;s not one of those five pillars, cut it. This is its own discipline &mdash; actively saying no to everything else is one of the hardest and most important things you can do. Get laser, laser focused.</p>
                   </div>
                 </div>
               </div>
