@@ -583,8 +583,14 @@ export default function TodayScreen() {
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
           >
           <View className="flex-1 px-4">
+        {/* App Title */}
+        <View className="items-center pt-6 pb-2">
+          <Text className="text-3xl font-bold text-gray-900">Daygo</Text>
+          <Text className="text-sm text-gray-500 mt-1">Design Your Best Life One Day At A Time</Text>
+        </View>
+
         {/* Header */}
-        <View className="items-center py-6">
+        <View className="items-center py-4">
           <View className="flex-row items-center justify-center w-full">
             <TouchableOpacity
               onPress={goToPreviousDay}
