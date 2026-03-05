@@ -2072,7 +2072,7 @@ export default function TodayPage() {
       )}
 
       {/* Tagline */}
-      <p className="text-center text-sm font-semibold tracking-widest uppercase text-brand-500 dark:text-brand-400 mb-6">
+      <p className="text-center text-sm font-semibold tracking-widest uppercase text-brand-500 dark:text-brand-400 mt-10 mb-6">
         Design your best day, every day.
       </p>
 
