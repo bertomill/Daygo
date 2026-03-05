@@ -2236,11 +2236,11 @@ export default function TodayPage() {
                   </button>
                   {expandedGoal === 3 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Build the community you wish existed.</p>
+                      <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">The moat is the data you collect.</p>
                       {[
-                        { key: 'hp-3-0', label: 'Grow membership to 1,000 paying members' },
-                        { key: 'hp-3-1', label: 'Host incredible events that people talk about' },
-                        { key: 'hp-3-2', label: 'Build a platform people love' },
+                        { key: 'hp-3-0', label: 'Film every presentation — own the content' },
+                        { key: 'hp-3-1', label: 'Mini pitch night every Monday' },
+                        { key: 'hp-3-2', label: 'Feed all that data into the MakersLounge app' },
                       ].map(item => (
                         <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
                           <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
