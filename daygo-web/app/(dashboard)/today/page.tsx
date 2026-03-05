@@ -2071,6 +2071,11 @@ export default function TodayPage() {
         </div>
       )}
 
+      {/* Tagline */}
+      <p className="text-center text-sm font-semibold tracking-widest uppercase text-brand-500 dark:text-brand-400 mb-6">
+        Design your best day, every day.
+      </p>
+
       {/* Header with date navigation */}
       <div className="flex items-center justify-between mb-8">
         <button
