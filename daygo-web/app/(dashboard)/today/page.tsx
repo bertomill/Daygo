@@ -38,6 +38,9 @@ import {
   Check,
   Wrench,
   Users,
+  Coffee,
+  Dumbbell,
+  Repeat,
   type LucideIcon
 } from 'lucide-react'
 import Link from 'next/link'
@@ -2490,6 +2493,56 @@ export default function TodayPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Daily Routine - bertmill19 */}
+      {user?.email === 'bertmill19@gmail.com' && (
+        <div className="mb-10 -mt-6">
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-[2px]">
+            <div className="rounded-2xl bg-white dark:bg-slate-900 p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Repeat className="w-5 h-5 text-emerald-500" />
+                <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">Daily Routine</h2>
+              </div>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">Repeat this every single day and you will be unstoppable. You will have so much to show.</p>
+              <div className="space-y-2">
+                {[
+                  { key: 'dr-0', icon: Sun, color: 'text-amber-500', time: 'Morning', label: 'Meditate, stretch, and read — makes you smarter, healthier, and a better thinker' },
+                  { key: 'dr-1', icon: Pen, color: 'text-rose-500', time: 'Morning', label: 'Post content about Claude & genetic engineering — grow your audience, grow your community' },
+                  { key: 'dr-2', icon: Brain, color: 'text-indigo-500', time: 'Morning', label: 'Build and test AI agents until lunch — this is your craft, get relentless' },
+                  { key: 'dr-3', icon: Coffee, color: 'text-amber-700', time: 'Lunch', label: 'Go for a walk, eat lunch, have another coffee — keeps your mind razor sharp' },
+                  { key: 'dr-4', icon: Brain, color: 'text-indigo-500', time: 'Afternoon', label: 'Back to agent building — build and test AI agents, this is what you do all day' },
+                  { key: 'dr-5', icon: Dumbbell, color: 'text-emerald-500', time: 'Afternoon', label: 'Work out from a place of enjoyment and energy, not stress' },
+                  { key: 'dr-6', icon: Users, color: 'text-purple-500', time: 'Evening', label: 'Attend or host an event — build your network, drive people to MakersLounge' },
+                  { key: 'dr-7', icon: Brain, color: 'text-indigo-500', time: 'Evening', label: 'Continue agent building' },
+                  { key: 'dr-8', icon: BookOpen, color: 'text-blue-500', time: 'Night', label: 'Read a few pages' },
+                  { key: 'dr-9', icon: Compass, color: 'text-teal-500', time: 'Night', label: 'Go for another walk' },
+                  { key: 'dr-10', icon: Moon, color: 'text-slate-400', time: 'Night', label: 'Sleep' },
+                ].map(item => {
+                  const Icon = item.icon
+                  return (
+                    <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'
+                      } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                        {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${item.color}`} />
+                      <div className="flex-1 text-left">
+                        <p className={`text-sm ${
+                          mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                        } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                          <span className="font-semibold text-[10px] uppercase tracking-wider text-bevel-text-secondary dark:text-slate-500 mr-1.5">{item.time}</span>
+                          {item.label}
+                        </p>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
