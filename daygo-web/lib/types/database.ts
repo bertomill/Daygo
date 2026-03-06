@@ -1030,6 +1030,35 @@ export interface Database {
           created_at?: string;
         };
       };
+      daily_reflections: {
+        Row: {
+          id: string;
+          user_id: string;
+          date: string;
+          answer: boolean;
+          reason: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          date: string;
+          answer: boolean;
+          reason?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          date?: string;
+          answer?: boolean;
+          reason?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       daily_scores: {
@@ -1080,6 +1109,7 @@ export type Expense = Database['public']['Tables']['expenses']['Row'];
 export type ExpenseCategory = Expense['category'];
 export type GiftIdea = Database['public']['Tables']['gift_ideas']['Row'];
 export type PushupLog = Database['public']['Tables']['pushup_logs']['Row'];
+export type DailyReflection = Database['public']['Tables']['daily_reflections']['Row'];
 
 // Extended types for UI
 export type HabitWithLog = Habit & {
