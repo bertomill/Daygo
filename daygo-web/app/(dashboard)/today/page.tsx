@@ -2173,7 +2173,7 @@ export default function TodayPage() {
                 <Flame className="w-5 h-5 text-orange-500" />
                 <h2 className="text-lg font-extrabold text-bevel-text dark:text-white tracking-tight uppercase">2026 Roadmap</h2>
               </div>
-              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">By September 2026. These are the only five pillars. Everything else gets cut.</p>
+              <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">By September 2026. These are the only two pillars. Everything else gets cut.</p>
               <div className="space-y-3">
                 {/* Pillar 1 - $200K AI Engineer */}
                 <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
@@ -2197,7 +2197,8 @@ export default function TodayPage() {
                         { key: 'hp-1-0', label: 'Send portfolio to a company every week for feedback' },
                         { key: 'hp-1-1', label: 'Produce an AI tutorial every day' },
                         { key: 'hp-1-2', label: '10 best possible Agentic AI projects in your portfolio' },
-                        { key: 'hp-1-3', label: 'Wide opportunity net — teach AI at community events' },
+                        { key: 'hp-1-3', label: 'David\'s consulting — build AI tools that showcase your skills' },
+                        { key: 'hp-1-4', label: 'Wide opportunity net — teach AI at community events' },
                       ].map(item => (
                         <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
                           <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
@@ -2216,141 +2217,22 @@ export default function TodayPage() {
                   )}
                 </div>
 
-                {/* Pillar 2 - David's Company */}
-                <div className="rounded-xl border border-amber-200/60 dark:border-amber-500/20 overflow-hidden">
-                  <button
-                    onClick={() => setExpandedGoal(expandedGoal === 2 ? null : 2)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors"
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
-                    <div className="flex-1 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-0.5">David&apos;s Company</p>
-                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        Consulting my brother David&apos;s company &mdash; $5K/month
-                      </p>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 2 ? 'rotate-180' : ''}`} />
-                  </button>
-                  {expandedGoal === 2 && (
-                    <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Family &amp; business. Help David win.</p>
-                      {[
-                        { key: 'hp-2-0', label: 'Deliver massive value on the side' },
-                        { key: 'hp-2-1', label: 'Build AI tools that 10x his business' },
-                      ].map(item => (
-                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
-                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-amber-400'
-                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
-                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <p className={`text-sm text-left ${
-                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
-                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
-                            {item.label}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Pillar 3 - MakersLounge */}
-                <div className="rounded-xl border border-purple-200/60 dark:border-purple-500/20 overflow-hidden">
-                  <button
-                    onClick={() => setExpandedGoal(expandedGoal === 3 ? null : 3)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-purple-50/50 dark:hover:bg-purple-500/5 transition-colors"
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white font-black text-sm shadow-lg">3</div>
-                    <div className="flex-1 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">MakersLounge</p>
-                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        1,000 paying members on the MakersLounge platform
-                      </p>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 3 ? 'rotate-180' : ''}`} />
-                  </button>
-                  {expandedGoal === 3 && (
-                    <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">The moat is the data you collect.</p>
-                      {[
-                        { key: 'hp-3-0', label: 'Film every presentation — own the content' },
-                        { key: 'hp-3-1', label: 'Mini pitch night every Monday' },
-                        { key: 'hp-3-2', label: 'Feed all that data into the MakersLounge app' },
-                      ].map(item => (
-                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
-                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-purple-400'
-                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
-                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <p className={`text-sm text-left ${
-                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
-                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
-                            {item.label}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Pillar 4 - Promise Piece */}
-                <div className="rounded-xl border border-pink-200/60 dark:border-pink-500/20 overflow-hidden">
-                  <button
-                    onClick={() => setExpandedGoal(expandedGoal === 4 ? null : 4)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-pink-50/50 dark:hover:bg-pink-500/5 transition-colors"
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-black text-sm shadow-lg">4</div>
-                    <div className="flex-1 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-pink-500 dark:text-pink-400 mb-0.5">Promise Piece</p>
-                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        10,000 members at $5/month for Katy
-                      </p>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 4 ? 'rotate-180' : ''}`} />
-                  </button>
-                  {expandedGoal === 4 && (
-                    <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-pink-600 dark:text-pink-400">Build something beautiful for the person you love.</p>
-                      {[
-                        { key: 'hp-4-0', label: 'Ship the app and get first paying users' },
-                        { key: 'hp-4-1', label: 'Grow to 10,000 members' },
-                        { key: 'hp-4-2', label: 'Make it a product people genuinely love' },
-                      ].map(item => (
-                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
-                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-pink-400'
-                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
-                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <p className={`text-sm text-left ${
-                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
-                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
-                            {item.label}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Pillar 5 - Hyrox Elite 15 */}
+                {/* Pillar 2 - Hyrox Elite 15 */}
                 <div className="rounded-xl border border-sky-200/60 dark:border-sky-500/20 overflow-hidden">
                   <button
-                    onClick={() => setExpandedGoal(expandedGoal === 5 ? null : 5)}
+                    onClick={() => setExpandedGoal(expandedGoal === 2 ? null : 2)}
                     className="w-full flex items-center gap-3 p-3 hover:bg-sky-50/50 dark:hover:bg-sky-500/5 transition-colors"
                   >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow-lg">5</div>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
                     <div className="flex-1 text-left">
                       <p className="text-[10px] font-black uppercase tracking-widest text-sky-500 dark:text-sky-400 mb-0.5">Hyrox Elite 15</p>
                       <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
                         Travelling the world training with Olympians
                       </p>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 5 ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 2 ? 'rotate-180' : ''}`} />
                   </button>
-                  {expandedGoal === 5 && (
+                  {expandedGoal === 2 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
                       <p className="text-sm font-semibold text-sky-600 dark:text-sky-400">Elite athlete. World-class fitness. Surround yourself with the best.</p>
                       {[
@@ -2387,7 +2269,7 @@ export default function TodayPage() {
                     </div>
                   </div>
                   <div className="px-3 pb-3 pl-14">
-                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">If it&apos;s not one of those five pillars, cut it. This is its own discipline &mdash; actively saying no to everything else is one of the hardest and most important things you can do. Get laser, laser focused.</p>
+                    <p className="text-sm text-bevel-text-secondary dark:text-slate-400">If it&apos;s not one of those two pillars, cut it. This is its own discipline &mdash; actively saying no to everything else is one of the hardest and most important things you can do. Get laser, laser focused.</p>
                   </div>
                 </div>
               </div>
