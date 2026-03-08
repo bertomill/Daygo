@@ -41,6 +41,7 @@ import {
   Coffee,
   Dumbbell,
   Repeat,
+  Focus,
   type LucideIcon
 } from 'lucide-react'
 import Link from 'next/link'
@@ -2369,7 +2370,47 @@ export default function TodayPage() {
                   )}
                 </div>
 
-                {/* Focus 3 - The People Around You */}
+                {/* Focus 3 - Simplicity */}
+                <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedKeyFocus(expandedKeyFocus === 5 ? null : 5)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-lg"><Focus className="w-4 h-4" /></div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 mb-0.5">Simplicity</p>
+                      <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
+                        No social media, no email, no meetings. You must stay focused to succeed
+                      </p>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedKeyFocus === 5 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expandedKeyFocus === 5 && (
+                    <div className="px-3 pb-3 pl-14 space-y-2">
+                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Eliminate distractions ruthlessly. Deep focus is your superpower.</p>
+                      {[
+                        { key: 's-0', label: 'No social media — it drains your time and energy' },
+                        { key: 's-1', label: 'No unnecessary email — batch and minimize' },
+                        { key: 's-2', label: 'No meetings — protect your deep work time' },
+                      ].map(item => (
+                        <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            mitChecked[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-celebrate' : ''}`}>
+                            {mitChecked[item.key] && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <p className={`text-sm text-left ${
+                            mitChecked[item.key] ? 'text-bevel-text-secondary dark:text-slate-500 line-through' : 'text-bevel-text dark:text-slate-300'
+                          } ${celebratingHabitKeys.has(item.key) ? 'animate-habit-text-flash' : ''}`}>
+                            {item.label}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Focus 4 - The People Around You */}
                 <div className="rounded-xl border border-purple-200/60 dark:border-purple-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedKeyFocus(expandedKeyFocus === 3 ? null : 3)}
