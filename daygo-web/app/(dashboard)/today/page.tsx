@@ -2427,7 +2427,7 @@ export default function TodayPage() {
               <div className="space-y-2">
                 {[
                   { key: 'dr-0', icon: Sun, color: 'text-amber-500', time: 'Morning', label: 'Meditate, stretch, and read — makes you smarter, healthier, and a better thinker' },
-                  { key: 'dr-1', icon: Pen, color: 'text-rose-500', time: 'Morning', label: 'Post content about Claude & genetic engineering — grow your audience, grow your community' },
+                  { key: 'dr-1', icon: Pen, color: 'text-rose-500', time: 'Morning', label: 'Post a tutorial about Agentic AI Engineering — grow your audience, grow your community' },
                   { key: 'dr-2', icon: Brain, color: 'text-indigo-500', time: 'Morning', label: 'Build and test AI agents until lunch — this is your craft, get relentless' },
                   { key: 'dr-3', icon: Coffee, color: 'text-amber-700', time: 'Lunch', label: 'Go for a walk, eat lunch, have another coffee — keeps your mind razor sharp' },
                   { key: 'dr-4', icon: Brain, color: 'text-indigo-500', time: 'Afternoon', label: 'Back to agent building — build and test AI agents, this is what you do all day' },
