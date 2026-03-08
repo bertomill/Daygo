@@ -2175,7 +2175,7 @@ export default function TodayPage() {
               </div>
               <p className="text-xs text-bevel-text-secondary dark:text-slate-400 mb-4">By September 2026. These are the only five pillars. Everything else gets cut.</p>
               <div className="space-y-3">
-                {/* Pillar 1 - Mason AI */}
+                {/* Pillar 1 - $200K AI Engineer */}
                 <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 overflow-hidden">
                   <button
                     onClick={() => setExpandedGoal(expandedGoal === 1 ? null : 1)}
@@ -2183,20 +2183,21 @@ export default function TodayPage() {
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg">1</div>
                     <div className="flex-1 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 mb-0.5">Mason AI</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 mb-0.5">$200K AI Engineer</p>
                       <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        Working with a team I love of guys I highly respect &mdash; $200K/year
+                        Get hired as a $200K AI Engineer
                       </p>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 1 ? 'rotate-180' : ''}`} />
                   </button>
                   {expandedGoal === 1 && (
                     <div className="px-3 pb-3 pl-14 space-y-2">
-                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Be so good they can&apos;t ignore you. This is the rocketship.</p>
+                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Mason AI is the vehicle. The goal is the $200K AI Engineer role.</p>
                       {[
-                        { key: 'hp-1-0', label: 'Perform at the highest level every single day' },
-                        { key: 'hp-1-1', label: 'Build deep trust with the team' },
-                        { key: 'hp-1-2', label: 'Ship AI features that move the needle' },
+                        { key: 'hp-1-0', label: 'Send portfolio to a company every week for feedback' },
+                        { key: 'hp-1-1', label: 'Produce an AI tutorial every day' },
+                        { key: 'hp-1-2', label: '10 best possible Agentic AI projects in your portfolio' },
+                        { key: 'hp-1-3', label: 'Wide opportunity net — teach AI at community events' },
                       ].map(item => (
                         <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
                           <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
