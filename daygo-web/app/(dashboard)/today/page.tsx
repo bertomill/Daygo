@@ -2226,9 +2226,9 @@ export default function TodayPage() {
                   >
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow-lg">2</div>
                     <div className="flex-1 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-sky-500 dark:text-sky-400 mb-0.5">High Rocks Worlds</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-sky-500 dark:text-sky-400 mb-0.5">Hyrox Worlds</p>
                       <p className="font-extrabold text-bevel-text dark:text-white text-[15px] leading-snug">
-                        Make it to the High Rocks Worlds in Sweden in June with Katie
+                        Make it to the Hyrox Worlds in Sweden in June with Katie
                       </p>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-bevel-text-secondary transition-transform ${expandedGoal === 2 ? 'rotate-180' : ''}`} />
@@ -2238,7 +2238,7 @@ export default function TodayPage() {
                       <p className="text-sm font-semibold text-sky-600 dark:text-sky-400">Train like an Olympian every day for the next three months.</p>
                       {[
                         { key: 'hp-5-0', label: 'Train like an Olympian every single day' },
-                        { key: 'hp-5-1', label: 'Qualify for High Rocks Worlds in Sweden' },
+                        { key: 'hp-5-1', label: 'Qualify for Hyrox Worlds in Sweden' },
                         { key: 'hp-5-2', label: 'Push your body to its absolute limit with Katie' },
                       ].map(item => (
                         <button key={item.key} onClick={(e) => toggleMit(item.key, e)} className="w-full flex items-center gap-2.5 group">
